@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScreenPulse TV Player - 主题资源 -->
+<resources>
+
+    <!-- 主应用主题 - 全屏沉浸式 -->
+    <style name="Theme.ScreenPulseTV" parent="Theme.Leanback">
+        <!-- 全屏无标题栏 -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+
+        <!-- 隐藏导航栏和状态栏 -->
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+
+        <!-- 背景色 -->
+        <item name="android:windowBackground">@color/background_dark</item>
+
+        <!-- Leanback 主题覆盖 -->
+        <item name="browseTitleTextColor">@color/leanback_browse_title</item>
+        <item name="browseRowsBackgroundColor">@color/leanback_background</item>
+        <item name="searchAffordanceColor">@color/primary</item>
+
+        <!-- 状态栏颜色（用于 WorkManager 通知等场景） -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- 着陆页主题 -->
+    <style name="Theme.ScreenPulseTV.Landing" parent="Theme.ScreenPulseTV">
+        <item name="android:windowBackground">@drawable/bg_gradient</item>
+    </style>
+
+    <!-- 播放主题 -->
+    <style name="Theme.ScreenPulseTV.Playback" parent="Theme.ScreenPulseTV">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <!-- 设置主题 -->
+    <style name="Theme.ScreenPulseTV.Settings" parent="Theme.ScreenPulseTV">
+        <item name="android:windowBackground">@color/background_dark</item>
+    </style>
+</resources>

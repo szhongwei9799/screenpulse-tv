@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScreenPulse TV Player - 着陆页布局 -->
+<!-- 首次运行时显示，包含 QR 码和设备信息 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/landing_background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:padding="48dp">
+
+    <!-- 居中内容容器 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <!-- 应用标题 -->
+        <TextView
+            android:id="@+id/landing_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/landing_title"
+            android:textColor="@color/text_primary"
+            android:textSize="48sp"
+            android:textStyle="bold" />
+
+        <!-- 副标题 -->
+        <TextView
+            android:id="@+id/landing_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="48dp"
+            android:fontFamily="sans-serif"
+            android:text="@string/landing_subtitle"
+            android:textColor="@color/text_secondary"
+            android:textSize="20sp" />
+
+        <!-- QR 码图片 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="320dp"
+            android:layout_height="320dp"
+            android:layout_marginBottom="24dp"
+            android:background="@color/background_card"
+            android:elevation="8dp">
+
+            <ImageView
+                android:id="@+id/landing_qr_code"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:contentDescription="@string/landing_qr_hint"
+                android:padding="16dp"
+                android:scaleType="fitCenter" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- QR 码提示 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:fontFamily="sans-serif"
+            android:text="@string/landing_qr_hint"
+            android:textColor="@color/text_hint"
+            android:textSize="14sp" />
+
+        <!-- 设备 IP 地址 -->
+        <TextView
+            android:id="@+id/landing_ip_address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/primary"
+            android:textSize="24sp" />
+
+        <!-- 管理面板 URL -->
+        <TextView
+            android:id="@+id/landing_manage_url"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp" />
+
+        <!-- 状态提示 -->
+        <TextView
+            android:id="@+id/landing_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif"
+            android:text="@string/landing_scanning"
+            android:textColor="@color/warning_yellow"
+            android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,476 +1,288 @@
-# 🖥️ ScreenPulse TV Player
+<p align="center">
+  <img src="docs/assets/banner.png" alt="ScreenPulse TV Banner" width="800"/>
+</p>
 
-> An open-source Android TV digital signage player with a built-in web-based management backend. Manage your playlists, upload media, and control playback — all from your browser.
+<h1 align="center">📺 ScreenPulse TV</h1>
 
-![Android](https://img.shields.io/badge/Platform-Android%20TV-3DDC84?logo=android&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white)
-![Vue3](https://img.shields.io/badge/Frontend-Vue%203-4FC08D?logo=vue.js&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-1.0.0-green.svg)
-![Min SDK](https://img.shields.io/badge/Min%20SDK-21%20(Lollipop)-orange.svg)
+<p align="center">
+  <strong>Android TV 数字标牌轮播播放器</strong><br/>
+  开源、轻量、功能丰富的智能播放器解决方案
+</p>
 
----
-
-## 📖 Overview
-
-**ScreenPulse TV Player** turns any Android TV or Android box into a professional digital signage display. It supports full-screen rotation of videos, photos, presentations, IPTV streams, and network media resources. The embedded web management interface (powered by Vue 3 + Element Plus) lets you control everything from any device on the same network — no separate server required.
-
-### How It Works
-
-The Android app bundles a lightweight HTTP server (NanoHTTPD) that serves a Vue 3 Single Page Application. When the app launches on your TV, it displays a QR code and management URL. Scan the QR code or open the URL from any device to access the web admin panel, where you can:
-
-- Upload and manage media files
-- Build and reorder playlists
-- Configure playback modes and interstitial schedules
-- Monitor device status in real time
+<p align="center">
+  <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-1.9.0-purple?logo=kotlin&logoColor=white" alt="Kotlin"/></a>
+  <a href="https://developer.android.com/studio"><img src="https://img.shields.io/badge/Android%20TV-API%2024+-green?logo=android&logoColor=white" alt="Android TV"/></a>
+  <a href="https://exoplayer.dev/"><img src="https://img.shields.io/badge/ExoPlayer-Media3%201.2.1-blue?logo=google&logoColor=white" alt="ExoPlayer"/></a>
+  <a href="https://github.com/NanoHttpd/nanohttpd"><img src="https://img.shields.io/badge/NanoHTTPD-2.3.1-orange?logo=web&logoColor=white" alt="NanoHTTPD"/></a>
+  <br/>
+  <a href="https://developer.android.com/topic/libraries/architecture/room"><img src="https://img.shields.io/badge/Room-2.6.1-green" alt="Room"/></a>
+  <a href="https://developer.android.com/kotlin/coroutines"><img src="https://img.shields.io/badge/Coroutines-1.7.3-blue" alt="Coroutines"/></a>
+  <a href="https://github.com/nicklockwood/FX"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License"/></a>
+  <a href="https://github.com/nicklockwood/FX"><img src="https://img.shields.io/badge/Version-1.0.0-brightgreen" alt="Version"/>
+  <img src="https://img.shields.io/badge/minSdk-24+-informational" alt="Min SDK"/>
+</p>
 
 ---
 
-## ✨ Features
+## 📖 项目简介
 
-### Media Playback
-- **Full-screen video playback** — MP4, AVI, MKV, MOV, 3GP, WebM, FLV
-- **Photo slideshow** — JPG, JPEG, PNG, GIF, BMP, WebP with configurable display duration
-- **Presentation display** — PPT, PPTX, PDF with timed transitions
-- **IPTV / HLS streams** — M3U / M3U8 playlists with native HLS support
-- **Network media** — HTTP, HTTPS, RTSP, DASH, and generic streaming URLs
-- **Automatic media type detection** based on file extension
+**ScreenPulse TV** 是一款专为 Android TV 设计的**数字标牌轮播播放器**，适用于商场、酒店、学校、会议室、展览展示等场景。设备通过局域网内的 Web 管理后台即可完成全部配置，无需外接键盘鼠标，真正做到**零接触部署**。
 
-### Playlist Management
-- Add, edit, delete, and reorder playlist items via drag-and-drop
-- Per-item **enable/disable** toggle — temporarily skip items without deleting them
-- Per-item **duration override** — set custom display time for images and presentations
-- **Loop mode** — repeat the playlist indefinitely
-- **Sequential mode** — play through once and stop
-- **Random mode** — shuffle playback order each cycle
+只需将安卓电视盒子接上显示器或大屏电视，打开 ScreenPulse TV，扫描屏幕上的二维码即可在手机或电脑上管理播放内容。
 
-### Scheduled Interstitials
-- Configure time-windowed interstitial playlists (e.g., lunch-break ads from 12:00–13:00)
-- Automatic insertion and removal of interstitial content based on the system clock
-- Cross-midnight support (e.g., 22:00 to 06:00)
+### ✨ 核心特性
 
-### Web Admin Panel
-- **Built-in Vue 3 SPA** — no external server or cloud dependency
-- **Dashboard** — real-time device status (IP, playback state, active items, volume)
-- **Playlist editor** — full CRUD with drag-and-drop reordering
-- **Media library** — file upload with auto-playlist add option
-- **Settings** — playback mode, interstitial schedule, volume control
-- **Dark theme UI** — optimized for low-light environments
-- **Responsive design** — works on phones, tablets, and desktops
-
-### Device Integration
-- **QR code on first launch** — instantly connect to the management interface
-- **QR code on empty playlist** — reminds you to add content when the playlist is empty
-- **Auto-start on boot** — the player launches automatically after device reboot
-- **Foreground service** — uninterrupted playback even when the app is backgrounded
-- **Android TV Leanback** compatible — appears in the Android TV launcher
+- 🎬 **多格式视频播放** — 支持 MP4、MKV、AVI、HLS (m3u8)、DASH、RTSP、RTMP 等几乎所有视频格式
+- 📡 **IPTV 直播源** — 支持 M3U/M3U8 直播源列表，直接播放网络电视频道
+- 🖼️ **图片轮播** — 支持 JPG/PNG/GIF/WebP，内置淡入淡出过渡动画
+- 🌐 **网页/PPT 展示** — 支持在线网页和文档的实时展示，定时切换
+- 🖥️ **内置 Web 管理后台** — 无需安装任何客户端，浏览器即可管理，响应式设计适配手机
+- 📋 **播放列表管理** — 每项可独立设置时长、音量、启用/禁用，支持拖拽排序
+- ⏰ **定时插播功能** — 在指定时间自动中断当前播放，插入紧急通知或广告，播完自动恢复
+- 🔁 **多种播放模式** — 循环播放、顺序播放、随机播放
+- 📱 **首次启动二维码** — 首次启动自动在屏幕上显示管理地址二维码，手机扫码即可开始
+- 🚀 **开机自启动** — 设备上电即自动启动播放，适合无人值守场景
 
 ---
 
-## 📸 Screenshots
-
-| Dashboard | Playlist Management | Media Upload |
-|-----------|-------------------|--------------|
-| _Coming soon_ | _Coming soon_ | _Coming soon_ |
-
-| Settings | QR Code | Playback |
-|----------|---------|----------|
-| _Coming soon_ | _Coming soon_ | _Coming soon_ |
-
----
-
-## 🏗️ Tech Stack
-
-### Android App
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| Language | Kotlin | 1.9+ |
-| Min SDK | Android 5.0 (Lollipop) | API 21 |
-| Target SDK | Android 14 | API 34 |
-| Media Player | ExoPlayer (Media3) | 1.2.0 |
-| Database | Room | 2.6.1 |
-| Web Server | NanoHTTPD | 2.3.1 |
-| QR Code | ZXing Core | 3.5.2 |
-| Scheduling | WorkManager | 2.9.0 |
-| Serialization | Gson | 2.10.1 |
-| Concurrency | Kotlin Coroutines | 1.7.3 |
-| Build System | Gradle (AGP) | 8.x |
-
-### Web Admin Panel
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| Framework | Vue 3 (Composition API) | 3.4+ |
-| UI Library | Element Plus | 2.9+ |
-| Routing | Vue Router | 4.3+ |
-| HTTP Client | Axios | 1.7+ |
-| Build Tool | Vite | 5.4+ |
-| Icons | Element Plus Icons | 2.3+ |
-
----
-
-## 🧩 Architecture
+## 🏗️ 系统架构
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ScreenPulse TV Player                         │
+┌───────────────────────────────────────────────────────────────────┐
+│                     ScreenPulse TV 系统                          │
 │                                                                   │
-│  ┌──────────────────────┐    ┌─────────────────────────────────┐ │
-│  │   Android TV App     │    │       Web Admin (Vue 3 SPA)      │ │
-│  │                      │    │                                   │ │
-│  │  ┌────────────────┐  │    │  ┌──────────┐ ┌───────────────┐  │ │
-│  │  │  MainActivity  │  │    │  │Dashboard │ │  Playlist     │  │ │
-│  │  └───────┬────────┘  │    │  └──────────┘ └───────────────┘  │ │
-│  │          │           │    │  ┌──────────┐ ┌───────────────┐  │ │
-│  │  ┌───────▼────────┐  │    │  │  Media   │ │   Settings    │  │ │
-│  │  │ PlaybackService│  │    │  │ Library  │ │               │  │ │
-│  │  └───────┬────────┘  │    │  └──────────┘ └───────────────┘  │ │
-│  │          │           │    └──────────────┬──────────────────┘ │
-│  │  ┌───────▼────────┐  │                   │ Axios HTTP          │
-│  │  │PlaylistManager │  │                   │ Requests           │
-│  │  └───────┬────────┘  │                   │                    │
-│  │  ┌───────▼────────┐  │    ┌──────────────▼──────────────────┐ │
-│  │  │MediaController │◄─┼────│  NanoHTTPD Web Server :8080    │ │
-│  │  │  (ExoPlayer)    │  │    │                                  │ │
-│  │  └────────────────┘  │    │  ┌──────────┐  ┌────────────┐  │ │
-│  │                      │    │  │Static SPA │  │  REST API   │  │ │
-│  │  ┌────────────────┐  │    │  │  Files    │  │  Endpoints  │  │ │
-│  │  │ ScheduleManager│  │    │  └──────────┘  └──────┬─────┘  │ │
-│  │  │ (WorkManager)  │  │    └───────────────────────┼────────┘ │
-│  │  └────────────────┘  │                            │           │
-│  │                      │    ┌───────────────────────▼────────┐ │
-│  │  ┌────────────────┐  │    │      Room Database (SQLite)     │ │
-│  │  │ QRCodeGenerator│  │    │  ┌──────────┐  ┌────────────┐  │ │
-│  │  └────────────────┘  │    │  │media_items│  │playlist    │  │ │
-│  └──────────────────────┘    │  │  table    │  │_config tbl │  │ │
-│                                │  └──────────┘  └────────────┘  │ │
-│                                └─────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │                    Android TV 设备                           │  │
+│  │                                                              │  │
+│  │  ┌─────────────┐    ┌──────────────┐    ┌───────────────┐  │  │
+│  │  │             │    │              │    │               │  │  │
+│  │  │  播放引擎   │◄───┤  播放列表    │◄───┤  定时任务     │  │  │
+│  │  │  Playback   │    │  Manager     │    │  Scheduler     │  │  │
+│  │  │  Engine     │    │              │    │               │  │  │
+│  │  │             │    └──────┬───────┘    └───────────────┘  │  │
+│  │  │  ┌───────┐  │           │                                │  │
+│  │  │  │ExoPlr │  │    ┌──────┴───────┐                       │  │
+│  │  │  │Glide  │  │    │   Room DB     │                       │  │
+│  │  │  │WebView│  │    │  (SQLite)     │                       │  │
+│  │  │  └───────┘  │    │  3 Tables     │                       │  │
+│  │  └─────────────┘    └──────────────┘                       │  │
+│  │                                                              │  │
+│  │  ┌─────────────────────────────────────────────────────┐    │  │
+│  │  │              Web 服务器 (NanoHTTPD :8080)            │    │  │
+│  │  │  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │    │  │
+│  │  │  │  Web 管理   │  │  REST API   │  │  媒体文件   │  │    │  │
+│  │  │  │  面板 HTML  │  │  端点       │  │  服务       │  │    │  │
+│  │  │  └─────────────┘  └─────────────┘  └────────────┘  │    │  │
+│  │  └──────────────────────┬──────────────────────────────┘    │  │
+│  └─────────────────────────┼───────────────────────────────────┘  │
+│                            │  HTTP (局域网)                        │
+└────────────────────────────┼──────────────────────────────────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+        ┌─────┴─────┐  ┌────┴────┐  ┌──────┴──────┐
+        │  手机浏览器 │  │ 电脑    │  │  平板浏览器 │
+        │  (扫码访问) │  │  浏览器 │  │             │
+        └───────────┘  └─────────┘  └─────────────┘
 ```
 
 ---
 
-## 🚀 Getting Started
+## 📸 截图预览
 
-### Prerequisites
+| 首次启动（二维码引导） | Web 管理后台 | 播放列表管理 |
+|:---:|:---:|:---:|
+| ![](docs/assets/screenshot-qr.png) | ![](docs/assets/screenshot-web-admin.png) | ![](docs/assets/screenshot-playlist.png) |
 
-- **Android Studio** — Hedgehog (2023.1.1) or newer
-- **JDK 17** — required for Gradle compilation
-- **Android TV device or emulator** — API 21+ for testing
-- **Node.js 18+** — only needed if you want to modify the web admin UI
-- **Git** — for cloning the repository
+| 视频播放 | 图片轮播 | IPTV 直播 |
+|:---:|:---:|:---:|
+| ![](docs/assets/screenshot-video.png) | ![](docs/assets/screenshot-image.png) | ![](docs/assets/screenshot-iptv.png) |
 
-### Clone the Repository
+> 📁 截图文件请放置于 `docs/assets/` 目录下
+
+---
+
+## 🚀 快速开始
+
+### 前置条件
+
+| 环境 | 要求 |
+|------|------|
+| Android Studio | Flamingo (2022.2.1) 或更高版本 |
+| JDK | 17 |
+| Android 设备/模拟器 | Android TV (API 24+)，建议使用 Android TV Box |
+| 网络 | 局域网环境（用于 Web 管理后台访问） |
+
+### 构建步骤
 
 ```bash
-git clone https://github.com/szhongwei9799/ScreenPulse-TV-Player.git
-cd ScreenPulse-TV-Player
+# 1. 克隆项目
+git clone https://github.com/yourname/screenpulse-tv.git
+cd screenpulse-tv
+
+# 2. 打开项目
+# 用 Android Studio 打开 android/ 目录
+open -a "Android Studio" android/
+
+# 3. 同步 Gradle
+# Android Studio 会自动提示同步，或点击 File → Sync Project with Gradle Files
+
+# 4. 构建项目
+# Build → Build Bundle(s) / APK(s) → Build APK(s)
 ```
 
-### Build the APK
+### 安装到设备
 
-#### Option A: Android Studio
-1. Open the project in Android Studio
-2. Wait for Gradle sync to complete
-3. Select **Build > Build Bundle(s) / APK(s) > Build APK(s)**
-4. The APK will be at `app/build/outputs/apk/debug/app-debug.apk`
-
-#### Option B: Command Line
 ```bash
-./gradlew assembleDebug
-# Output: app/build/outputs/apk/debug/app-debug.apk
+# 方式一：通过 ADB 连接 Android TV 盒子安装
+adb connect <tv-ip-address>        # 例如: adb connect 192.168.1.100
+adb install android/app/build/outputs/apk/debug/app-debug.apk
 
-# For release build:
-./gradlew assembleRelease
+# 方式二：通过 U 盘
+# 将 APK 复制到 U 盘，在 Android TV 上使用文件管理器安装
+
+# 方式三：通过 Android Studio 直接运行
+# 选择 TV 设备，点击 Run 按钮
 ```
 
-#### Option C: GitHub Actions
-The project includes a GitHub Actions workflow (`.github/workflows/build.yml`). Pushing to the `main` branch will automatically build and upload the APK as an artifact.
+### 访问 Web 管理后台
 
-### Install on Android TV
-
-1. **Via ADB** (recommended for development):
-   ```bash
-   adb install app/build/outputs/apk/debug/app-debug.apk
-   ```
-
-2. **Via USB drive**:
-   - Copy the APK to a USB drive
-   - Plug into your Android TV
-   - Use a file manager app to install the APK
-   - Enable "Install from unknown sources" in Settings > Security
-
-3. **Via network**:
-   - Host the APK on a local web server
-   - Open the URL in the Android TV browser to download
-
-### Access the Web Admin
-
-1. Launch ScreenPulse TV Player on your Android TV
-2. The screen will display a **QR code** and **management URL** (e.g., `http://192.168.1.100:8080`)
-3. From any device on the **same network**, open that URL in a browser
-4. The web admin dashboard will load — start managing your playlists!
-
-> **Note:** Both devices must be on the same local network. The web server runs on port **8080** by default.
-
-### Build the Web Admin (Optional)
-
-If you want to modify the web admin UI:
-
-```bash
-cd web-admin
-npm install
-npm run dev        # Development server at http://localhost:5173
-npm run build      # Production build → dist/
 ```
-
-After building, copy the `dist/` contents to `app/src/main/assets/web-admin/`:
-
-```bash
-rm -rf ../app/src/main/assets/web-admin/*
-cp -r dist/* ../app/src/main/assets/web-admin/
+1. 在 Android TV 设备上启动 ScreenPulse TV 应用
+2. 屏幕上会显示管理地址和二维码
+3. 在手机或电脑浏览器中输入: http://<设备IP>:8080
+   或直接扫描屏幕上的二维码
+4. 即可在 Web 界面管理播放内容
 ```
 
 ---
 
-## 📁 Project Structure
+## 🛠️ 技术栈
+
+| 模块 | 技术 | 版本 | 用途 |
+|------|------|------|------|
+| **开发语言** | Kotlin | 1.9.0 | 主开发语言 |
+| **最低 SDK** | Android API | 24 (Android 7.0) | 兼容性 |
+| **目标 SDK** | Android API | 34 (Android 14) | 最新特性 |
+| **视频播放** | ExoPlayer (Media3) | 1.2.1 | 视频/IPTV/流媒体播放 |
+| **图片加载** | Glide | 4.16.0 | 图片加载与缓存 |
+| **Web 服务器** | NanoHTTPD | 2.3.1 | 嵌入式 Web 服务 |
+| **本地数据库** | Room | 2.6.1 | 播放列表/媒体库/定时任务持久化 |
+| **异步框架** | Kotlin Coroutines | 1.7.3 | 异步任务处理 |
+| **定时调度** | AlarmManager + WorkManager | 2.9.0 | 定时任务/开机自启动 |
+| **JSON 解析** | Gson | 2.10.1 | API 数据序列化 |
+| **网络客户端** | OkHttp | 4.12.0 | HTTP 请求 |
+| **二维码** | ZXing | 3.5.3 | 管理地址二维码生成 |
+| **导航** | Navigation Component | 2.7.7 | 页面导航 |
+| **UI 框架** | Leanback + Material | 1.0.0 / 1.11.0 | Android TV UI 组件 |
+| **数据存储** | DataStore | 1.0.0 | 应用设置存储 |
+
+---
+
+## 📁 项目结构
 
 ```
-ScreenPulse-TV-Player/
-├── .github/
-│   └── workflows/
-│       └── build.yml                    # GitHub Actions CI/CD
-├── app/
-│   ├── build.gradle                     # App-level Gradle config
-│   ├── proguard-rules.pro              # ProGuard rules
-│   └── src/main/
-│       ├── AndroidManifest.xml          # App manifest (permissions, activities)
-│       ├── res/
-│       │   ├── layout/
-│       │   │   └── activity_main.xml    # Main activity layout
-│       │   ├── values/
-│       │   │   ├── strings.xml          # String resources
-│       │   │   ├── colors.xml          # Color definitions
-│       │   │   └── styles.xml          # Theme styles
-│       │   └── xml/
-│       │       └── file_paths.xml       # FileProvider paths
-│       ├── assets/
-│       │   └── web-admin/
-│       │       └── index.html           # Bundled Vue 3 SPA
-│       └── java/com/screenpulse/player/
-│           ├── ScreenPulseApp.kt       # Application class
-│           ├── MainActivity.kt         # Main launcher activity
-│           ├── data/
-│           │   ├── AppDatabase.kt      # Room database singleton
-│           │   ├── dao/
-│           │   │   ├── MediaItemDao.kt # Media item DAO
-│           │   │   └── PlaylistConfigDao.kt
-│           │   └── entity/
-│           │       ├── MediaItem.kt     # MediaItem entity + MediaType enum
-│           │       └── PlaylistConfig.kt # PlaylistConfig entity + PlaybackMode enum
-│           ├── player/
-│           │   ├── PlaybackService.kt  # Foreground service for playback
-│           │   ├── PlaylistManager.kt  # Playlist iteration & interstitial logic
-│           │   └── MediaController.kt  # ExoPlayer wrapper
-│           ├── server/
-│           │   ├── WebServer.kt        # NanoHTTPD server
-│           │   └── ApiRouter.kt        # REST API route handler
-│           ├── schedule/
-│           │   ├── BootReceiver.kt     # BOOT_COMPLETED receiver
-│           │   ├── ScheduleManager.kt  # Schedule configuration
-│           │   └── ScheduleCheckWorker.kt # WorkManager worker
-│           ├── qrcode/
-│           │   └── QRCodeGenerator.kt  # QR code generation
-│           └── util/
-│               └── NetworkUtil.kt      # Network utility (IP detection)
-├── web-admin/                          # Vue 3 web admin (separate project)
-│   ├── package.json                     # Node.js dependencies
-│   ├── vite.config.js                  # Vite configuration
-│   ├── index.html                      # Entry HTML
-│   └── src/
-│       ├── main.js                     # Vue app entry point
-│       ├── App.vue                     # Root component
-│       ├── api/
-│       │   └── index.js                # Axios API client
-│       ├── router/
-│       │   └── index.js                # Vue Router configuration
-│       ├── views/
-│       │   ├── Dashboard.vue           # Device status dashboard
-│       │   ├── Playlist.vue           # Playlist management
-│       │   ├── MediaLibrary.vue        # Media file management
-│       │   └── Settings.vue            # App settings
-│       ├── components/
-│       │   ├── MediaTypeBadge.vue      # Media type indicator
-│       │   └── StatusCard.vue          # Status card widget
-│       └── assets/
-│           └── styles.css              # Global styles
-├── build.gradle                         # Root Gradle config
-├── settings.gradle                      # Gradle settings
-├── gradle.properties                    # Gradle properties
-├── gradle/wrapper/
-│   └── gradle-wrapper.properties       # Gradle wrapper version
+screenpulse-tv/
+├── README.md                          # 项目说明文档
 ├── docs/
-│   ├── DESIGN.md                       # Architecture & design document
-│   ├── USAGE.md                        # User guide (Chinese)
-│   └── CHANGELOG.md                    # Version changelog
-└── README.md                            # This file
+│   ├── API.md                        # REST API 文档
+│   ├── USAGE.md                      # 使用指南
+│   ├── DESIGN.md                     # 技术设计文档
+│   ├── CHANGELOG.md                  # 更新日志
+│   └── assets/
+│       ├── prototype-tv.html          # TV 端原型
+│       └── prototype-web.html        # Web 管理端原型
+└── android/
+    ├── build.gradle.kts              # 根构建配置
+    ├── settings.gradle.kts            # 项目设置
+    ├── gradle.properties              # Gradle 属性
+    └── app/
+        ├── build.gradle.kts          # 应用模块构建配置
+        └── src/main/
+            ├── AndroidManifest.xml   # 应用清单
+            ├── java/com/screenpulse/tv/
+            │   ├── MainActivity.kt              # 主 Activity
+            │   ├── ScreenPulseApp.kt           # Application 类
+            │   ├── player/
+            │   │   ├── PlaybackEngine.kt       # 播放引擎（核心）
+            │   │   ├── PlaylistManager.kt       # 播放列表管理
+            │   │   ├── PlaylistItemAdapter.kt   # 列表适配器
+            │   │   ├── MediaItem.kt             # 媒体类型枚举
+            │   │   ├── ImageDisplayFragment.kt  # 图片展示
+            │   │   └── WebPageDisplayFragment.kt# 网页展示
+            │   ├── server/
+            │   │   ├── WebServerManager.kt      # Web 服务器管理
+            │   │   └── ApiHandler.kt           # REST API 处理器
+            │   ├── db/
+            │   │   ├── AppDatabase.kt           # Room 数据库
+            │   │   ├── Converters.kt            # 类型转换器
+            │   │   ├── MediaDao.kt              # 媒体库 DAO
+            │   │   ├── PlaylistDao.kt          # 播放列表 DAO
+            │   │   ├── ScheduleDao.kt           # 定时任务 DAO
+            │   │   └── entities/
+            │   │       ├── MediaEntity.kt       # 媒体实体
+            │   │       ├── PlaylistEntity.kt    # 播放列表实体
+            │   │       └── ScheduleEntity.kt     # 定时任务实体
+            │   ├── schedule/
+            │   │   ├── ScheduleManager.kt       # 定时任务管理器
+            │   │   └── BootReceiver.kt           # 开机自启动接收器
+            │   ├── ui/
+            │   │   ├── PlaybackFragment.kt       # 播放界面
+            │   │   ├── PlaybackViewModel.kt     # 播放视图模型
+            │   │   ├── LandingFragment.kt        # 首次启动页面
+            │   │   └── SettingsFragment.kt        # 设置页面
+            │   └── util/
+            │       ├── NetworkUtils.kt           # 网络工具类
+            │       ├── FileScanner.kt            # 文件扫描
+            │       └── QrCodeGenerator.kt        # 二维码生成
+            └── res/
+                ├── layout/                       # 布局文件
+                ├── values/                       # 字符串、颜色、样式
+                ├── drawable/                     # 图片资源
+                └── xml/                          # 配置文件
 ```
 
 ---
 
-## 📡 API Reference
+## 📡 API 接口概览
 
-All API endpoints are served by the embedded NanoHTTPD server on port **8080**.
+ScreenPulse TV 内置完整的 REST API，可通过 Web 管理后台或第三方集成调用。
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/status` | Get device status, IP address, active item count, playback mode, volume |
-| `GET` | `/api/playlist` | Get all playlist items |
-| `POST` | `/api/playlist` | Add a new media item to the playlist |
-| `PUT` | `/api/playlist/:id` | Update an existing playlist item |
-| `DELETE` | `/api/playlist/:id` | Delete a playlist item (and its local file if applicable) |
-| `POST` | `/api/playlist/reorder` | Reorder playlist items (batch update sort orders) |
-| `PUT` | `/api/config` | Update playback configuration (mode, interstitial, volume) |
-| `POST` | `/api/upload` | Upload a media file (multipart form data) |
-| `GET` | `/api/scan` | Trigger a scan of local media directories |
+| 方法 | 端点 | 描述 |
+|------|------|------|
+| GET | `/api/status` | 获取设备状态 |
+| GET | `/api/playlist` | 获取播放列表 |
+| POST | `/api/playlist` | 更新播放列表 |
+| PUT | `/api/playlist/{id}` | 更新播放项 |
+| DELETE | `/api/playlist/{id}` | 删除播放项 |
+| POST | `/api/playlist/reorder` | 重新排序播放列表 |
+| GET | `/api/media` | 获取媒体库 |
+| POST | `/api/media/upload` | 上传媒体文件 |
+| POST | `/api/media/url` | 添加网络 URL |
+| DELETE | `/api/media/{id}` | 删除媒体 |
+| GET | `/api/schedule` | 获取定时任务 |
+| POST | `/api/schedule` | 创建定时任务 |
+| PUT | `/api/schedule/{id}` | 更新定时任务 |
+| DELETE | `/api/schedule/{id}` | 删除定时任务 |
+| POST | `/api/control/play` | 播放 |
+| POST | `/api/control/pause` | 暂停 |
+| POST | `/api/control/skip` | 跳到下一项 |
+| POST | `/api/control/previous` | 跳到上一项 |
+| GET | `/api/settings` | 获取设置 |
+| POST | `/api/settings` | 更新设置 |
 
-### Example Requests
-
-#### Get Device Status
-```bash
-curl http://192.168.1.100:8080/api/status
-```
-
-```json
-{
-  "deviceName": "Android TV Box",
-  "ipAddress": "192.168.1.100",
-  "port": 8080,
-  "managementUrl": "http://192.168.1.100:8080",
-  "activeItems": 5,
-  "playbackMode": "LOOP",
-  "interstitialEnabled": false,
-  "volumeLevel": 80,
-  "androidVersion": "14",
-  "appVersion": "1.0.0"
-}
-```
-
-#### Add Playlist Item
-```bash
-curl -X POST http://192.168.1.100:8080/api/playlist \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Promo Video",
-    "url": "/storage/emulated/0/ScreenPulse/promo.mp4",
-    "type": "VIDEO",
-    "durationSeconds": 0,
-    "enabled": true,
-    "sortOrder": 0
-  }'
-```
-
-#### Upload a File
-```bash
-curl -X POST http://192.168.1.100:8080/api/upload \
-  -F "file=@/path/to/video.mp4" \
-  -F "filename=video.mp4" \
-  -F "autoAdd=true"
-```
-
-#### Update Configuration
-```bash
-curl -X PUT http://192.168.1.100:8080/api/config \
-  -H "Content-Type: application/json" \
-  -d '{
-    "playbackMode": "LOOP",
-    "interstitialEnabled": true,
-    "interstitialStartHour": 12,
-    "interstitialEndHour": 13,
-    "volumeLevel": 75
-  }'
-```
+> 📖 完整 API 文档请参阅 [docs/API.md](docs/API.md)
 
 ---
 
-## ⚙️ Configuration
+## 📄 开源协议
 
-### Playlist Config Fields
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `playbackMode` | enum | `LOOP` | `LOOP`, `SEQUENTIAL`, or `RANDOM` |
-| `interstitialEnabled` | boolean | `false` | Enable time-windowed interstitial playback |
-| `interstitialStartHour` | int | `12` | Interstitial start hour (0–23) |
-| `interstitialEndHour` | int | `13` | Interstitial end hour (0–23) |
-| `interstitialPlaylistName` | string | `"interstitial"` | Name of the interstitial playlist |
-| `volumeLevel` | int | `80` | Master volume (0–100) |
-
-### Media Item Fields
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `title` | string | required | Display name of the media item |
-| `url` | string | required | File path or network URL |
-| `type` | enum | `VIDEO` | `VIDEO`, `IMAGE`, `PPT`, `IPTV`, `STREAM` |
-| `durationSeconds` | int | `0` | Custom duration (0 = auto-detect for video, 10s default for images) |
-| `enabled` | boolean | `true` | Whether the item is active in the playlist |
-| `sortOrder` | int | auto | Position in the playlist (0 = first) |
-
-### Environment / Build Config
-
-| Property | Value | Description |
-|----------|-------|-------------|
-| `applicationId` | `com.screenpulse.player` | Unique app identifier |
-| `minSdk` | `21` | Android 5.0 Lollipop |
-| `targetSdk` | `34` | Android 14 |
-| `versionCode` | `1` | Incremental version code |
-| `versionName` | `"1.0.0"` | Human-readable version |
-| Web server port | `8080` | Embedded HTTP server port |
-| Upload directory | `files/screenpulse_uploads/` | Local file storage for uploaded media |
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. **Fork** the repository
-2. **Create a feature branch**: `git checkout -b feature/your-feature-name`
-3. **Commit** your changes: `git commit -m 'Add: your feature description'`
-4. **Push** to your branch: `git push origin feature/your-feature-name`
-5. Open a **Pull Request** with a clear description of your changes
-
-### Commit Message Convention
-
-We follow conventional commits:
-
-- `feat:` — New features
-- `fix:` — Bug fixes
-- `docs:` — Documentation changes
-- `style:` — Code style changes (formatting)
-- `refactor:` — Code refactoring
-- `perf:` — Performance improvements
-- `test:` — Test additions or modifications
-- `chore:` — Build system or tooling changes
-
-### Development Guidelines
-
-- **Kotlin**: Follow [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html)
-- **Vue 3**: Use the Composition API with `<script setup>`
-- **API**: Keep REST endpoints consistent and backward-compatible
-- **Database**: Use Room migrations for schema changes
-- **Testing**: Write unit tests for core logic (PlaylistManager, ApiRouter)
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**. You are free to use, modify, and distribute this software.
+本项目基于 [MIT License](LICENSE) 开源。
 
 ```
 MIT License
 
-Copyright (c) 2024 szhongwei9799
+Copyright (c) 2026 ScreenPulse TV Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -484,34 +296,92 @@ copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 ```
 
 ---
 
-## 👤 Author
+## 🤝 贡献指南
 
-**szhongwei9799**
+我们欢迎任何形式的贡献！无论是提交 Bug、改进文档还是开发新功能。
 
-- GitHub: [@szhongwei9799](https://github.com/szhongwei9799)
+### 贡献流程
+
+1. **Fork** 本仓库
+2. 创建特性分支：`git checkout -b feature/your-feature-name`
+3. 提交更改：`git commit -m 'feat: add your feature description'`
+4. 推送分支：`git push origin feature/your-feature-name`
+5. 提交 **Pull Request**
+
+### Commit 规范
+
+我们使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
+
+| 类型 | 描述 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | 修复 Bug |
+| `docs` | 文档更新 |
+| `style` | 代码格式（不影响功能） |
+| `refactor` | 重构（不是新功能也不是修复） |
+| `perf` | 性能优化 |
+| `test` | 测试相关 |
+| `chore` | 构建过程或辅助工具的变动 |
+
+### 代码风格
+
+- 遵循 [Kotlin 官方编码规范](https://kotlinlang.org/docs/coding-conventions.html)
+- 使用 Android Studio 内置的 Kotlin 代码格式化工具
+- 添加必要的 KDoc 注释（尤其是公共 API）
 
 ---
 
-## 🙏 Acknowledgments
+## 📚 文档目录
 
-- [ExoPlayer / Media3](https://github.com/google/ExoPlayer) by Google — powerful media playback
-- [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd) — lightweight embedded HTTP server
-- [Room](https://developer.android.com/jetpack/androidx/releases/room) — Android persistence library
-- [Vue.js](https://vuejs.org/) — progressive JavaScript framework
-- [Element Plus](https://element-plus.org/) — Vue 3 UI component library
-- [ZXing](https://github.com/zxing/zxing) — QR code generation
+| 文档 | 说明 |
+|------|------|
+| [README.md](README.md) | 项目总览（本文件） |
+| [docs/API.md](docs/API.md) | REST API 完整接口文档 |
+| [docs/USAGE.md](docs/USAGE.md) | 用户使用指南 |
+| [docs/DESIGN.md](docs/DESIGN.md) | 技术设计文档 |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | 版本更新日志 |
+
+---
+
+## ⚠️ 常见问题
+
+<details>
+<summary><b>❓ 无法通过浏览器访问设备？</b></summary>
+
+1. 确保手机/电脑与 Android TV 设备在同一个局域网
+2. 检查设备 IP 地址是否正确（屏幕上会显示）
+3. 确认防火墙未阻止 8080 端口
+4. 尝试关闭 VPN 连接
+
+</details>
+
+<details>
+<summary><b>❓ 视频播放卡顿？</b></summary>
+
+1. 确保网络带宽足够（建议 10Mbps+ 用于 1080p 视频）
+2. 对于 4K 视频，建议使用支持硬件解码的设备
+3. 检查 RTSP/RTMP 流地址是否可访问
+4. IPTV 源可能存在服务器端限制
+
+</details>
+
+<details>
+<summary><b>❓ 上传文件失败？</b></summary>
+
+1. 文件大小限制为 50MB，如需更大请通过 URL 添加
+2. 确保设备存储空间充足
+3. 检查网络连接是否稳定
+
+</details>
 
 ---
 
 <p align="center">
-  <sub>Built with ❤️ for digital signage</sub>
+  Made with ❤️ by ScreenPulse TV Contributors<br/>
+  <sub>让每一块屏幕都充满活力</sub>
 </p>

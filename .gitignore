@@ -1,3 +1,4 @@
+# Android
 *.iml
 .gradle
 /local.properties
@@ -8,15 +9,43 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Built application files
 *.apk
 *.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
 *.dex
-*.class
+
+# Generated files
 bin/
 gen/
 out/
-.navigation/
-*.log
-app/build/
+
+# Gradle files
+.gradle/
 build/
-gradle-app.ini
+
+# Local configuration file
+local.properties
+
+# Android Studio
+*.iml
+.idea/
+.navigation/
+captures/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Log Files
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env

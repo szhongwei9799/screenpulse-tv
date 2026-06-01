@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScreenPulse TV Player - 字符串资源 -->
+<resources>
+    <string name="app_name">ScreenPulse TV</string>
+    <string name="app_description">数字标牌和播放列表管理器</string>
+
+    <!-- 着陆页 -->
+    <string name="landing_title">ScreenPulse TV</string>
+    <string name="landing_subtitle">数字标牌播放器</string>
+    <string name="landing_ip_label">设备 IP 地址</string>
+    <string name="landing_url_label">管理面板地址</string>
+    <string name="landing_scanning">等待播放列表…</string>
+    <string name="landing_ready">Web 管理面板就绪</string>
+    <string name="landing_detected">检测到播放列表，即将开始播放</string>
+    <string name="landing_qr_hint">使用手机扫描二维码访问管理面板</string>
+
+    <!-- 播放控制 -->
+    <string name="control_play">播放</string>
+    <string name="control_pause">暂停</string>
+    <string name="control_skip">下一项</string>
+    <string name="control_previous">上一项</string>
+    <string name="control_stop">停止</string>
+
+    <!-- 设置 -->
+    <string name="settings_title">设置</string>
+    <string name="settings_play_mode">播放模式</string>
+    <string name="settings_mode_loop">循环播放</string>
+    <string name="settings_mode_sequential">顺序播放</string>
+    <string name="settings_mode_random">随机播放</string>
+    <string name="settings_server">Web 服务器</string>
+    <string name="settings_server_port">服务器端口</string>
+    <string name="settings_auto_start">开机自启动</string>
+    <string name="settings_default_duration">默认显示时长</string>
+    <string name="settings_clear_playlist">清空播放列表</string>
+    <string name="settings_about">关于</string>
+
+    <!-- 媒体类型 -->
+    <string name="type_video">视频</string>
+    <string name="type_image">图片</string>
+    <string name="type_iptv">直播</string>
+    <string name="type_stream">流媒体</string>
+    <string name="type_webpage">网页</string>
+
+    <!-- 错误信息 -->
+    <string name="error_empty_playlist">播放列表为空</string>
+    <string name="error_network_unavailable">网络不可用</string>
+    <string name="error_server_failed">服务器启动失败</string>
+    <string name="error_file_not_found">文件未找到</string>
+    <string name="error_playback_failed">播放失败</string>
+
+    <!-- 通知 -->
+    <string name="notification_playback_channel">播放服务</string>
+    <string name="notification_playback_title">ScreenPulse 正在播放</string>
+    <string name="notification_playback_text">点击查看详情</string>
+</resources>

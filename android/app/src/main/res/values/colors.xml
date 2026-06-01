@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScreenPulse TV Player - 颜色资源 -->
+<resources>
+
+    <!-- 主色调 -->
+    <color name="primary">#00D4FF</color>
+    <color name="primary_dark">#0098B3</color>
+    <color name="primary_variant">#00B8D4</color>
+
+    <!-- 辅助色 -->
+    <color name="secondary">#FF6D00</color>
+    <color name="secondary_dark">#C43E00</color>
+    <color name="secondary_variant">#FF9100</color>
+
+    <!-- 背景色 -->
+    <color name="background_dark">#0A0E1A</color>
+    <color name="background_card">#121829</color>
+    <color name="background_elevated">#1A2040</color>
+
+    <!-- 文字颜色 -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0B8C8</color>
+    <color name="text_hint">#5A6278</color>
+    <color name="text_disabled">#3A4058</color>
+
+    <!-- 状态颜色 -->
+    <color name="success_green">#4CAF50</color>
+    <color name="warning_yellow">#FF9800</color>
+    <color name="error_red">#F44336</color>
+    <color name="info_blue">#2196F3</color>
+
+    <!-- 媒体类型标签颜色 -->
+    <color name="badge_video">#E91E63</color>
+    <color name="badge_image">#2196F3</color>
+    <color name="badge_iptv">#FF5722</color>
+    <color name="badge_stream">#9C27B0</color>
+    <color name="badge_webpage">#4CAF50</color>
+
+    <!-- 播放器遮罩 -->
+    <color name="player_overlay">#80000000</color>
+
+    <!-- Leanback 主题色 -->
+    <color name="leanback_background">#0A0E1A</color>
+    <color name="leanback_browse_title">#00D4FF</color>
+    <color name="leanback_card_bg">#1A2040</color>
+
+    <!-- 默认分隔线 -->
+    <color name="divider">#1E2640</color>
+</resources>
