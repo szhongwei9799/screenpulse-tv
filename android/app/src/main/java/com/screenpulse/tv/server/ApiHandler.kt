@@ -87,11 +87,13 @@ class ApiHandler(private val context: Context) {
      * 路由到对应的处理方法
      */
     fun handleRequest(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
-        // 添加 CORS 头
-        addCorsHeaders(session)
-
         val uri = session.uri
         val method = session.method
+
+        // 处理 CORS 预检请求
+        if (method == NanoHTTPD.Method.OPTIONS) {
+            return handleCorsPreflight()
+        }
 
         Log.d(TAG, "请求: $method $uri")
 
@@ -181,6 +183,11 @@ class ApiHandler(private val context: Context) {
                     serveMediaFile(uri.removePrefix("/media/"))
                 }
 
+                // ========== SPA fallback ==========
+                !uri.startsWith("/api/") && !uri.startsWith("/media/") -> {
+                    serveAdminPanel()
+                }
+
                 else -> {
                     notFound("未找到: $uri")
                 }
@@ -199,13 +206,16 @@ class ApiHandler(private val context: Context) {
      */
     private fun serveAdminPanel(): NanoHTTPD.Response {
         val html = buildAdminPanelHtml()
-        return NanoHTTPD.newChunkedResponse(
+        return NanoHTTPD.newFixedLengthResponse(
             NanoHTTPD.Response.Status.OK,
             "text/html; charset=UTF-8",
-            html.byteInputStream()
+            html
         ).apply {
             addHeader("Content-Type", "text/html; charset=UTF-8")
             addHeader("Cache-Control", "no-cache, no-store, must-revalidate")
+            addHeader("Access-Control-Allow-Origin", "*")
+            addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
         }
     }
 
@@ -529,6 +539,30 @@ class ApiHandler(private val context: Context) {
             } catch(e) { showToast('删除失败'); }
         }
 
+        // 启用/禁用播放项
+        async function toggleItem(id, enabled) {
+            try {
+                const res = await fetch(API_BASE + '/api/playlist/' + id + '/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+                if (res.ok) { showToast(enabled ? '已启用' : '已禁用'); loadPlaylist(); }
+            } catch(e) { showToast('操作失败'); }
+        }
+
+        // 移动播放项
+        async function moveItem(id, direction) {
+            try {
+                const res = await fetch(API_BASE + '/api/playlist/' + id + '/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: direction })
+                });
+                if (res.ok) { loadPlaylist(); }
+            } catch(e) { showToast('操作失败'); }
+        }
+
         // 播放控制
         async function controlPlay() { await fetch(API_BASE + '/api/control/play', { method: 'POST' }); showToast('播放'); loadStatus(); }
         async function controlPause() { await fetch(API_BASE + '/api/control/pause', { method: 'POST' }); showToast('暂停'); loadStatus(); }
@@ -581,6 +615,7 @@ class ApiHandler(private val context: Context) {
         val status = mapOf(
             "deviceName" to android.os.Build.MODEL,
             "deviceIp" to ip,
+            "ip" to ip,
             "port" to port,
             "status" to "online",
             "playlistCount" to playlistCount,
@@ -1011,10 +1046,19 @@ class ApiHandler(private val context: Context) {
     }
 
     /**
-     * 添加 CORS 头
+     * 处理 CORS 预检请求
      */
-    private fun addCorsHeaders(session: NanoHTTPD.IHTTPSession) {
-        // CORS 在响应中处理
+    private fun handleCorsPreflight(): NanoHTTPD.Response {
+        return NanoHTTPD.newFixedLengthResponse(
+            NanoHTTPD.Response.Status.OK,
+            "text/plain",
+            ""
+        ).apply {
+            addHeader("Access-Control-Allow-Origin", "*")
+            addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+            addHeader("Access-Control-Max-Age", "86400")
+        }
     }
 
     /**
