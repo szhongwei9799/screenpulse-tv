@@ -49,10 +49,20 @@ class WebServer(
     override fun serve(session: IHTTPSession): Response {
         val uri = session.uri
 
+        // Handle CORS preflight
+        if (session.method == Method.OPTIONS) {
+            return newFixedLengthResponse(Response.Status.OK, "text/plain", "").apply {
+                addHeader("Access-Control-Allow-Origin", "*")
+                addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+                addHeader("Access-Control-Max-Age", "86400")
+            }
+        }
+
         Log.d(TAG, "Request: ${session.method} $uri")
 
         return try {
-            when {
+            val response = when {
                 uri.startsWith("/api/") -> {
                     serveApi(session)
                 }
@@ -60,6 +70,9 @@ class WebServer(
                     serveStaticFile(uri)
                 }
             }
+            // Add CORS headers to all responses
+            response.addHeader("Access-Control-Allow-Origin", "*")
+            response
         } catch (e: Exception) {
             Log.e(TAG, "Error serving request: $uri", e)
             newFixedLengthResponse(
@@ -140,19 +153,20 @@ class WebServer(
             val inputStream = context.assets.open(path)
             val mimeType = getMimeType(path)
 
-            val buffer = ByteArray(inputStream.available())
-            inputStream.read(buffer)
+            // Use ByteArrayOutputStream to reliably read full content
+            val buffer = ByteArrayOutputStream()
+            inputStream.copyTo(buffer)
             inputStream.close()
 
-            newFixedLengthResponse(Response.Status.OK, mimeType, String(buffer))
+            newFixedLengthResponse(Response.Status.OK, mimeType, buffer.toString("UTF-8"))
         } catch (e: Exception) {
             // SPA fallback: serve index.html for unknown routes
             try {
                 val inputStream = context.assets.open("web-admin/index.html")
-                val buffer = ByteArray(inputStream.available())
-                inputStream.read(buffer)
+                val buffer = ByteArrayOutputStream()
+                inputStream.copyTo(buffer)
                 inputStream.close()
-                newFixedLengthResponse(Response.Status.OK, "text/html", String(buffer))
+                newFixedLengthResponse(Response.Status.OK, "text/html", buffer.toString("UTF-8"))
             } catch (fallbackE: Exception) {
                 newFixedLengthResponse(
                     Response.Status.NOT_FOUND,

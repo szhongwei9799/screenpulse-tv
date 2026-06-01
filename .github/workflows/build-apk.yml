@@ -1,4 +1,4 @@
-name: Build APK
+name: Build & Release APK
 
 on:
   push:
@@ -8,26 +8,23 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
-    name: Build Debug & Release APK
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. Cache Gradle dependencies
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -38,85 +35,48 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # 4. Make gradlew executable
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 5. Build debug APK
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      # 6. Build release APK (using debug signing config for CI)
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
-        env:
-          KEYSTORE_FILE: debug.keystore
-          KEYSTORE_PASSWORD: android
-          KEY_ALIAS: androiddebugkey
-          KEY_PASSWORD: android
+      - name: Rename APK for release
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk ScreenPulse-TV-Player-latest.apk
 
-      # 7. Upload debug APK as artifact
-      - name: Upload Debug APK
+      - name: Upload Debug APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: ScreenPulse-debug-${{ github.sha }}
-          path: app/build/outputs/apk/debug/*.apk
+          path: ScreenPulse-TV-Player-latest.apk
           retention-days: 30
 
-      # 8. Upload release APK as artifact
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ScreenPulse-release-${{ github.sha }}
-          path: app/build/outputs/apk/release/*.apk
-          retention-days: 30
-
-  release-on-tag:
-    name: Create GitHub Release on Tag
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download Release APK
-        uses: actions/download-artifact@v4
-        with:
-          name: ScreenPulse-release-${{ github.sha }}
-          path: release-artifacts/
-
-      - name: Generate changelog
-        id: changelog
-        run: |
-          # Get the previous tag
-          PREV_TAG=$(git tag --sort=-creatordate | head -2 | tail -1)
-          if [ -z "$PREV_TAG" ]; then
-            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
-          fi
-
-          # Generate changelog from commits
-          CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Release
+      # Create/update GitHub Release with APK for direct download
+      - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ScreenPulse TV Player ${{ github.ref_name }}
+          tag_name: latest
+          name: ScreenPulse TV Player - Latest Build
           body: |
-            ## What's New
-            ${{ steps.changelog.outputs.changelog }}
+            ## ScreenPulse TV Player
 
-            ## Installation
-            Download the APK below and install it on your Android TV device.
-          files: release-artifacts/*.apk
+            Android TV 数字标牌轮播播放器，支持视频/照片/IPTV/流媒体全屏轮播。
+
+            ### 安装方法
+            1. 下载下方 APK 文件
+            2. 传输到 Android TV 设备
+            3. 在设置中开启「允许安装未知来源应用」
+            4. 打开 APK 文件安装
+
+            ### 管理面板
+            安装后打开应用，屏幕会显示管理地址和二维码，用浏览器访问即可管理播放列表。
+
+            ---
+            **构建信息：** Commit ${{ github.sha }} | ${{ github.run_number }}
+          files: ScreenPulse-TV-Player-latest.apk
           draft: false
           prerelease: false
+          overwrite: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
