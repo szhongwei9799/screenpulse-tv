@@ -36,9 +36,10 @@ local.properties
 .navigation/
 captures/
 
-# Keystore files
+# Keystore files (except debug keystore for CI)
 *.jks
 *.keystore
+!app/debug.keystore
 
 # Log Files
 *.log
