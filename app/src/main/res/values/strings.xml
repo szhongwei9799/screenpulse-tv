@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ScreenPulse Player</string>
+    <string name="scan_qr">Scan QR code to manage</string>
+    <string name="management_url">Management URL</string>
+    <string name="no_playlist">No playlist configured</string>
+    <string name="settings">Settings</string>
+    <string name="loading">Loading…</string>
+    <string name="playback_notification_channel">Playback</string>
+    <string name="playback_notification_title">ScreenPulse Player</string>
+    <string name="playback_notification_text">Playlist is playing</string>
+    <string name="device_info">Device IP: %1$s</string>
+    <string name="qr_instructions">Open the URL below in your browser to manage this display</string>
+</resources>

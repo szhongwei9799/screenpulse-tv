@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ScreenPulse Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231A237E'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>S</text></svg>">
+<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+<link rel="stylesheet" href="https://unpkg.com/element-plus/theme-chalk/dark/css-vars.css">
+<style>
+/* ===== GLOBAL DARK THEME ===== */
+:root{--ep-color-primary:#448aff;--ep-color-primary-light-3:#6f9fff;--ep-color-primary-light-5:#82b1ff;--ep-color-primary-dark-2:#1a237e;--ep-bg-color:#0d1117;--ep-bg-color-overlay:#161b22;--ep-bg-color-page:#0d1117;--ep-text-color-primary:#e0e0e0;--ep-text-color-regular:#b0bec5;--ep-text-color-secondary:#78909c;--ep-text-color-placeholder:#546e7a;--ep-border-color:#21262d;--ep-border-color-light:#30363d;--ep-border-color-lighter:#21262d;--ep-border-color-extra-light:#1c2128;--ep-fill-color:#161b22;--ep-fill-color-light:#1c2128;--ep-fill-color-lighter:#21262d;--ep-fill-color-blank:#0d1117;--ep-fill-color-dark:#0d1117;--ep-mask-color:rgba(0,0,0,.7);--ep-color-success:#4caf50;--ep-color-warning:#ff9800;--ep-color-danger:#f44336;--ep-color-info:#90a4ae;--el-color-primary:#448aff;--el-color-primary-light-3:#6f9fff;--el-color-primary-light-5:#82b1ff;--el-color-primary-dark-2:#1a237e;--el-bg-color:#0d1117;--el-bg-color-overlay:#161b22;--el-text-color-primary:#e0e0e0;--el-text-color-regular:#b0bec5;--el-text-color-secondary:#78909c;--el-border-color:#21262d;--el-border-color-light:#30363d;--el-fill-color:#161b22;--el-fill-color-light:#1c2128;--el-fill-color-lighter:#21262d;--el-fill-color-blank:#0d1117}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#e0e0e0;-webkit-font-smoothing:antialiased}
+#app{height:100%}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#0d1117}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#484f58}
+
+/* ===== ELEMENT PLUS DARK OVERRIDES ===== */
+.el-card{--el-card-bg-color:#161b22;--el-card-border-color:#21262d;border-radius:12px!important;transition:box-shadow .3s,border-color .3s}
+.el-card:hover{border-color:#30363d;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.el-button--primary{--el-button-bg-color:#1a237e;--el-button-border-color:#1a237e;--el-button-hover-bg-color:#283593;--el-button-hover-border-color:#283593}
+.el-table{--el-table-bg-color:#161b22;--el-table-tr-bg-color:#161b22;--el-table-header-bg-color:#0d1117;--el-table-header-text-color:#b0bec5;--el-table-text-color:#e0e0e0;--el-table-border-color:#21262d;--el-table-row-hover-bg-color:rgba(68,138,255,.06);border-radius:12px;overflow:hidden}
+.el-table th.el-table__cell{font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.el-dialog{--el-dialog-bg-color:#161b22;border-radius:16px;border:1px solid #21262d}
+.el-dialog__header{border-bottom:1px solid #21262d;padding:16px 24px}
+.el-dialog__body{padding:24px}
+.el-dialog__footer{border-top:1px solid #21262d;padding:12px 24px}
+.el-input__wrapper,.el-textarea__inner{background-color:#0d1117!important;box-shadow:0 0 0 1px #21262d inset!important;border-radius:8px!important}
+.el-input__wrapper:hover{box-shadow:0 0 0 1px #30363d inset!important}
+.el-input__wrapper.is-focus{box-shadow:0 0 0 1px #448aff inset!important}
+.el-switch{--el-switch-on-color:#448aff}
+.el-tag{border-radius:6px;font-weight:500}
+.el-select-dropdown{background:#161b22!important;border:1px solid #21262d!important}
+.el-select-dropdown__item{color:#e0e0e0!important}
+.el-select-dropdown__item.is-hovering{background:rgba(68,138,255,.08)!important}
+.el-select-dropdown__item.is-selected{color:#448aff!important;font-weight:600}
+.el-message-box{--el-messagebox-bg-color:#161b22;border:1px solid #21262d;border-radius:16px}
+.el-loading-mask{background-color:rgba(13,17,23,.8)!important;backdrop-filter:blur(4px)}
+.el-upload-dragger{background:#0d1117!important;border:2px dashed #30363d!important;border-radius:12px!important;transition:border-color .3s,background .3s}
+.el-upload-dragger:hover{border-color:#448aff!important;background:rgba(68,138,255,.04)!important}
+.el-upload-dragger.is-dragover{border-color:#448aff!important;background:rgba(68,138,255,.08)!important}
+.el-slider__runway{background-color:#21262d}
+.el-radio-button__inner{background:#0d1117!important;border-color:#21262d!important;color:#b0bec5!important}
+.el-radio-button__original-radio:checked+.el-radio-button__inner{background:#1a237e!important;border-color:#1a237e!important;color:#fff!important;box-shadow:-1px 0 0 0 #21262d!important}
+.el-radio-button:first-child .el-radio-button__inner{border-left-color:#21262d!important}
+.el-radio-button__inner:hover{color:#448aff!important}
+.el-form-item__label{color:#b0bec5!important;font-weight:500}
+.el-overlay{background:rgba(0,0,0,.7)!important}
+.el-popper.is-light{border-color:#21262d!important}
+.el-popper.is-light .el-popper__arrow::before{border-color:#21262d!important;background:#161b22!important}
+
+/* ===== APP LAYOUT ===== */
+.app-container{height:100vh;background:#0d1117;color:#e0e0e0;overflow:hidden;display:flex}
+.app-aside{width:220px;min-width:64px;background:#161b22;border-right:1px solid #21262d;display:flex;flex-direction:column;transition:width .3s ease;overflow:hidden;flex-shrink:0}
+.app-aside.collapsed{width:64px}
+.logo-area{height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #21262d;gap:10px;flex-shrink:0}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#1a237e,#448aff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
+.logo-text{font-size:16px;font-weight:700;white-space:nowrap;background:linear-gradient(135deg,#448aff,#82b1ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;overflow:hidden}
+.app-menu{flex:1;padding-top:8px;border-right:none!important}
+.app-menu .el-menu-item{margin:2px 8px;border-radius:8px;height:44px;line-height:44px}
+.app-menu .el-menu-item:hover{background:rgba(68,138,255,.08)!important}
+.app-menu .el-menu-item.is-active{background:rgba(68,138,255,.15)!important;color:#448aff!important}
+.aside-footer{padding:12px;border-top:1px solid #21262d;display:flex;justify-content:center;flex-shrink:0}
+.app-main-container{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.app-header{background:#161b22;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;flex-shrink:0}
+.page-title{font-size:18px;font-weight:600;color:#e0e0e0}
+.header-right{display:flex;align-items:center;gap:12px}
+.status-tag{border:none}
+.app-main{background:#0d1117;padding:24px;overflow-y:auto;overflow-x:hidden;flex:1}
+
+/* ===== STATUS GRID ===== */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.status-card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px;display:flex;align-items:center;gap:16px;transition:all .3s ease;cursor:default}
+.status-card:hover{border-color:var(--c);box-shadow:0 4px 20px rgba(0,0,0,.3);transform:translateY(-2px)}
+.card-icon-wrap{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-content{flex:1;min-width:0}
+.card-label{font-size:13px;color:#78909c;font-weight:500;margin-bottom:4px}
+.card-value{font-size:20px;font-weight:700;color:#e0e0e0;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== INFO CARDS ===== */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px}
+.info-card .el-card__header{padding:16px 20px}
+.card-hdr{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px}
+.card-hdr .el-icon{color:#448aff}
+.live-tag{margin-left:auto}
+.live-dot{display:inline-block;width:6px;height:6px;background:#4caf50;border-radius:50%;margin-right:4px;animation:pulse 1.5s ease-in-out infinite}
+
+/* ===== NOW PLAYING ===== */
+.now-playing{display:flex;gap:16px;align-items:flex-start}
+.np-thumb{width:64px;height:64px;background:linear-gradient(135deg,#1a237e,#448aff);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.np-info{flex:1;min-width:0}
+.np-title{font-size:16px;font-weight:600;color:#e0e0e0;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.np-url{font-size:12px;color:#78909c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-duration{font-size:12px;color:#448aff}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:32px;color:#78909c}
+.empty-icon{color:#30363d;font-size:32px}
+
+/* ===== SUMMARY ===== */
+.summary-list{display:flex;flex-direction:column;gap:12px}
+.summary-row{display:flex;align-items:center;gap:12px}
+.summary-bar-wrap{flex:1;height:6px;background:#21262d;border-radius:3px;overflow:hidden}
+.summary-bar{height:100%;border-radius:3px;transition:width .6s ease}
+.summary-count{font-size:12px;color:#b0bec5;min-width:60px;text-align:right}
+.summary-pct{font-size:12px;color:#78909c;min-width:35px;text-align:right}
+
+/* ===== DEVICE INFO ===== */
+.device-info{display:flex;flex-direction:column;gap:0}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #21262d}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:13px;color:#78909c}
+.info-value{font-size:13px;color:#e0e0e0;font-weight:500}
+.info-value.mono{font-family:'JetBrains Mono','Fira Code',monospace}
+
+/* ===== MEDIA TYPE BADGE ===== */
+.mtb{display:inline-flex;align-items:center;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.mtb-video{color:#448aff;background:rgba(68,138,255,.15)}
+.mtb-image{color:#66bb6a;background:rgba(102,187,106,.15)}
+.mtb-ppt{color:#ff9800;background:rgba(255,152,0,.15)}
+.mtb-iptv{color:#ab47bc;background:rgba(171,71,188,.15)}
+.mtb-stream{color:#ef5350;background:rgba(239,83,80,.15)}
+.mtb-web{color:#26c6da;background:rgba(38,198,218,.15)}
+
+/* ===== PLAYLIST ===== */
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.toolbar-left,.toolbar-right{display:flex;gap:10px;flex-wrap:wrap}
+.drag-handle{display:flex;align-items:center;gap:6px;cursor:grab;color:#78909c;padding:4px 6px;border-radius:4px;transition:all .2s;user-select:none}
+.drag-handle:hover{color:#448aff;background:rgba(68,138,255,.1)}
+.drag-handle:active{cursor:grabbing}
+.drag-handle.dragging{opacity:.4}
+.drag-over{border-top:2px solid #448aff}
+.title-cell{display:flex;align-items:center;gap:12px}
+.item-thumb{width:36px;height:36px;background:#21262d;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#448aff;flex-shrink:0}
+.item-title{font-weight:500;color:#e0e0e0}
+.url-text{font-size:13px;color:#78909c;font-family:'JetBrains Mono','Fira Code',monospace}
+.action-buttons{display:flex;justify-content:center;gap:2px}
+.duration-field{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+
+/* ===== UPLOAD ===== */
+.upload-area{width:100%}
+.upload-area .el-upload-dragger{padding:40px}
+.upload-content{display:flex;flex-direction:column;align-items:center;gap:12px}
+.upload-icon{color:#30363d;font-size:48px}
+.upload-text{font-size:16px;color:#b0bec5;font-weight:500}
+.upload-hint{font-size:12px;color:#78909c}
+.upload-actions{display:flex;gap:12px;margin-top:16px}
+.file-cell{display:flex;align-items:center;gap:12px}
+.file-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-icon-wrap.video{background:rgba(68,138,255,.15);color:#448aff}
+.file-icon-wrap.image{background:rgba(102,187,106,.15);color:#66bb6a}
+.file-icon-wrap.document{background:rgba(255,152,0,.15);color:#ff9800}
+.file-name{font-weight:500;color:#e0e0e0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-path{font-size:12px;color:#78909c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:13px;color:#b0bec5;font-family:'JetBrains Mono',monospace}
+.file-date{font-size:13px;color:#78909c}
+
+/* ===== SETTINGS ===== */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}
+.form-hint{font-size:12px;color:#78909c;margin-top:6px}
+.toggle-row{display:flex;align-items:center;gap:12px}
+.toggle-label{font-size:13px;color:#b0bec5}
+.volume-control{display:flex;align-items:center;gap:12px;width:100%}
+.volume-control .el-icon{color:#78909c}
+.volume-slider{flex:1}
+.volume-value{min-width:48px;text-align:right;font-size:14px;font-weight:600;color:#448aff}
+.save-bar{margin-top:32px;display:flex;justify-content:center}
+.save-button{min-width:200px;height:44px;font-size:15px;border-radius:10px}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-enter-active{animation:fadeIn .25s ease}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+.status-grid{grid-template-columns:repeat(2,1fr)}
+.info-grid{grid-template-columns:1fr}
+.settings-grid{grid-template-columns:1fr}
+.app-aside{width:64px}
+.app-aside .logo-text,.app-aside .menu-text{display:none}
+.app-main{padding:16px}
+.toolbar{flex-direction:column;align-items:stretch}
+}
+@media(max-width:480px){
+.status-grid{grid-template-columns:1fr}
+.app-main{padding:12px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="app-container">
+    <!-- Sidebar -->
+    <div class="app-aside" :class="{collapsed: isCollapsed}">
+      <div class="logo-area">
+        <div class="logo-icon">S</div>
+        <span v-show="!isCollapsed" class="logo-text">ScreenPulse</span>
+      </div>
+      <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#B0BEC5" active-text-color="#448AFF">
+        <el-menu-item index="dashboard" @click="currentView='dashboard'">
+          <el-icon><Monitor /></el-icon>
+          <template #title>Dashboard</template>
+        </el-menu-item>
+        <el-menu-item index="playlist" @click="currentView='playlist'">
+          <el-icon><List /></el-icon>
+          <template #title>Playlist</template>
+        </el-menu-item>
+        <el-menu-item index="media" @click="currentView='media'">
+          <el-icon><FolderOpened /></el-icon>
+          <template #title>Media Library</template>
+        </el-menu-item>
+        <el-menu-item index="settings" @click="currentView='settings'">
+          <el-icon><Setting /></el-icon>
+          <template #title>Settings</template>
+        </el-menu-item>
+      </el-menu>
+      <div class="aside-footer">
+        <el-button :icon="isCollapsed?'Expand':'Fold'" circle size="small" text @click="isCollapsed=!isCollapsed" />
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="app-main-container">
+      <div class="app-header">
+        <h2 class="page-title">{{pageTitle}}</h2>
+        <div class="header-right">
+          <el-tag type="success" effect="dark" size="small" class="status-tag">
+            <el-icon style="margin-right:4px"><CircleCheck /></el-icon> Connected
+          </el-tag>
+          <el-button :icon="Refresh" circle size="small" @click="refreshView" />
+        </div>
+      </div>
+
+      <div class="app-main">
+
+        <!-- ====== DASHBOARD VIEW ====== -->
+        <div v-if="currentView==='dashboard'" v-loading="dashLoading">
+          <div class="status-grid">
+            <div class="status-card" style="--c:#4CAF50" @click="">
+              <div class="card-icon-wrap" style="background:rgba(76,175,80,.15);color:#4CAF50"><el-icon :size="24"><Monitor /></el-icon></div>
+              <div class="card-content"><div class="card-label">Device Status</div><div class="card-value">{{status.online?'Online':'Offline'}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#448AFF">
+              <div class="card-icon-wrap" style="background:rgba(68,138,255,.15);color:#448AFF"><el-icon :size="24"><Connection /></el-icon></div>
+              <div class="card-content"><div class="card-label">IP Address</div><div class="card-value">{{status.ip||'--'}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#FF9800">
+              <div class="card-icon-wrap" style="background:rgba(255,152,0,.15);color:#FF9800"><el-icon :size="24"><Timer /></el-icon></div>
+              <div class="card-content"><div class="card-label">Uptime</div><div class="card-value">{{status.uptime||'--'}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#AB47BC">
+              <div class="card-icon-wrap" style="background:rgba(171,71,188,.15);color:#AB47BC"><el-icon :size="24"><VideoPlay /></el-icon></div>
+              <div class="card-content"><div class="card-label">Total Media</div><div class="card-value">{{status.mediaCount||0}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#26C6DA">
+              <div class="card-icon-wrap" style="background:rgba(38,198,218,.15);color:#26C6DA"><el-icon :size="24"><Film /></el-icon></div>
+              <div class="card-content"><div class="card-label">Playlist Items</div><div class="card-value">{{playlist.length||0}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#66BB6A">
+              <div class="card-icon-wrap" style="background:rgba(102,187,106,.15);color:#66BB6A"><el-icon :size="24"><Coin /></el-icon></div>
+              <div class="card-content"><div class="card-label">Storage Used</div><div class="card-value">{{status.storageUsed||'--'}}</div></div>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <!-- Now Playing -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><VideoPlay /></el-icon><span>Now Playing</span><el-tag v-if="nowPlaying" type="success" effect="dark" size="small" class="live-tag"><span class="live-dot"></span>LIVE</el-tag></div></template>
+              <div v-if="nowPlaying" class="now-playing">
+                <div class="np-thumb"><el-icon :size="32"><VideoPlay /></el-icon></div>
+                <div class="np-info">
+                  <div class="np-title">{{nowPlaying.title||'Untitled'}}</div>
+                  <div class="np-meta"><span :class="'mtb mtb-'+(nowPlaying.type||'video').toLowerCase()">{{(nowPlaying.type||'VIDEO')}}</span><span class="np-url">{{trunc(nowPlaying.url,50)}}</span></div>
+                  <div class="np-duration">{{nowPlaying.duration==='auto'?'Auto (video length)':(nowPlaying.duration?nowPlaying.duration+'s':'--')}}</div>
+                </div>
+              </div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><VideoPause /></el-icon><span>No media currently playing</span></div>
+            </el-card>
+
+            <!-- Playlist Summary -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><List /></el-icon><span>Playlist Summary</span></div></template>
+              <div v-if="playlistSummary.length" class="summary-list">
+                <div v-for="s in playlistSummary" :key="s.type" class="summary-row">
+                  <span :class="'mtb mtb-'+s.type.toLowerCase()">{{s.type}}</span>
+                  <div class="summary-bar-wrap"><div class="summary-bar" :style="{width:s.pct+'%',background:s.color}"></div></div>
+                  <span class="summary-count">{{s.count}} items</span>
+                  <span class="summary-pct">{{s.pct}}%</span>
+                </div>
+              </div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><Document /></el-icon><span>Playlist is empty</span></div>
+            </el-card>
+
+            <!-- Device Info -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><InfoFilled /></el-icon><span>Device Information</span></div></template>
+              <div class="device-info">
+                <div class="info-row"><span class="info-label">Device Name</span><span class="info-value">{{status.deviceName||'ScreenPulse Player'}}</span></div>
+                <div class="info-row"><span class="info-label">Model</span><span class="info-value">{{status.model||'Android TV'}}</span></div>
+                <div class="info-row"><span class="info-label">Android Version</span><span class="info-value">{{status.androidVersion||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">App Version</span><span class="info-value">{{status.appVersion||'1.0.0'}}</span></div>
+                <div class="info-row"><span class="info-label">MAC Address</span><span class="info-value mono">{{status.mac||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">Resolution</span><span class="info-value">{{status.resolution||'--'}}</span></div>
+              </div>
+            </el-card>
+          </div>
+        </div>
+
+        <!-- ====== PLAYLIST VIEW ====== -->
+        <div v-if="currentView==='playlist'" v-loading="plLoading">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button type="primary" :icon="Plus" @click="openAddItem">Add Item</el-button>
+              <el-button :icon="Refresh" @click="fetchPlaylist">Refresh</el-button>
+            </div>
+            <div class="toolbar-right" v-if="selectedIds.length>0">
+              <el-button :icon="CircleCheck" type="success" plain @click="bulkToggle(true)">Enable ({{selectedIds.length}})</el-button>
+              <el-button :icon="CircleClose" type="warning" plain @click="bulkToggle(false)">Disable ({{selectedIds.length}})</el-button>
+              <el-button :icon="Delete" type="danger" plain @click="batchDelete">Delete ({{selectedIds.length}})</el-button>
+            </div>
+          </div>
+
+          <el-card>
+            <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="No items in playlist" row-key="_id" style="width:100%">
+              <el-table-column type="selection" width="50" />
+              <el-table-column label="#" width="60">
+                <template #default="{$index}">
+                  <div class="drag-handle" :draggable="true" @dragstart="dragStart($event,$index)" @dragover.prevent @drop="dropItem($event,$index)">
+                    <el-icon :size="16"><Rank /></el-icon><span>{{$index+1}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="Title" min-width="220" show-overflow-tooltip>
+                <template #default="{row}">
+                  <div class="title-cell">
+                    <div class="item-thumb"><el-icon :size="18"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"/><Picture v-else-if="row.type==='IMAGE'"/><Document v-else /></el-icon></div>
+                    <span class="item-title">{{row.title||'Untitled'}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="Type" width="100" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="URL / Source" min-width="250" show-overflow-tooltip>
+                <template #default="{row}"><span class="url-text">{{row.url||'--'}}</span></template>
+              </el-table-column>
+              <el-table-column label="Duration" width="110" align="center">
+                <template #default="{row}"><el-tag size="small" :type="row.duration==='auto'?'':'info'" effect="plain" round>{{row.duration==='auto'?'Auto':row.duration+'s'}}</el-tag></template>
+              </el-table-column>
+              <el-table-column label="Enabled" width="90" align="center">
+                <template #default="{row}"><el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" /></template>
+              </el-table-column>
+              <el-table-column label="Actions" width="150" align="center" fixed="right">
+                <template #default="{row,$index}">
+                  <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text @click="openEditItem(row)" />
+                    <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0" />
+                    <el-button :icon="Bottom" size="small" text type="primary" @click="moveItem(row,$index,1)" :disabled="$index>=playlist.length-1" />
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteItem(row)" />
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- Add/Edit Dialog -->
+          <el-dialog v-model="plDialog" :title="plEditing?'Edit Playlist Item':'Add Playlist Item'" width="520px" @close="resetItemForm" destroy-on-close>
+            <el-form :model="itemForm" label-position="top">
+              <el-form-item label="Title" required><el-input v-model="itemForm.title" placeholder="Enter item title" clearable /></el-form-item>
+              <el-form-item label="URL / Source" required><el-input v-model="itemForm.url" placeholder="File path, URL, or stream address" clearable /></el-form-item>
+              <el-form-item label="Media Type">
+                <el-select v-model="itemForm.type" placeholder="Select type" style="width:100%">
+                  <el-option label="Video" value="VIDEO" />
+                  <el-option label="Image" value="IMAGE" />
+                  <el-option label="PPT / Presentation" value="PPT" />
+                  <el-option label="IPTV Stream" value="IPTV" />
+                  <el-option label="Web Stream" value="STREAM" />
+                  <el-option label="Web Page" value="WEB" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Duration">
+                <div class="duration-field">
+                  <el-switch v-model="itemForm.autoDuration" active-text="Auto (video length)" inactive-text="Custom (seconds)" inline-prompt @change="onDurationToggle" />
+                  <el-input-number v-if="!itemForm.autoDuration" v-model="itemForm.duration" :min="1" :max="3600" style="width:160px" />
+                </div>
+              </el-form-item>
+              <el-form-item label="Enabled"><el-switch v-model="itemForm.enabled" /></el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="plDialog=false">Cancel</el-button>
+              <el-button type="primary" :loading="plSaving" @click="saveItem">{{plEditing?'Update':'Add'}}</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- ====== MEDIA LIBRARY VIEW ====== -->
+        <div v-if="currentView==='media'" v-loading="mediaLoading">
+          <el-card>
+            <template #header><div class="card-hdr"><el-icon><UploadFilled /></el-icon><span>Upload Media Files</span></div></template>
+            <el-upload :action="uploadUrl" :auto-upload="false" :on-change="onFileChange" :on-remove="onFileRemove" :file-list="uploadFiles" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx" drag multiple class="upload-area">
+              <div class="upload-content">
+                <el-icon :size="48" class="upload-icon"><UploadFilled /></el-icon>
+                <div class="upload-text">Drop files here or click to upload</div>
+                <div class="upload-hint">Supports: Videos (MP4, MKV, AVI), Images (JPG, PNG, GIF), Presentations (PPT, PPTX)</div>
+              </div>
+            </el-upload>
+            <div class="upload-actions">
+              <el-button type="primary" :icon="UploadFilled" @click="doUpload" :loading="uploading" :disabled="!uploadFiles.length">Upload {{uploadFiles.length}} file{{uploadFiles.length!==1?'s':''}}</el-button>
+              <el-button :icon="Refresh" @click="scanMedia">Scan Local Storage</el-button>
+            </div>
+          </el-card>
+
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><FolderOpened /></el-icon><span>Media Files</span><el-tag effect="dark" size="small" class="live-tag">{{mediaFiles.length}} files</el-tag></div></template>
+            <el-table :data="mediaFiles" empty-text="No media files found" style="width:100%">
+              <el-table-column label="File" min-width="300">
+                <template #default="{row}">
+                  <div class="file-cell">
+                    <div :class="'file-icon-wrap '+(isVideo(row.name)?'video':isImage(row.name)?'image':'document')">
+                      <el-icon :size="20"><VideoPlay v-if="isVideo(row.name)"/><Picture v-else-if="isImage(row.name)"/><Document v-else /></el-icon>
+                    </div>
+                    <div><div class="file-name">{{row.name}}</div><div class="file-path" v-if="row.path">{{row.path}}</div></div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="Type" width="100" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(getMediaType(row.name)||'video')">{{getMediaType(row.name)||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="Size" width="120" align="right">
+                <template #default="{row}"><span class="file-size">{{fmtSize(row.size)}}</span></template>
+              </el-table-column>
+              <el-table-column label="Date" width="160" align="center">
+                <template #default="{row}"><span class="file-date">{{row.modifiedAt||row.date||'--'}}</span></template>
+              </el-table-column>
+              <el-table-column label="Actions" width="100" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyPath(row)" title="Copy path" />
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteFile(row)" />
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </div>
+
+        <!-- ====== SETTINGS VIEW ====== -->
+        <div v-if="currentView==='settings'" v-loading="settingsLoading">
+          <div class="settings-grid">
+            <!-- Playback -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><VideoPlay /></el-icon><span>Playback Settings</span></div></template>
+              <el-form label-position="top">
+                <el-form-item label="Playback Mode">
+                  <el-radio-group v-model="cfg.playbackMode">
+                    <el-radio-button value="loop">Loop</el-radio-button>
+                    <el-radio-button value="sequential">Sequential</el-radio-button>
+                    <el-radio-button value="random">Random</el-radio-button>
+                  </el-radio-group>
+                  <div class="form-hint">{{cfg.playbackMode==='loop'?'Repeat the playlist continuously':cfg.playbackMode==='sequential'?'Play through once and stop':'Shuffle and play randomly'}}</div>
+                </el-form-item>
+                <el-form-item label="Volume">
+                  <div class="volume-control">
+                    <el-icon><Mute /></el-icon>
+                    <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" />
+                    <el-icon><Bell /></el-icon>
+                    <span class="volume-value">{{cfg.volume}}%</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="Image Duration (seconds)">
+                  <el-input-number v-model="cfg.imageDuration" :min="1" :max="3600" :step="1" />
+                  <div class="form-hint">Default display duration for image items without custom duration.</div>
+                </el-form-item>
+              </el-form>
+            </el-card>
+
+            <!-- Interstitial -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><Clock /></el-icon><span>Interstitial Settings</span></div></template>
+              <el-form label-position="top">
+                <el-form-item label="Enable Interstitial Mode">
+                  <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" /><span class="toggle-label">{{cfg.interstitialEnabled?'Enabled':'Disabled'}}</span></div>
+                  <div class="form-hint">Display content only during specified hours.</div>
+                </el-form-item>
+                <el-form-item v-if="cfg.interstitialEnabled" label="Active Start Hour">
+                  <el-time-picker v-model="cfg.interstitialStart" placeholder="Start time" format="HH:mm" style="width:100%" />
+                </el-form-item>
+                <el-form-item v-if="cfg.interstitialEnabled" label="Active End Hour">
+                  <el-time-picker v-model="cfg.interstitialEnd" placeholder="End time" format="HH:mm" style="width:100%" />
+                </el-form-item>
+                <el-form-item v-if="cfg.interstitialEnabled" label="Off-Screen Message">
+                  <el-input v-model="cfg.offScreenMessage" placeholder="Message shown outside active hours" clearable />
+                </el-form-item>
+              </el-form>
+            </el-card>
+
+            <!-- Device -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><Monitor /></el-icon><span>Device Settings</span></div></template>
+              <el-form label-position="top">
+                <el-form-item label="Device Name"><el-input v-model="cfg.deviceName" placeholder="Enter device name" clearable /></el-form-item>
+                <el-form-item label="Screen Orientation">
+                  <el-radio-group v-model="cfg.orientation">
+                    <el-radio-button value="landscape">Landscape</el-radio-button>
+                    <el-radio-button value="portrait">Portrait</el-radio-button>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="Idle Timeout (minutes, 0 = never)">
+                  <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" />
+                </el-form-item>
+              </el-form>
+            </el-card>
+
+            <!-- Network -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><Connection /></el-icon><span>Network Information</span></div></template>
+              <div class="device-info">
+                <div class="info-row"><span class="info-label">IP Address</span><span class="info-value mono">{{netInfo.ip||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">Gateway</span><span class="info-value mono">{{netInfo.gateway||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">DNS</span><span class="info-value mono">{{netInfo.dns||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">SSID</span><span class="info-value mono">{{netInfo.ssid||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">Signal Strength</span><span class="info-value">{{netInfo.signal||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">MAC Address</span><span class="info-value mono">{{netInfo.mac||'--'}}</span></div>
+              </div>
+            </el-card>
+          </div>
+          <div class="save-bar">
+            <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">Save Settings</el-button>
+          </div>
+        </div>
+
+      </div><!-- /app-main -->
+    </div><!-- /app-main-container -->
+  </div><!-- /app-container -->
+</div><!-- /app -->
+
+<!-- CDN Scripts -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/element-plus"></script>
+<script src="https://unpkg.com/@element-plus/icons-vue"></script>
+
+<script>
+const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
+
+const API = window.location.origin;
+
+// Simple fetch wrapper
+async function apiGet(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiPost(path, data) {
+  const r = await fetch(API + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiPut(path, data) {
+  const r = await fetch(API + path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiDelete(path) {
+  const r = await fetch(API + path, { method: 'DELETE' });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiUpload(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch(API + '/api/upload', { method: 'POST', body: fd });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+const app = createApp({
+  setup() {
+    // Layout
+    const isCollapsed = ref(false);
+    const currentView = ref('dashboard');
+    const pageTitle = computed(() => ({
+      dashboard: 'Dashboard', playlist: 'Playlist Management',
+      media: 'Media Library', settings: 'Device Settings'
+    }[currentView.value] || 'Dashboard'));
+
+    const refreshView = () => {
+      const loaders = { dashboard: loadDashboard, playlist: fetchPlaylist, media: scanMedia, settings: loadSettings };
+      (loaders[currentView.value] || loadDashboard)();
+    };
+
+    // ========== DASHBOARD ==========
+    const dashLoading = ref(false);
+    const status = ref({});
+    const playlist = ref([]);
+    const mediaFiles = ref([]);
+
+    const nowPlaying = computed(() => {
+      const enabled = playlist.value.filter(p => p.enabled);
+      return enabled[0] || null;
+    });
+
+    const playlistSummary = computed(() => {
+      if (!playlist.value.length) return [];
+      const types = {};
+      playlist.value.forEach(i => { types[i.type || 'VIDEO'] = (types[i.type || 'VIDEO'] || 0) + 1; });
+      const colors = { VIDEO:'#448aff', IMAGE:'#66bb6a', PPT:'#ff9800', IPTV:'#ab47bc', STREAM:'#ef5350', WEB:'#26c6da' };
+      return Object.entries(types).map(([type, count]) => ({
+        type, count, pct: Math.round((count / playlist.value.length) * 100), color: colors[type] || '#448aff'
+      })).sort((a, b) => b.count - a.count);
+    });
+
+    const trunc = (s, n) => (!s ? '' : s.length > n ? s.substring(0, n) + '...' : s);
+
+    const loadDashboard = async () => {
+      dashLoading.value = true;
+      try {
+        const [s, p] = await Promise.allSettled([apiGet('/api/status'), apiGet('/api/playlist')]);
+        if (s.status === 'fulfilled') status.value = s.value || {};
+        if (p.status === 'fulfilled') playlist.value = Array.isArray(p.value) ? p.value : (p.value?.items || []);
+      } catch (e) { console.error(e); }
+      dashLoading.value = false;
+    };
+
+    // ========== PLAYLIST ==========
+    const plLoading = ref(false);
+    const plSaving = ref(false);
+    const plDialog = ref(false);
+    const plEditing = ref(false);
+    const editId = ref(null);
+    const selectedIds = ref([]);
+    const dragIdx = ref(null);
+
+    const defaultItemForm = () => ({ title:'', url:'', type:'VIDEO', duration:'auto', enabled:true, autoDuration:true });
+    const itemForm = reactive(defaultItemForm());
+
+    const fetchPlaylist = async () => {
+      plLoading.value = true;
+      try {
+        const data = await apiGet('/api/playlist');
+        playlist.value = Array.isArray(data) ? data : (data?.items || []);
+      } catch (e) { ElementPlus.ElMessage.error('Failed to load playlist'); }
+      plLoading.value = false;
+    };
+
+    const onSelectionChange = (rows) => { selectedIds.value = rows.map(r => r._id || r.id); };
+
+    // Drag & Drop
+    const dragStart = (e, idx) => {
+      dragIdx.value = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', idx);
+    };
+    const dropItem = (e, toIdx) => {
+      e.preventDefault();
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      if (isNaN(fromIdx) || fromIdx === toIdx) return;
+      const item = playlist.value.splice(fromIdx, 1)[0];
+      playlist.value.splice(toIdx, 0, item);
+      saveOrder();
+    };
+
+    const saveOrder = async () => {
+      try { await apiPut('/api/playlist', playlist.value); ElementPlus.ElMessage.success('Order updated'); }
+      catch (e) { ElementPlus.ElMessage.error('Failed to update order'); }
+    };
+
+    const moveItem = (row, idx, dir) => {
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= playlist.value.length) return;
+      const item = playlist.value.splice(idx, 1)[0];
+      playlist.value.splice(newIdx, 0, item);
+      saveOrder();
+    };
+
+    const openAddItem = () => {
+      plEditing.value = false; editId.value = null;
+      Object.assign(itemForm, defaultItemForm());
+      plDialog.value = true;
+    };
+
+    const openEditItem = (row) => {
+      plEditing.value = true; editId.value = row._id || row.id;
+      Object.assign(itemForm, { ...row, autoDuration: row.duration === 'auto' });
+      plDialog.value = true;
+    };
+
+    const onDurationToggle = (val) => { itemForm.duration = val ? 'auto' : 10; };
+
+    const resetItemForm = () => { Object.assign(itemForm, defaultItemForm()); };
+
+    const saveItem = async () => {
+      if (!itemForm.title) { ElementPlus.ElMessage.warning('Title is required'); return; }
+      if (!itemForm.url) { ElementPlus.ElMessage.warning('URL is required'); return; }
+      plSaving.value = true;
+      try {
+        const payload = { ...itemForm };
+        if (payload.autoDuration) payload.duration = 'auto';
+        delete payload.autoDuration;
+        if (plEditing.value) {
+          await apiPut('/api/playlist/' + editId.value, payload);
+          ElementPlus.ElMessage.success('Item updated');
+        } else {
+          await apiPost('/api/playlist', payload);
+          ElementPlus.ElMessage.success('Item added');
+        }
+        plDialog.value = false;
+        await fetchPlaylist();
+      } catch (e) { ElementPlus.ElMessage.error('Failed to save item'); }
+      plSaving.value = false;
+    };
+
+    const toggleItem = async (row) => {
+      try { await apiPut('/api/playlist/' + (row._id || row.id), { enabled: row.enabled }); }
+      catch (e) { row.enabled = !row.enabled; ElementPlus.ElMessage.error('Failed to update'); }
+    };
+
+    const confirmDeleteItem = (row) => {
+      ElementPlus.ElMessageBox.confirm('Delete "' + (row.title || 'Untitled') + '"?', 'Confirm Delete', {
+        confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/playlist/' + (row._id || row.id)); ElementPlus.ElMessage.success('Deleted'); fetchPlaylist(); }
+        catch (e) { ElementPlus.ElMessage.error('Failed to delete'); }
+      }).catch(() => {});
+    };
+
+    const bulkToggle = async (enabled) => {
+      try {
+        for (const row of playlist.value) {
+          if (selectedIds.value.includes(row._id || row.id)) {
+            row.enabled = enabled;
+            await apiPut('/api/playlist/' + (row._id || row.id), { enabled });
+          }
+        }
+        ElementPlus.ElMessage.success('Updated ' + selectedIds.value.length + ' items');
+        selectedIds.value = [];
+      } catch (e) { ElementPlus.ElMessage.error('Bulk operation failed'); }
+    };
+
+    const batchDelete = () => {
+      ElementPlus.ElMessageBox.confirm('Delete ' + selectedIds.value.length + ' selected items?', 'Batch Delete', {
+        confirmButtonText: 'Delete All', cancelButtonText: 'Cancel', type: 'warning'
+      }).then(async () => {
+        try {
+          for (const id of selectedIds.value) await apiDelete('/api/playlist/' + id);
+          ElementPlus.ElMessage.success('Items deleted');
+          fetchPlaylist();
+        } catch (e) { ElementPlus.ElMessage.error('Batch delete failed'); }
+      }).catch(() => {});
+    };
+
+    // ========== MEDIA LIBRARY ==========
+    const mediaLoading = ref(false);
+    const uploading = ref(false);
+    const uploadFiles = ref([]);
+    const uploadUrl = API + '/api/upload';
+
+    const onFileChange = (file, files) => { uploadFiles.value = files; };
+    const onFileRemove = (file, files) => { uploadFiles.value = files; };
+
+    const doUpload = async () => {
+      if (!uploadFiles.value.length) return;
+      uploading.value = true;
+      let ok = 0, fail = 0;
+      for (const f of uploadFiles.value) {
+        try { await apiUpload(f.raw); ok++; } catch (e) { fail++; }
+      }
+      uploading.value = false;
+      if (fail === 0) { ElementPlus.ElMessage.success(ok + ' file(s) uploaded'); uploadFiles.value = []; }
+      else ElementPlus.ElMessage.warning(ok + ' uploaded, ' + fail + ' failed');
+      scanMedia();
+    };
+
+    const scanMedia = async () => {
+      mediaLoading.value = true;
+      try {
+        const r = await apiGet('/api/scan');
+        mediaFiles.value = r?.files || (Array.isArray(r) ? r : []);
+      } catch (e) { console.error(e); }
+      mediaLoading.value = false;
+    };
+
+    const isVideo = (n) => /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(n || '');
+    const isImage = (n) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(n || '');
+    const getMediaType = (n) => {
+      if (isVideo(n)) return 'VIDEO';
+      if (isImage(n)) return 'IMAGE';
+      if (/\.(ppt|pptx)$/i.test(n || '')) return 'PPT';
+      return 'VIDEO';
+    };
+
+    const fmtSize = (b) => {
+      if (!b && b !== 0) return '--';
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB';
+      return (b / 1073741824).toFixed(2) + ' GB';
+    };
+
+    const copyPath = (row) => {
+      const p = row.path || row.name;
+      navigator.clipboard?.writeText(p).then(() => ElementPlus.ElMessage.success('Path copied')).catch(() => ElementPlus.ElMessage.info(p));
+    };
+
+    const confirmDeleteFile = (row) => {
+      ElementPlus.ElMessageBox.confirm('Delete "' + row.name + '"?', 'Confirm', {
+        confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/media/' + encodeURIComponent(row.name)); ElementPlus.ElMessage.success('Deleted'); scanMedia(); }
+        catch (e) { ElementPlus.ElMessage.error('Failed to delete'); }
+      }).catch(() => {});
+    };
+
+    // ========== SETTINGS ==========
+    const settingsLoading = ref(false);
+    const settingsSaving = ref(false);
+    const netInfo = ref({});
+    const cfg = reactive({
+      playbackMode: 'loop', volume: 50, imageDuration: 10,
+      interstitialEnabled: false, interstitialStart: null, interstitialEnd: null,
+      offScreenMessage: '', deviceName: 'ScreenPulse Player',
+      orientation: 'landscape', idleTimeout: 0
+    });
+
+    const loadSettings = async () => {
+      settingsLoading.value = true;
+      try {
+        const [s, c] = await Promise.allSettled([apiGet('/api/status'), apiGet('/api/config')]);
+        if (s.status === 'fulfilled' && s.value) {
+          const d = s.value;
+          netInfo.value = { ip: d.ip, gateway: d.gateway, dns: d.dns, ssid: d.ssid, signal: d.signal, mac: d.mac };
+        }
+        if (c.status === 'fulfilled' && c.value) {
+          Object.assign(cfg, {
+            playbackMode: c.value.playbackMode || cfg.playbackMode,
+            volume: c.value.volume ?? cfg.volume,
+            imageDuration: c.value.imageDuration || cfg.imageDuration,
+            interstitialEnabled: !!c.value.interstitialEnabled,
+            interstitialStart: c.value.interstitialStart || null,
+            interstitialEnd: c.value.interstitialEnd || null,
+            offScreenMessage: c.value.offScreenMessage || '',
+            deviceName: c.value.deviceName || cfg.deviceName,
+            orientation: c.value.orientation || cfg.orientation,
+            idleTimeout: c.value.idleTimeout ?? cfg.idleTimeout
+          });
+        }
+      } catch (e) { console.error(e); }
+      settingsLoading.value = false;
+    };
+
+    const saveSettings = async () => {
+      settingsSaving.value = true;
+      try {
+        await apiPut('/api/config', { ...cfg });
+        ElementPlus.ElMessage.success('Settings saved');
+      } catch (e) { ElementPlus.ElMessage.error('Failed to save settings'); }
+      settingsSaving.value = false;
+    };
+
+    // ========== INIT ==========
+    onMounted(() => { loadDashboard(); });
+
+    return {
+      isCollapsed, currentView, pageTitle, refreshView,
+      dashLoading, status, playlist, mediaFiles, nowPlaying, playlistSummary, trunc,
+      plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds,
+      dragStart, dropItem, fetchPlaylist, onSelectionChange, moveItem,
+      openAddItem, openEditItem, onDurationToggle, resetItemForm, saveItem,
+      toggleItem, confirmDeleteItem, bulkToggle, batchDelete,
+      mediaLoading, uploading, uploadFiles, uploadUrl,
+      onFileChange, onFileRemove, doUpload, scanMedia,
+      isVideo, isImage, getMediaType, fmtSize, copyPath, confirmDeleteFile,
+      settingsLoading, settingsSaving, netInfo, cfg, saveSettings
+    };
+  }
+});
+
+// Register Element Plus
+app.use(ElementPlus);
+
+// Register all icons
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component);
+}
+
+app.mount('#app');
+</script>
+</body>
+</html>
