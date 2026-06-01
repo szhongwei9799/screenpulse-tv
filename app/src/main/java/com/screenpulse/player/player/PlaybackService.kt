@@ -32,6 +32,7 @@ class PlaybackService : Service() {
         const val ACTION_PAUSE = "com.screenpulse.player.action.PAUSE"
         const val ACTION_STOP = "com.screenpulse.player.action.STOP"
         const val ACTION_SET_VOLUME = "com.screenpulse.player.action.SET_VOLUME"
+        private const val EXTRA_VOLUME = "extra_volume"
 
         /**
          * Starts the playback service as a foreground service.
@@ -161,9 +162,4 @@ class PlaybackService : Service() {
             .build()
     }
 
-    // =====================================================================
-    //  Action constants
-    // =====================================================================
-
-    private const val EXTRA_VOLUME = "extra_volume"
 }
