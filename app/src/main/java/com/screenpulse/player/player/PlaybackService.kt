@@ -28,6 +28,10 @@ class PlaybackService : Service() {
     companion object {
         private const val TAG = "PlaybackService"
         private const val NOTIFICATION_ID = 1001
+        const val ACTION_PLAY = "com.screenpulse.player.action.PLAY"
+        const val ACTION_PAUSE = "com.screenpulse.player.action.PAUSE"
+        const val ACTION_STOP = "com.screenpulse.player.action.STOP"
+        const val ACTION_SET_VOLUME = "com.screenpulse.player.action.SET_VOLUME"
 
         /**
          * Starts the playback service as a foreground service.
@@ -161,16 +165,5 @@ class PlaybackService : Service() {
     //  Action constants
     // =====================================================================
 
-    private object Actions {
-        const val ACTION_PLAY = "com.screenpulse.player.action.PLAY"
-        const val ACTION_PAUSE = "com.screenpulse.player.action.PAUSE"
-        const val ACTION_STOP = "com.screenpulse.player.action.STOP"
-        const val ACTION_SET_VOLUME = "com.screenpulse.player.action.SET_VOLUME"
-    }
-
-    private const val ACTION_PLAY = "com.screenpulse.player.action.PLAY"
-    private const val ACTION_PAUSE = "com.screenpulse.player.action.PAUSE"
-    private const val ACTION_STOP = "com.screenpulse.player.action.STOP"
-    private const val ACTION_SET_VOLUME = "com.screenpulse.player.action.SET_VOLUME"
     private const val EXTRA_VOLUME = "extra_volume"
 }

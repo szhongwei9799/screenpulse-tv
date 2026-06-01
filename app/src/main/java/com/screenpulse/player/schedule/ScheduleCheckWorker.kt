@@ -4,7 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.screenpulse.player.ScreenPulseApp
+import com.screenpulse.player.data.AppDatabase
+import kotlinx.coroutines.runBlocking
 
 /**
  * Periodic WorkManager worker that checks interstitial schedule conditions.
@@ -30,7 +31,7 @@ class ScheduleCheckWorker(
 
         return try {
             val scheduleManager = ScheduleManager(applicationContext)
-            scheduleManager.checkInterstitialSchedule()
+            runBlocking { scheduleManager.checkInterstitialSchedule() }
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Schedule check failed", e)

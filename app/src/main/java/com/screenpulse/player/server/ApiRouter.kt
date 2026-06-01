@@ -263,12 +263,17 @@ class ApiRouter(
     // =====================================================================
 
     fun uploadFile(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
-        val files = session.files ?: return jsonResponseError("No files in request", NanoHTTPD.Response.Status.BAD_REQUEST)
-        val tempFiles = files["file"] ?: return jsonResponseError("No 'file' field in upload", NanoHTTPD.Response.Status.BAD_REQUEST)
+        val files = mutableMapOf<String, String>()
+        try {
+            session.parseBody(files)
+        } catch (e: Exception) {
+            return jsonResponseError("Failed to parse upload: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
+        }
+        val tempFilePath = files["file"] ?: return jsonResponseError("No 'file' field in upload", NanoHTTPD.Response.Status.BAD_REQUEST)
+        val tempFile = File(tempFilePath)
 
         return runBlocking {
             try {
-                val tempFile = tempFiles ?: return@runBlocking jsonResponseError("Empty file upload", NanoHTTPD.Response.Status.BAD_REQUEST)
                 val originalName = session.parameters["filename"]?.firstOrNull() ?: "upload_${System.currentTimeMillis()}"
 
                 // Sanitize filename
@@ -276,7 +281,7 @@ class ApiRouter(
                 val destFile = File(uploadDir, safeName)
 
                 // Copy uploaded file to persistent storage
-                tempFile.inputStream().use { input ->
+                java.io.FileInputStream(tempFile).use { input ->
                     FileOutputStream(destFile).use { output ->
                         input.copyTo(output)
                     }
