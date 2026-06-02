@@ -5,6 +5,7 @@ import android.util.Log
 import com.screenpulse.player.data.AppDatabase
 import com.screenpulse.player.data.entity.MediaType
 import fi.iki.elonen.NanoHTTPD
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
