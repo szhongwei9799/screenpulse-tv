@@ -142,6 +142,7 @@ class WebServer(
     /**
      * Serves static files from the bundled web-admin SPA (assets/web-admin).
      * Falls back to index.html for SPA routing.
+     * Uses binary-safe serving (byte[]) for all file types including JS/CSS.
      */
     private fun serveStaticFile(uri: String): Response {
         return try {
@@ -154,12 +155,21 @@ class WebServer(
             val inputStream = context.assets.open(path)
             val mimeType = getMimeType(path)
 
-            // Use ByteArrayOutputStream to reliably read full content
+            // Read full content as bytes for binary-safe serving
             val buffer = ByteArrayOutputStream()
             inputStream.copyTo(buffer)
             inputStream.close()
+            val bytes = buffer.toByteArray()
 
-            newFixedLengthResponse(Response.Status.OK, mimeType, buffer.toString("UTF-8"))
+            // Use byte[] response for correct Content-Length with all file types
+            val response = newFixedLengthResponse(
+                Response.Status.OK,
+                mimeType,
+                java.io.ByteArrayInputStream(bytes),
+                bytes.size.toLong()
+            )
+            response.addHeader("Content-Type", "$mimeType; charset=utf-8")
+            response
         } catch (e: Exception) {
             // SPA fallback: serve index.html for unknown routes
             try {
@@ -167,7 +177,13 @@ class WebServer(
                 val buffer = ByteArrayOutputStream()
                 inputStream.copyTo(buffer)
                 inputStream.close()
-                newFixedLengthResponse(Response.Status.OK, "text/html", buffer.toString("UTF-8"))
+                val bytes = buffer.toByteArray()
+                newFixedLengthResponse(
+                    Response.Status.OK,
+                    "text/html",
+                    java.io.ByteArrayInputStream(bytes),
+                    bytes.size.toLong()
+                )
             } catch (fallbackE: Exception) {
                 newFixedLengthResponse(
                     Response.Status.NOT_FOUND,

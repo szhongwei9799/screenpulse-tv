@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ScreenPulse Admin</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231A237E'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>S</text></svg>">
-<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
-<link rel="stylesheet" href="https://unpkg.com/element-plus/theme-chalk/dark/css-vars.css">
+<link rel="stylesheet" href="css/index.css">
+<link rel="stylesheet" href="css/dark.css">
 <style>
 /* ===== GLOBAL DARK THEME ===== */
 :root{--ep-color-primary:#448aff;--ep-color-primary-light-3:#6f9fff;--ep-color-primary-light-5:#82b1ff;--ep-color-primary-dark-2:#1a237e;--ep-bg-color:#0d1117;--ep-bg-color-overlay:#161b22;--ep-bg-color-page:#0d1117;--ep-text-color-primary:#e0e0e0;--ep-text-color-regular:#b0bec5;--ep-text-color-secondary:#78909c;--ep-text-color-placeholder:#546e7a;--ep-border-color:#21262d;--ep-border-color-light:#30363d;--ep-border-color-lighter:#21262d;--ep-border-color-extra-light:#1c2128;--ep-fill-color:#161b22;--ep-fill-color-light:#1c2128;--ep-fill-color-lighter:#21262d;--ep-fill-color-blank:#0d1117;--ep-fill-color-dark:#0d1117;--ep-mask-color:rgba(0,0,0,.7);--ep-color-success:#4caf50;--ep-color-warning:#ff9800;--ep-color-danger:#f44336;--ep-color-info:#90a4ae;--el-color-primary:#448aff;--el-color-primary-light-3:#6f9fff;--el-color-primary-light-5:#82b1ff;--el-color-primary-dark-2:#1a237e;--el-bg-color:#0d1117;--el-bg-color-overlay:#161b22;--el-text-color-primary:#e0e0e0;--el-text-color-regular:#b0bec5;--el-text-color-secondary:#78909c;--el-border-color:#21262d;--el-border-color-light:#30363d;--el-fill-color:#161b22;--el-fill-color-light:#1c2128;--el-fill-color-lighter:#21262d;--el-fill-color-blank:#0d1117}
@@ -245,7 +245,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             </div>
             <div class="status-card" style="--c:#448AFF">
               <div class="card-icon-wrap" style="background:rgba(68,138,255,.15);color:#448AFF"><el-icon :size="24"><Connection /></el-icon></div>
-              <div class="card-content"><div class="card-label">IP Address</div><div class="card-value">{{status.ip||'--'}}</div></div>
+              <div class="card-content"><div class="card-label">IP Address</div><div class="card-value">{{status.ipAddress||status.ip||'--'}}</div></div>
             </div>
             <div class="status-card" style="--c:#FF9800">
               <div class="card-icon-wrap" style="background:rgba(255,152,0,.15);color:#FF9800"><el-icon :size="24"><Timer /></el-icon></div>
@@ -537,10 +537,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
   </div><!-- /app-container -->
 </div><!-- /app -->
 
-<!-- CDN Scripts -->
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://unpkg.com/element-plus"></script>
-<script src="https://unpkg.com/@element-plus/icons-vue"></script>
+<!-- Local Scripts (embedded for offline use) -->
+<script src="js/vue.global.prod.js"></script>
+<script src="js/element-plus.js"></script>
+<script src="js/element-plus-icons.js"></script>
 
 <script>
 const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
