@@ -5,10 +5,12 @@ import android.util.Log
 import com.screenpulse.player.data.AppDatabase
 import com.screenpulse.player.data.entity.MediaType
 import fi.iki.elonen.NanoHTTPD
+import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStreamReader
 
 /**
  * Embedded NanoHTTPD web server that serves a Vue3 SPA for management
@@ -27,6 +29,7 @@ import java.io.FileOutputStream
  *   PUT  /api/config          →  update playback config
  *   POST /api/upload          →  upload a media file (multipart)
  *   GET  /api/scan            →  trigger a local media scan
+ *   GET  /api/debug/assets    →  list all assets in web-admin for debugging
  */
 class WebServer(
     private val port: Int,
@@ -60,10 +63,13 @@ class WebServer(
             }
         }
 
-        Log.d(TAG, "Request: ${session.method} $uri")
+        Log.d(TAG, "Request: ${session.method} $uri  [thread=${Thread.currentThread().name}]")
 
         return try {
             val response = when {
+                uri.startsWith("/api/debug") -> {
+                    serveDebugApi(session)
+                }
                 uri.startsWith("/api/") -> {
                     serveApi(session)
                 }
@@ -75,7 +81,7 @@ class WebServer(
             response.addHeader("Access-Control-Allow-Origin", "*")
             response
         } catch (e: Exception) {
-            Log.e(TAG, "Error serving request: $uri", e)
+            Log.e(TAG, "FATAL error serving $uri", e)
             newFixedLengthResponse(
                 Response.Status.INTERNAL_ERROR,
                 "application/json",
@@ -83,6 +89,140 @@ class WebServer(
             )
         }
     }
+
+    // =====================================================================
+    //  Debug API (helps diagnose blank page issues)
+    // =====================================================================
+
+    private fun serveDebugApi(session: IHTTPSession): Response {
+        return when {
+            session.uri == "/api/debug/assets" -> {
+                listAssets()
+            }
+            session.uri == "/api/debug/check" -> {
+                checkCriticalAssets()
+            }
+            else -> {
+                newFixedLengthResponse(
+                    Response.Status.NOT_FOUND,
+                    "application/json",
+                    """{"error":"Debug endpoint not found: ${session.uri}"}"""
+                )
+            }
+        }
+    }
+
+    /**
+     * Lists all files in assets/web-admin/ with their sizes.
+     * Useful for verifying files are present in the APK.
+     */
+    private fun listAssets(): Response {
+        val sb = StringBuilder()
+        sb.append("=== Web Admin Assets ===\n")
+        sb.append("Listing: web-admin/\n\n")
+        try {
+            val files = context.assets.list("web-admin")
+            if (files != null) {
+                for (file in files.sorted()) {
+                    sb.append("  $file\n")
+                    listAssetsRecursive("web-admin/$file", "  ", sb)
+                }
+            } else {
+                sb.append("  (empty or not found)\n")
+            }
+        } catch (e: Exception) {
+            sb.append("  ERROR: ${e.message}\n")
+        }
+        sb.append("\n=== Done ===")
+        Log.d(TAG, sb.toString())
+        return newFixedLengthResponse(Response.Status.OK, "text/plain; charset=utf-8", sb.toString())
+    }
+
+    private fun listAssetsRecursive(path: String, indent: String, sb: StringBuilder) {
+        try {
+            val files = context.assets.list(path)
+            if (files != null && files.isNotEmpty()) {
+                for (file in files.sorted()) {
+                    sb.append("$indent$path/$file\n")
+                    listAssetsRecursive("$path/$file", "$indent  ", sb)
+                }
+            }
+        } catch (_: Exception) {
+            // Not a directory, that's fine
+        }
+    }
+
+    /**
+     * Checks that critical JS/CSS files exist and returns their sizes.
+     * This is the key diagnostic: if a file is missing or empty, it explains the blank page.
+     */
+    private fun checkCriticalAssets(): Response {
+        val criticalFiles = listOf(
+            "web-admin/index.html",
+            "web-admin/css/index.css",
+            "web-admin/css/dark.css",
+            "web-admin/js/vue.global.prod.js",
+            "web-admin/js/element-plus.js",
+            "web-admin/js/element-plus-icons.js"
+        )
+
+        val sb = StringBuilder()
+        sb.append("{\n  \"checks\": [\n")
+
+        criticalFiles.forEachIndexed { index, assetPath ->
+            try {
+                val inputStream = context.assets.open(assetPath)
+                val size = inputStream.available().toLong()
+                // Read first 100 bytes to verify file is valid
+                val header = ByteArray(minOf(100, size.toInt()))
+                inputStream.read(header)
+                inputStream.close()
+
+                val headerStr = String(header, Charsets.US_ASCII).trim()
+                val isValid = headerStr.isNotEmpty() && size > 0
+
+                sb.append("    {")
+                sb.append("\"file\": \"$assetPath\", ")
+                sb.append("\"size\": $size, ")
+                sb.append("\"valid\": $isValid, ")
+                sb.append("\"header\": ${headerStr.take(80).replace("\"", "'").let { "\"$it\"" }}")
+                sb.append("}")
+
+                if (index < criticalFiles.lastIndex) sb.append(",")
+                sb.append("\n")
+
+                Log.d(TAG, "Asset check OK: $assetPath (${size} bytes, starts with: ${headerStr.take(50)})")
+            } catch (e: Exception) {
+                sb.append("    {")
+                sb.append("\"file\": \"$assetPath\", ")
+                sb.append("\"size\": 0, ")
+                sb.append("\"valid\": false, ")
+                sb.append("\"error\": \"${e.javaClass.simpleName}: ${e.message}\"")
+                sb.append("}")
+
+                if (index < criticalFiles.lastIndex) sb.append(",")
+                sb.append("\n")
+
+                Log.e(TAG, "Asset check FAILED: $assetPath - ${e.javaClass.simpleName}: ${e.message}")
+            }
+        }
+
+        sb.append("  ],\n")
+        sb.append("  \"note\": \"If 'valid' is false for any JS/CSS file, the admin page will be blank. ")
+        sb.append("element-plus.js must be the IIFE browser build (index.full.min.js), NOT the CJS/UMD build. ")
+        sb.append("Check that it starts with 'var ElementPlus' or contains 'global.ElementPlus'.\"\n")
+        sb.append("}")
+
+        return newFixedLengthResponse(
+            Response.Status.OK,
+            "application/json; charset=utf-8",
+            sb.toString()
+        )
+    }
+
+    // =====================================================================
+    //  API routing
+    // =====================================================================
 
     /**
      * Routes API requests to [ApiRouter].
@@ -139,74 +279,179 @@ class WebServer(
         }
     }
 
+    // =====================================================================
+    //  Static file serving
+    // =====================================================================
+
     /**
      * Serves static files from the bundled web-admin SPA (assets/web-admin).
-     * Falls back to index.html for SPA routing.
-     * Uses binary-safe serving (byte[]) for all file types including JS/CSS.
+     *
+     * Key design decisions:
+     * - Text files (HTML, CSS, JS) are read as Strings and served via
+     *   `newFixedLengthResponse(status, mimeType, bodyString)`. This is the
+     *   most battle-tested NanoHTTPD code path and avoids all issues with
+     *   InputStream constructors, Content-Length mismatches, and duplicate
+     *   Content-Type headers.
+     * - Binary files (images, fonts) use the byte[] constructor.
+     * - NO duplicate Content-Type header is added (NanoHTTPD sets it from the
+     *   mimeType parameter automatically).
+     * - Missing asset files return a proper 404 instead of silently falling
+     *   back to index.html (prevents returning HTML with a JS MIME type).
+     * - Cache-Control headers are set for static assets.
      */
     private fun serveStaticFile(uri: String): Response {
+        // Strip query string if present (NanoHTTPD should do this, but be safe)
+        val cleanUri = uri.split("?")[0].split("#")[0]
+
+        val assetPath = if (cleanUri == "/" || cleanUri == "/index.html") {
+            "web-admin/index.html"
+        } else {
+            "web-admin$cleanUri"
+        }
+
+        val mimeType = getMimeType(assetPath)
+
         return try {
-            val path = if (uri == "/" || uri == "/index.html") {
-                "web-admin/index.html"
+            val inputStream = context.assets.open(assetPath)
+
+            if (isTextType(mimeType)) {
+                // ── Text files: String-based response (most reliable) ──
+                val reader = BufferedReader(InputStreamReader(inputStream, "UTF-8"))
+                val content = reader.readText()
+                reader.close()
+
+                Log.d(TAG, "SERVED TEXT $assetPath  mime=$mimeType  size=${content.length}B")
+
+                val response = newFixedLengthResponse(Response.Status.OK, mimeType, content)
+                addStaticFileHeaders(response, assetPath)
+                response
             } else {
-                "web-admin$uri"
-            }
-
-            val inputStream = context.assets.open(path)
-            val mimeType = getMimeType(path)
-
-            // Read full content as bytes for binary-safe serving
-            val buffer = ByteArrayOutputStream()
-            inputStream.copyTo(buffer)
-            inputStream.close()
-            val bytes = buffer.toByteArray()
-
-            // Use byte[] response for correct Content-Length with all file types
-            val response = newFixedLengthResponse(
-                Response.Status.OK,
-                mimeType,
-                java.io.ByteArrayInputStream(bytes),
-                bytes.size.toLong()
-            )
-            response.addHeader("Content-Type", "$mimeType; charset=utf-8")
-            response
-        } catch (e: Exception) {
-            // SPA fallback: serve index.html for unknown routes
-            try {
-                val inputStream = context.assets.open("web-admin/index.html")
+                // ── Binary files: InputStream response with explicit content-length ──
                 val buffer = ByteArrayOutputStream()
                 inputStream.copyTo(buffer)
                 inputStream.close()
                 val bytes = buffer.toByteArray()
-                newFixedLengthResponse(
+
+                Log.d(TAG, "SERVED BINARY $assetPath  mime=$mimeType  size=${bytes.size}B")
+
+                val response = newFixedLengthResponse(
                     Response.Status.OK,
-                    "text/html",
+                    mimeType,
                     java.io.ByteArrayInputStream(bytes),
                     bytes.size.toLong()
                 )
-            } catch (fallbackE: Exception) {
+                addStaticFileHeaders(response, assetPath)
+                response
+            }
+        } catch (e: java.io.FileNotFoundException) {
+            // ── File genuinely not found ──
+            Log.w(TAG, "ASSET NOT FOUND: $assetPath (requested URI: $uri)")
+
+            // For known static file extensions, return 404 (NOT index.html fallback)
+            if (cleanUri.contains(".") && !cleanUri.endsWith(".html")) {
                 newFixedLengthResponse(
                     Response.Status.NOT_FOUND,
-                    "text/html",
-                    "<h1>ScreenPulse Admin UI not found</h1><p>Place the web-admin SPA in assets/web-admin/</p>"
+                    "application/json",
+                    """{"error":"File not found: $cleanUri"}"""
                 )
+            } else {
+                // HTML files and unknown routes: SPA fallback
+                serveIndexHtmlFallback()
+            }
+        } catch (e: Exception) {
+            // ── Unexpected error reading asset ──
+            Log.e(TAG, "ERROR serving $assetPath: ${e.javaClass.simpleName}: ${e.message}", e)
+
+            if (cleanUri.contains(".") && !cleanUri.endsWith(".html")) {
+                newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"Failed to serve $cleanUri: ${e.message}"}"""
+                )
+            } else {
+                serveIndexHtmlFallback()
             }
         }
     }
 
+    /**
+     * SPA fallback: serves index.html for client-side routing.
+     */
+    private fun serveIndexHtmlFallback(): Response {
+        return try {
+            val inputStream = context.assets.open("web-admin/index.html")
+            val reader = BufferedReader(InputStreamReader(inputStream, "UTF-8"))
+            val content = reader.readText()
+            reader.close()
+
+            Log.d(TAG, "SPA FALLBACK → index.html  size=${content.length}B")
+
+            newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", content)
+        } catch (e: Exception) {
+            Log.e(TAG, "FATAL: index.html not found in assets!", e)
+            newFixedLengthResponse(
+                Response.Status.NOT_FOUND,
+                "text/html; charset=utf-8",
+                "<h1>ScreenPulse Admin UI not found</h1>" +
+                "<p>Place the web-admin SPA in assets/web-admin/</p>" +
+                "<p>Error: ${e.message ?: "unknown"}</p>"
+            )
+        }
+    }
+
+    /**
+     * Adds standard static file headers (Cache-Control, etc.).
+     * Does NOT add Content-Type (NanoHTTPD handles it from mimeType).
+     */
+    private fun addStaticFileHeaders(response: Response, assetPath: String) {
+        // Cache immutable assets (JS, CSS with hash) aggressively
+        // For non-hashed assets, use shorter cache
+        val maxAge = when {
+            assetPath.contains(".js") || assetPath.contains(".css") -> "3600" // 1 hour
+            assetPath.contains(".png") || assetPath.contains(".ico") || assetPath.contains(".svg") -> "86400" // 1 day
+            else -> "0" // no cache for HTML
+        }
+        response.addHeader("Cache-Control", "public, max-age=$maxAge")
+    }
+
+    /**
+     * Determines if a MIME type represents text content.
+     * Text types are served as Strings (most reliable NanoHTTPD path).
+     * Binary types are served as byte[].
+     */
+    private fun isTextType(mimeType: String): Boolean {
+        // Strip charset suffix (e.g., "application/javascript; charset=utf-8" → "application/javascript")
+        val baseType = mimeType.split(";")[0].trim()
+        return baseType.startsWith("text/") ||
+               baseType == "application/javascript" ||
+               baseType == "application/json" ||
+               baseType == "application/xml"
+    }
+
+    // =====================================================================
+    //  MIME type detection
+    // =====================================================================
+
     private fun getMimeType(path: String): String {
         return when {
-            path.endsWith(".html") -> "text/html"
-            path.endsWith(".css") -> "text/css"
-            path.endsWith(".js") -> "application/javascript"
-            path.endsWith(".json") -> "application/json"
+            path.endsWith(".html") || path.endsWith(".htm") -> "text/html; charset=utf-8"
+            path.endsWith(".css") -> "text/css; charset=utf-8"
+            path.endsWith(".js") || path.endsWith(".mjs") -> "application/javascript; charset=utf-8"
+            path.endsWith(".json") -> "application/json; charset=utf-8"
+            path.endsWith(".map") -> "application/json"
             path.endsWith(".png") -> "image/png"
             path.endsWith(".jpg") || path.endsWith(".jpeg") -> "image/jpeg"
+            path.endsWith(".gif") -> "image/gif"
+            path.endsWith(".webp") -> "image/webp"
             path.endsWith(".svg") -> "image/svg+xml"
             path.endsWith(".ico") -> "image/x-icon"
             path.endsWith(".woff") -> "font/woff"
             path.endsWith(".woff2") -> "font/woff2"
             path.endsWith(".ttf") -> "font/ttf"
+            path.endsWith(".eot") -> "application/vnd.ms-fontobject"
+            path.endsWith(".mp4") -> "video/mp4"
+            path.endsWith(".webm") -> "video/webm"
+            path.endsWith(".pdf") -> "application/pdf"
             else -> "application/octet-stream"
         }
     }
