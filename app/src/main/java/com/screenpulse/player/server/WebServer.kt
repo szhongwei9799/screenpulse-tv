@@ -282,6 +282,18 @@ class WebServer(
             session.method == Method.GET && session.uri == "/api/playback-stats" -> {
                 apiRouter.getPlaybackStats(session)
             }
+            session.method == Method.DELETE && session.uri.matches(Regex("^/api/media/\\d+$")) -> {
+                val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(
+                    Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}"""
+                )
+                apiRouter.deleteMediaItem(session, id)
+            }
+            session.method == Method.PUT && session.uri.matches(Regex("^/api/media/\\d+$")) -> {
+                val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(
+                    Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}"""
+                )
+                apiRouter.renameMediaItem(session, id)
+            }
             else -> {
                 newFixedLengthResponse(
                     Response.Status.NOT_FOUND,

@@ -433,15 +433,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <el-table-column label="文件" min-width="300">
                 <template #default="{row}">
                   <div class="file-cell">
-                    <div :class="'file-icon-wrap '+(isVideo(row.name)?'video':isImage(row.name)?'image':'document')">
-                      <el-icon :size="20"><VideoPlay v-if="isVideo(row.name)"></VideoPlay><Picture v-else-if="isImage(row.name)"></Picture><Document v-else ></Document></el-icon>
+                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
+                      <el-icon :size="20"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
                     </div>
-                    <div><div class="file-name">{{row.name}}</div><div class="file-path" v-if="row.path">{{row.path}}</div></div>
+                    <div><div class="file-name">{{row.name||row.title||'未命名'}}</div><div class="file-path" v-if="row.path">{{row.path}}</div></div>
                   </div>
                 </template>
               </el-table-column>
               <el-table-column label="类型" width="100" align="center">
-                <template #default="{row}"><span :class="'mtb mtb-'+(getMediaType(row.name)||'video')">{{getMediaType(row.name)||'VIDEO'}}</span></template>
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
               </el-table-column>
               <el-table-column label="大小" width="120" align="right">
                 <template #default="{row}"><span class="file-size">{{fmtSize(row.size)}}</span></template>
@@ -449,9 +449,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <el-table-column label="日期" width="160" align="center">
                 <template #default="{row}"><span class="file-date">{{row.modifiedAt||row.date||'--'}}</span></template>
               </el-table-column>
-              <el-table-column label="操作" width="100" align="center">
+              <el-table-column label="操作" width="150" align="center">
                 <template #default="{row}">
                   <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text type="primary" @click="openRenameFile(row)" title="重命名" ></el-button>
                     <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyPath(row)" title="复制路径" ></el-button>
                     <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteFile(row)" ></el-button>
                   </div>
@@ -459,6 +460,22 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               </el-table-column>
             </el-table>
           </el-card>
+
+          <!-- 重命名对话框 -->
+          <el-dialog v-model="renameDialog" title="重命名文件" width="420px" @close="resetRenameForm" destroy-on-close>
+            <el-form label-position="top">
+              <el-form-item label="新文件名" required>
+                <el-input v-model="renameForm.title" placeholder="请输入新文件名（不含扩展名）" clearable ></el-input>
+              </el-form-item>
+              <el-form-item>
+                <div style="font-size:12px;color:#78909c">原文件：{{renameForm.originalName}}</div>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="renameDialog=false">取消</el-button>
+              <el-button type="primary" :loading="renameSaving" @click="doRename">确认重命名</el-button>
+            </template>
+          </el-dialog>
         </div>
 
         <!-- ====== 设置视图 ====== -->
@@ -873,11 +890,36 @@ const app = createApp({
       navigator.clipboard?.writeText(p).then(() => ElementPlus.ElMessage.success('路径已复制')).catch(() => ElementPlus.ElMessage.info(p));
     };
 
+    const renameDialog = ref(false);
+    const renameSaving = ref(false);
+    const renameForm = reactive({ id: null, title: '', originalName: '' });
+
+    const openRenameFile = (row) => {
+      renameForm.id = row.id;
+      renameForm.title = row.title || row.name.substringBeforeLast('.') || '';
+      renameForm.originalName = row.name || row.title || '';
+      renameDialog.value = true;
+    };
+
+    const resetRenameForm = () => { renameForm.id = null; renameForm.title = ''; renameForm.originalName = ''; };
+
+    const doRename = async () => {
+      if (!renameForm.title) { ElementPlus.ElMessage.warning('请输入文件名'); return; }
+      renameSaving.value = true;
+      try {
+        await apiPut('/api/media/' + renameForm.id, { title: renameForm.title });
+        ElementPlus.ElMessage.success('重命名成功');
+        renameDialog.value = false;
+        scanMedia();
+      } catch (e) { ElementPlus.ElMessage.error('重命名失败'); }
+      renameSaving.value = false;
+    };
+
     const confirmDeleteFile = (row) => {
-      ElementPlus.ElMessageBox.confirm('确定删除 "' + row.name + '" 吗？', '确认', {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + (row.name || row.title) + '" 吗？文件将从磁盘上永久删除。', '确认删除', {
         confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
       }).then(async () => {
-        try { await apiDelete('/api/media/' + encodeURIComponent(row.name)); ElementPlus.ElMessage.success('已删除'); scanMedia(); }
+        try { await apiDelete('/api/media/' + row.id); ElementPlus.ElMessage.success('已删除'); scanMedia(); }
         catch (e) { ElementPlus.ElMessage.error('删除失败'); }
       }).catch(() => {});
     };
@@ -942,6 +984,7 @@ const app = createApp({
       mediaLoading, uploading, uploadFiles, uploadUrl,
       onFileChange, onFileRemove, doUpload, scanMedia,
       isVideo, isImage, getMediaType, fmtSize, copyPath, confirmDeleteFile,
+      renameDialog, renameSaving, renameForm, openRenameFile, resetRenameForm, doRename,
       settingsLoading, settingsSaving, netInfo, cfg, saveSettings
     };
   }

@@ -333,30 +333,50 @@ class ApiRouter(
             return jsonResponseError("临时文件不存在: ${tempFile.absolutePath}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
         }
 
-        // NanoHTTPD stores filenames in session.parameters when using multipart
-        // Try multiple possible parameter names
-        val originalName = session.parameters["file"]?.firstOrNull()
-            ?: session.parameters["filename"]?.firstOrNull()
-            ?: tempFile.name
+        // Extract original filename from multipart Content-Disposition header
+        // NanoHTTPD stores the filename in session.parameters[fieldName]
+        val originalName = session.parameters["file"]?.firstOrNull()?.let {
+            // Strip any directory path (browser may include full path)
+            it.substringAfterLast('/')
+        }
+        val fallbackName = tempFile.name
+        val nameToUse = if (!originalName.isNullOrBlank() && originalName.contains('.')) {
+            originalName
+        } else {
+            fallbackName
+        }
+        Log.d(TAG, "Upload original filename: $originalName, using: $nameToUse")
 
         return runBlocking {
             try {
-                // Sanitize filename
-                val safeName = originalName.replace(Regex("[^a-zA-Z0-9._\\u4e00-\\u9fff\\u3040-\\u309f\\u30a0-\\u30ff]"), "_")
+                // Keep original filename, only strip path separators and null bytes
+                val safeName = nameToUse
+                    .replace("\\0", "")
+                    .replace("..", "_")
                 val destFile = File(uploadDir, safeName)
+
+                // If filename conflicts, append a number
+                var finalFile = destFile
+                var counter = 1
+                while (finalFile.exists() && finalFile != tempFile) {
+                    val base = nameToUse.substringBeforeLast('.')
+                    val ext = nameToUse.substringAfterLast('.')
+                    finalFile = File(uploadDir, "${base}_${counter}.${ext}")
+                    counter++
+                }
 
                 // Copy uploaded file to persistent storage
                 java.io.FileInputStream(tempFile).use { input ->
-                    FileOutputStream(destFile).use { output ->
+                    FileOutputStream(finalFile).use { output ->
                         input.copyTo(output)
                     }
                 }
 
                 // Always auto-add to playlist database
-                val type = detectMediaType(safeName)
+                val type = detectMediaType(finalFile.name)
                 val mediaItem = MediaItem(
-                    title = safeName.substringBeforeLast("."),
-                    url = destFile.absolutePath,
+                    title = finalFile.nameWithoutExtension,
+                    url = finalFile.absolutePath,
                     type = type,
                     durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
                     sortOrder = mediaItemDao.getTotalCount()
@@ -369,9 +389,9 @@ class ApiRouter(
 
                 val result = JsonObject().apply {
                     addProperty("success", true)
-                    addProperty("filename", safeName)
-                    addProperty("url", destFile.absolutePath)
-                    addProperty("size", destFile.length())
+                    addProperty("filename", finalFile.name)
+                    addProperty("url", finalFile.absolutePath)
+                    addProperty("size", finalFile.length())
                     add("mediaItem", gson.toJsonTree(mediaItem))
                 }
 
@@ -424,9 +444,22 @@ class ApiRouter(
                     }
                 }
 
-                // Fetch all media items from database to return as files array
+                // Fetch all media items from database and enrich with file system metadata
                 val allItems = mediaItemDao.getAllItemsOnce()
-                val filesArray = gson.toJsonTree(allItems).asJsonArray
+                val filesArray = com.google.gson.JsonArray()
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
+                for (item in allItems) {
+                    val file = File(item.url)
+                    val obj = com.google.gson.JsonObject()
+                    obj.addProperty("id", item.id)
+                    obj.addProperty("name", file.name)
+                    obj.addProperty("title", item.title)
+                    obj.addProperty("path", item.url)
+                    obj.addProperty("type", item.type.name)
+                    obj.addProperty("size", if (file.exists()) file.length() else 0)
+                    obj.addProperty("date", if (file.exists()) dateFormat.format(java.util.Date(file.lastModified())) else "")
+                    filesArray.add(obj)
+                }
 
                 val result = JsonObject().apply {
                     addProperty("success", true)
@@ -468,6 +501,90 @@ class ApiRouter(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get playback stats", e)
             jsonResponseError("获取播放统计失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+        }
+    }
+
+    // =====================================================================
+    //  DELETE /api/media/:id
+    // =====================================================================
+
+    fun deleteMediaItem(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val existing = mediaItemDao.getItemById(id)
+                if (existing == null) {
+                    return@runBlocking jsonResponseError("文件未找到", NanoHTTPD.Response.Status.NOT_FOUND)
+                }
+
+                // Delete file from disk
+                val file = File(existing.url)
+                if (file.exists()) file.delete()
+
+                // Delete from database
+                mediaItemDao.deleteById(id)
+
+                Log.d(TAG, "Deleted media file: ${file.name} (id=$id)")
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    addProperty("deletedId", id)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete media file: $id", e)
+                jsonResponseError("删除失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  PUT /api/media/:id  (rename)
+    // =====================================================================
+
+    fun renameMediaItem(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val existing = mediaItemDao.getItemById(id)
+                if (existing == null) {
+                    return@runBlocking jsonResponseError("文件未找到", NanoHTTPD.Response.Status.NOT_FOUND)
+                }
+
+                val body = parseBody(session)
+                val newTitle = body.get("title")?.asString
+                if (newTitle.isNullOrBlank()) {
+                    return@runBlocking jsonResponseError("文件名不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                }
+
+                val oldFile = File(existing.url)
+                val ext = oldFile.extension
+                val newFileName = if (ext.isNotEmpty()) "$newTitle.$ext" else newTitle
+                val newFile = File(oldFile.parentFile, newFileName)
+
+                // Rename file on disk
+                if (oldFile.exists() && !newFile.exists()) {
+                    oldFile.renameTo(newFile)
+                }
+
+                // Update database
+                val updated = existing.copy(
+                    title = newTitle,
+                    url = newFile.absolutePath,
+                    updatedAt = System.currentTimeMillis()
+                )
+                mediaItemDao.update(updated)
+
+                Log.d(TAG, "Renamed media: ${existing.title} -> $newTitle (id=$id)")
+                val result = com.google.gson.JsonObject()
+                result.addProperty("id", updated.id)
+                result.addProperty("name", newFile.name)
+                result.addProperty("title", newTitle)
+                result.addProperty("path", newFile.absolutePath)
+                result.addProperty("type", updated.type.name)
+                result.addProperty("success", true)
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to rename media file: $id", e)
+                jsonResponseError("重命名失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
         }
     }
 
