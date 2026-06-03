@@ -137,7 +137,11 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 .item-thumb{width:36px;height:36px;background:#21262d;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#448aff;flex-shrink:0}
 .item-title{font-weight:500;color:#e0e0e0}
 .url-text{font-size:13px;color:#78909c;font-family:'JetBrains Mono','Fira Code',monospace}
-.action-buttons{display:flex;justify-content:center;gap:2px}
+.action-buttons{display:flex;justify-content:center;gap:4px}
+.action-buttons .el-button{color:#78909c!important;border-radius:6px;width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.action-buttons .el-button:hover{color:#e0e0e0!important;background:rgba(68,138,255,.12)!important}
+.action-buttons .el-button--danger:hover{color:#f44336!important;background:rgba(244,67,54,.12)!important}
+.action-buttons .el-button--primary:hover{color:#448aff!important;background:rgba(68,138,255,.12)!important}
 .duration-field{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 
 /* ===== UPLOAD ===== */
@@ -338,7 +342,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           </div>
 
           <el-card>
-            <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="播放列表为空" row-key="_id" style="width:100%">
+            <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="播放列表为空" row-key="id" style="width:100%">
               <el-table-column type="selection" width="50" ></el-table-column>
               <el-table-column label="#" width="60">
                 <template #default="{$index}">
@@ -731,7 +735,7 @@ const app = createApp({
       plLoading.value = false;
     };
 
-    const onSelectionChange = (rows) => { selectedIds.value = rows.map(r => r._id || r.id); };
+    const onSelectionChange = (rows) => { selectedIds.value = rows.map(r => r.id); };
 
     // 拖拽排序
     const dragStart = (e, idx) => {
@@ -768,7 +772,7 @@ const app = createApp({
     };
 
     const openEditItem = (row) => {
-      plEditing.value = true; editId.value = row._id || row.id;
+      plEditing.value = true; editId.value = row.id;
       Object.assign(itemForm, { ...row, autoDuration: row.duration === 'auto' });
       plDialog.value = true;
     };
@@ -799,7 +803,7 @@ const app = createApp({
     };
 
     const toggleItem = async (row) => {
-      try { await apiPut('/api/playlist/' + (row._id || row.id), { enabled: row.enabled }); }
+      try { await apiPut('/api/playlist/' + row.id, { enabled: row.enabled }); }
       catch (e) { row.enabled = !row.enabled; ElementPlus.ElMessage.error('更新失败'); }
     };
 
@@ -807,7 +811,7 @@ const app = createApp({
       ElementPlus.ElMessageBox.confirm('确定删除 "' + (row.title || '未命名') + '" 吗？', '确认删除', {
         confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
       }).then(async () => {
-        try { await apiDelete('/api/playlist/' + (row._id || row.id)); ElementPlus.ElMessage.success('已删除'); fetchPlaylist(); }
+        try { await apiDelete('/api/playlist/' + row.id); ElementPlus.ElMessage.success('已删除'); fetchPlaylist(); }
         catch (e) { ElementPlus.ElMessage.error('删除失败'); }
       }).catch(() => {});
     };
@@ -815,9 +819,9 @@ const app = createApp({
     const bulkToggle = async (enabled) => {
       try {
         for (const row of playlist.value) {
-          if (selectedIds.value.includes(row._id || row.id)) {
+          if (selectedIds.value.includes(row.id)) {
             row.enabled = enabled;
-            await apiPut('/api/playlist/' + (row._id || row.id), { enabled });
+            await apiPut('/api/playlist/' + row.id, { enabled });
           }
         }
         ElementPlus.ElMessage.success('已更新 ' + selectedIds.value.length + ' 个项目');
@@ -970,7 +974,13 @@ const app = createApp({
       settingsSaving.value = false;
     };
 
-    // ========== 初始化 ==========
+    // Watch currentView to auto-load data when switching tabs
+    watch(currentView, (newView) => {
+      if (newView === 'media') scanMedia();
+      else if (newView === 'playlist') fetchPlaylist();
+      else if (newView === 'dashboard') loadDashboard();
+      else if (newView === 'settings') loadSettings();
+    });
     onMounted(() => { loadDashboard(); startStatsPolling(); });
 
     return {
