@@ -45,7 +45,7 @@ class WebServer(
         var activePlaylistManager: com.screenpulse.player.player.PlaylistManager? = null
             private set
 
-        fun setPlaylistManager(manager: com.screenpulse.player.player.PlaylistManager) {
+        fun setPlaylistManager(manager: com.screenpulse.player.player.PlaylistManager?) {
             activePlaylistManager = manager
         }
     }
