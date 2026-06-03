@@ -228,12 +228,10 @@ class WebServer(
      * Routes API requests to [ApiRouter].
      */
     private fun serveApi(session: IHTTPSession): Response {
-        // Parse multipart form data if needed
-        if (session.method == Method.POST && session.headers.containsKey("content-type") &&
-            session.headers["content-type"]?.contains("multipart") == true
-        ) {
-            session.parseBody(mapOf())
-        }
+        // NOTE: Do NOT call session.parseBody() here!
+        // Each handler (e.g. uploadFile) calls parseBody() itself.
+        // Calling parseBody() twice on the same session causes the second
+        // call to fail because the input stream is already consumed.
 
         return when {
             session.method == Method.GET && session.uri == "/api/status" -> {

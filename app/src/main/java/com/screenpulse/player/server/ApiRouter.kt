@@ -46,21 +46,49 @@ class ApiRouter(
     fun getStatus(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         return runBlocking {
             val itemCount = mediaItemDao.getEnabledCount()
+            val totalCount = mediaItemDao.getTotalCount()
             val config = configDao.getConfigOnce() ?: PlaylistConfig()
             val ipAddress = NetworkUtil.getDeviceIpAddress(context) ?: "unknown"
-            val port = session.remoteIpAddress?.let { 8080 } ?: 8080
+
+            // Calculate uptime
+            val uptimeMs = System.currentTimeMillis() - android.os.Build.TIME
+            val uptimeSecs = uptimeMs / 1000
+            val hours = uptimeSecs / 3600
+            val minutes = (uptimeSecs % 3600) / 60
+            val uptimeStr = "${hours}h ${minutes}m"
+
+            // Calculate storage used
+            val uploadDirSize = uploadDir.listFiles()?.sumOf { it.length() } ?: 0
+            val storageUsedStr = if (uploadDirSize > 1073741824) {
+                String.format("%.1f GB", uploadDirSize / 1073741824.0)
+            } else if (uploadDirSize > 1048576) {
+                String.format("%.1f MB", uploadDirSize / 1048576.0)
+            } else {
+                uploadDirSize.toString() + " B"
+            }
+
+            // Get MAC address
+            val macAddress = try { NetworkUtil.getMacAddress(context) } catch (_: Exception) { null }
 
             val status = JsonObject().apply {
+                addProperty("online", true)
                 addProperty("deviceName", android.os.Build.MODEL)
+                addProperty("model", android.os.Build.MODEL)
+                addProperty("ip", ipAddress)
                 addProperty("ipAddress", ipAddress)
                 addProperty("port", 8080)
                 addProperty("managementUrl", "http://$ipAddress:8080")
+                addProperty("uptime", uptimeStr)
+                addProperty("mediaCount", totalCount)
                 addProperty("activeItems", itemCount)
+                addProperty("storageUsed", storageUsedStr)
                 addProperty("playbackMode", config.playbackMode.name)
                 addProperty("interstitialEnabled", config.interstitialEnabled)
                 addProperty("volumeLevel", config.volumeLevel)
+                addProperty("volume", config.volumeLevel)
                 addProperty("androidVersion", android.os.Build.VERSION.RELEASE)
                 addProperty("appVersion", "1.0.0")
+                if (macAddress != null) addProperty("mac", macAddress)
             }
 
             jsonResponse(status)
