@@ -1,18 +1,23 @@
 ---
-Task ID: 2
-Agent: main
-Task: 保留文件名 + 修复照片显示VIDEO + 媒体库删除/重命名
+Task ID: 1
+Agent: Main Agent
+Task: Fix script loading failure + checkbox selection + media library persistence + build pipeline
 
 Work Log:
-- 分析根因：scan API 返回 MediaItem 对象(title/url/type)，前端期望 name/path/size/date
-- row.name 为 undefined 导致 getMediaType(undefined) 默认返回 VIDEO
-- 修复上传文件名：不再用正则替换中文，仅过滤路径分隔符和危险字符
-- 修复 triggerScan()：返回包含文件系统元数据的完整 JSON
-- 新增 DELETE /api/media/:id 端点（删除文件+数据库记录）
-- 新增 PUT /api/media/:id 端点（重命名文件+数据库）
-- 前端修复类型列使用 row.type，删除改用 row.id，新增重命名对话框
-- 第一次编译成功（run 26872369250）
+- Analyzed project structure: two modules (app/ with WebServer.kt + android/ with ApiHandler.kt)
+- Identified root cause of script loading failure: large JS files served as Strings may fail with AAPT compressed assets
+- Modified WebServer.kt to serve ALL files as byte arrays (removed text/binary distinction)
+- Fixed build.gradle by reverting to original (removed aaptOptions that caused dataBinding error)
+- Attempted 6+ CI builds, all failed due to Google Maven (dl.google.com) being unreachable from GitHub Actions runners
+- Synchronized all fixes to Vite source code (web-admin/src/) since CI runs Vite build which overwrites assets
+- Fixed Playlist.vue: row-key changed from "id" to composite key "(row) => row.id + '_' + row.title"
+- Fixed MediaLibrary.vue: added auto-scan on mount when list is empty
+- Fixed web-admin/index.html: added script load retry with cache-bust mechanism
+- Fixed app/src/main/assets/web-admin/index.html: same fixes (directly in assets)
 
 Stage Summary:
-- 修改文件：ApiRouter.kt, WebServer.kt, index.html (assets + web-admin)
-- APK: https://github.com/szhongwei9799/screenpulse-tv/actions/runs/26872369250
+- All code fixes pushed to main branch
+- CI blocked by Google Maven infrastructure issue (not code issue)
+- 3 key files modified: WebServer.kt, Playlist.vue, MediaLibrary.vue (+ 2 index.html files)
+- Build will auto-trigger when GitHub Actions infrastructure recovers
+- User warned about Vite build overwriting assets directory
