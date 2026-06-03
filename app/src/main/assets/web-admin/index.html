@@ -240,21 +240,21 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
         <!-- ====== 仪表盘视图 ====== -->
         <div v-if="currentView==='dashboard'" v-loading="dashLoading">
           <div class="status-grid">
-            <div class="status-card" style="--c:#4CAF50" @click="">
-              <div class="card-icon-wrap" style="background:rgba(76,175,80,.15);color:#4CAF50"><el-icon :size="24"><Monitor></Monitor></el-icon></div>
-              <div class="card-content"><div class="card-label">设备状态</div><div class="card-value">{{status.online?'在线':'离线'}}</div></div>
+            <div class="status-card" style="--c:#4CAF50">
+              <div class="card-icon-wrap" style="background:rgba(76,175,80,.15);color:#4CAF50"><el-icon :size="24"><VideoPlay></VideoPlay></el-icon></div>
+              <div class="card-content"><div class="card-label">当前播放</div><div class="card-value" :title="playStats.currentPlayingTitle||'未在播放'">{{playStats.currentPlayingTitle||'未在播放'}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#FF9800">
+              <div class="card-icon-wrap" style="background:rgba(255,152,0,.15);color:#FF9800"><el-icon :size="24"><DataLine></DataLine></el-icon></div>
+              <div class="card-content"><div class="card-label">今日播放次数</div><div class="card-value">{{playStats.totalPlayCount||0}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#AB47BC">
+              <div class="card-icon-wrap" style="background:rgba(171,71,188,.15);color:#AB47BC"><el-icon :size="24"><RefreshRight></RefreshRight></el-icon></div>
+              <div class="card-content"><div class="card-label">循环次数</div><div class="card-value">{{playStats.loopCount||0}}</div></div>
             </div>
             <div class="status-card" style="--c:#448AFF">
               <div class="card-icon-wrap" style="background:rgba(68,138,255,.15);color:#448AFF"><el-icon :size="24"><Connection></Connection></el-icon></div>
               <div class="card-content"><div class="card-label">IP 地址</div><div class="card-value">{{status.ipAddress||status.ip||'--'}}</div></div>
-            </div>
-            <div class="status-card" style="--c:#FF9800">
-              <div class="card-icon-wrap" style="background:rgba(255,152,0,.15);color:#FF9800"><el-icon :size="24"><Timer></Timer></el-icon></div>
-              <div class="card-content"><div class="card-label">运行时间</div><div class="card-value">{{status.uptime||'--'}}</div></div>
-            </div>
-            <div class="status-card" style="--c:#AB47BC">
-              <div class="card-icon-wrap" style="background:rgba(171,71,188,.15);color:#AB47BC"><el-icon :size="24"><VideoPlay></VideoPlay></el-icon></div>
-              <div class="card-content"><div class="card-label">媒体总数</div><div class="card-value">{{status.mediaCount||0}}</div></div>
             </div>
             <div class="status-card" style="--c:#26C6DA">
               <div class="card-icon-wrap" style="background:rgba(38,198,218,.15);color:#26C6DA"><el-icon :size="24"><Film></Film></el-icon></div>
@@ -269,16 +269,29 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <div class="info-grid">
             <!-- 正在播放 -->
             <el-card class="info-card">
-              <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>正在播放</span><el-tag v-if="nowPlaying" type="success" effect="dark" size="small" class="live-tag"><span class="live-dot"></span>直播</el-tag></div></template>
-              <div v-if="nowPlaying" class="now-playing">
+              <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>正在播放</span><el-tag v-if="playStats.currentPlayingTitle" type="success" effect="dark" size="small" class="live-tag"><span class="live-dot"></span>播放中</el-tag></div></template>
+              <div v-if="playStats.currentPlayingTitle" class="now-playing">
                 <div class="np-thumb"><el-icon :size="32"><VideoPlay></VideoPlay></el-icon></div>
                 <div class="np-info">
-                  <div class="np-title">{{nowPlaying.title||'未命名'}}</div>
-                  <div class="np-meta"><span :class="'mtb mtb-'+(nowPlaying.type||'video').toLowerCase()">{{(nowPlaying.type||'VIDEO')}}</span><span class="np-url">{{trunc(nowPlaying.url,50)}}</span></div>
-                  <div class="np-duration">{{nowPlaying.duration==='auto'?'自动（视频时长）':(nowPlaying.duration?nowPlaying.duration+'s':'--')}}</div>
+                  <div class="np-title">{{playStats.currentPlayingTitle}}</div>
+                  <div class="np-meta"><span :class="'mtb mtb-'+(playStats.currentPlayingType||'video').toLowerCase()">{{playStats.currentPlayingType||'VIDEO'}}</span><span class="np-url">第 {{(playStats.currentIndex||0)+1}} / {{playStats.totalItems||playlist.length}} 项</span></div>
+                  <div class="np-duration">播放模式: {{playStats.playbackMode==='LOOP'?'循环':playStats.playbackMode==='SEQUENTIAL'?'顺序':playStats.playbackMode==='RANDOM'?'随机':playStats.playbackMode}}</div>
                 </div>
               </div>
               <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><VideoPause></VideoPause></el-icon><span>当前没有播放媒体</span></div>
+            </el-card>
+
+            <!-- 今日播放统计 -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><TrendCharts></TrendCharts></el-icon><span>今日播放统计</span><el-tag effect="dark" size="small" class="live-tag">{{playStats.totalPlayCount||0}} 次播放</el-tag></div></template>
+              <div v-if="playStats.itemStats && playStats.itemStats.length" class="summary-list">
+                <div v-for="s in playStats.itemStats" :key="s.id" class="summary-row">
+                  <span :class="'mtb mtb-'+(s.type||'video').toLowerCase()">{{s.type||'VIDEO'}}</span>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;color:#e0e0e0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{s.title}}</div></div>
+                  <span class="summary-count">{{s.playCount||0}} 次</span>
+                </div>
+              </div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><TrendCharts></TrendCharts></el-icon><span>今日暂无播放记录</span></div>
             </el-card>
 
             <!-- 播放列表摘要 -->
@@ -657,15 +670,28 @@ const app = createApp({
 
     const trunc = (s, n) => (!s ? '' : s.length > n ? s.substring(0, n) + '...' : s);
 
+    const playStats = ref({});
+
     const loadDashboard = async () => {
       dashLoading.value = true;
       try {
-        const [s, p] = await Promise.allSettled([apiGet('/api/status'), apiGet('/api/playlist')]);
+        const [s, p, ps] = await Promise.allSettled([apiGet('/api/status'), apiGet('/api/playlist'), apiGet('/api/playback-stats')]);
         if (s.status === 'fulfilled') status.value = s.value || {};
         if (p.status === 'fulfilled') playlist.value = Array.isArray(p.value) ? p.value : (p.value?.items || []);
+        if (ps.status === 'fulfilled') playStats.value = ps.value || {};
       } catch (e) { console.error(e); }
       dashLoading.value = false;
     };
+
+    // Auto-refresh playback stats every 5 seconds
+    let _statsTimer = null;
+    const startStatsPolling = () => {
+      stopStatsPolling();
+      _statsTimer = setInterval(async () => {
+        try { const r = await apiGet('/api/playback-stats'); playStats.value = r || {}; } catch(_) {}
+      }, 5000);
+    };
+    const stopStatsPolling = () => { if (_statsTimer) { clearInterval(_statsTimer); _statsTimer = null; } };
 
     // ========== 播放列表 ==========
     const plLoading = ref(false);
@@ -903,11 +929,12 @@ const app = createApp({
     };
 
     // ========== 初始化 ==========
-    onMounted(() => { loadDashboard(); });
+    onMounted(() => { loadDashboard(); startStatsPolling(); });
 
     return {
       isCollapsed, currentView, pageTitle, refreshView,
       dashLoading, status, playlist, mediaFiles, nowPlaying, playlistSummary, trunc,
+      playStats,
       plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds,
       dragStart, dropItem, fetchPlaylist, onSelectionChange, moveItem,
       openAddItem, openEditItem, onDurationToggle, resetItemForm, saveItem,

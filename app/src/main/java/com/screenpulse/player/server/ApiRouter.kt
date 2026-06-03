@@ -317,21 +317,33 @@ class ApiRouter(
     // =====================================================================
 
     fun uploadFile(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        // Use app's internal cache dir as temp dir for NanoHTTPD parseBody
+        // Default java.io.tmpdir may not be writable on Android TV
+        val tempDir = File(context.cacheDir, "nanohttpd_tmp")
+        tempDir.mkdirs()
         val files = mutableMapOf<String, String>()
         try {
-            session.parseBody(files)
+            session.parseBody(files, tempDir)
         } catch (e: Exception) {
-            return jsonResponseError("Failed to parse upload: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
+            Log.e(TAG, "parseBody failed: ${e.message}", e)
+            return jsonResponseError("文件上传解析失败: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
         }
-        val tempFilePath = files["file"] ?: return jsonResponseError("No 'file' field in upload", NanoHTTPD.Response.Status.BAD_REQUEST)
+        val tempFilePath = files["file"] ?: return jsonResponseError("未找到上传文件", NanoHTTPD.Response.Status.BAD_REQUEST)
         val tempFile = File(tempFilePath)
+        if (!tempFile.exists()) {
+            return jsonResponseError("临时文件不存在: ${tempFile.absolutePath}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+        }
+
+        // NanoHTTPD stores filenames in session.parameters when using multipart
+        // Try multiple possible parameter names
+        val originalName = session.parameters["file"]?.firstOrNull()
+            ?: session.parameters["filename"]?.firstOrNull()
+            ?: tempFile.name
 
         return runBlocking {
             try {
-                val originalName = session.parameters["filename"]?.firstOrNull() ?: "upload_${System.currentTimeMillis()}"
-
                 // Sanitize filename
-                val safeName = originalName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                val safeName = originalName.replace(Regex("[^a-zA-Z0-9._\\u4e00-\\u9fff\\u3040-\\u309f\\u30a0-\\u30ff]"), "_")
                 val destFile = File(uploadDir, safeName)
 
                 // Copy uploaded file to persistent storage
@@ -353,6 +365,9 @@ class ApiRouter(
                 val id = mediaItemDao.insert(mediaItem)
                 mediaItem.id = id
 
+                // Clean up temp file
+                try { tempFile.delete() } catch (_: Exception) {}
+
                 val result = JsonObject().apply {
                     addProperty("success", true)
                     addProperty("filename", safeName)
@@ -364,7 +379,7 @@ class ApiRouter(
                 jsonResponse(result)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to upload file", e)
-                jsonResponseError("Upload failed: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+                jsonResponseError("上传失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }
@@ -424,6 +439,35 @@ class ApiRouter(
                 Log.e(TAG, "Media scan failed", e)
                 jsonResponseError("Scan failed: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
+        }
+    }
+
+    // =====================================================================
+    //  GET /api/playback-stats
+    // =====================================================================
+
+    fun getPlaybackStats(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        try {
+            val manager = WebServer.activePlaylistManager
+            if (manager == null) {
+                val empty = JsonObject().apply {
+                    addProperty("currentPlayingTitle", "")
+                    addProperty("currentPlayingType", "")
+                    addProperty("currentIndex", 0)
+                    addProperty("totalPlayCount", 0)
+                    addProperty("loopCount", 0)
+                    add("itemStats", com.google.gson.JsonArray())
+                    addProperty("playbackMode", "LOOP")
+                    addProperty("totalItems", 0)
+                }
+                return jsonResponse(empty)
+            }
+            val stats = manager.getPlaybackStats()
+            val json = gson.toJsonTree(stats).asJsonObject
+            jsonResponse(json)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get playback stats", e)
+            jsonResponseError("获取播放统计失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
         }
     }
 
