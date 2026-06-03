@@ -202,19 +202,19 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
       </div>
       <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#B0BEC5" active-text-color="#448AFF">
         <el-menu-item index="dashboard" @click="currentView='dashboard'">
-          <el-icon><Monitor /></el-icon>
+          <el-icon><Monitor></Monitor></el-icon>
           <template #title>Dashboard</template>
         </el-menu-item>
         <el-menu-item index="playlist" @click="currentView='playlist'">
-          <el-icon><List /></el-icon>
+          <el-icon><List></List></el-icon>
           <template #title>Playlist</template>
         </el-menu-item>
         <el-menu-item index="media" @click="currentView='media'">
-          <el-icon><FolderOpened /></el-icon>
+          <el-icon><FolderOpened></FolderOpened></el-icon>
           <template #title>Media Library</template>
         </el-menu-item>
         <el-menu-item index="settings" @click="currentView='settings'">
-          <el-icon><Setting /></el-icon>
+          <el-icon><Setting></Setting></el-icon>
           <template #title>Settings</template>
         </el-menu-item>
       </el-menu>
@@ -229,7 +229,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
         <h2 class="page-title">{{pageTitle}}</h2>
         <div class="header-right">
           <el-tag type="success" effect="dark" size="small" class="status-tag">
-            <el-icon style="margin-right:4px"><CircleCheck /></el-icon> Connected
+            <el-icon style="margin-right:4px"><CircleCheck></CircleCheck></el-icon> Connected
           </el-tag>
           <el-button :icon="Refresh" circle size="small" @click="refreshView" />
         </div>
@@ -241,27 +241,27 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
         <div v-if="currentView==='dashboard'" v-loading="dashLoading">
           <div class="status-grid">
             <div class="status-card" style="--c:#4CAF50" @click="">
-              <div class="card-icon-wrap" style="background:rgba(76,175,80,.15);color:#4CAF50"><el-icon :size="24"><Monitor /></el-icon></div>
+              <div class="card-icon-wrap" style="background:rgba(76,175,80,.15);color:#4CAF50"><el-icon :size="24"><Monitor></Monitor></el-icon></div>
               <div class="card-content"><div class="card-label">Device Status</div><div class="card-value">{{status.online?'Online':'Offline'}}</div></div>
             </div>
             <div class="status-card" style="--c:#448AFF">
-              <div class="card-icon-wrap" style="background:rgba(68,138,255,.15);color:#448AFF"><el-icon :size="24"><Connection /></el-icon></div>
+              <div class="card-icon-wrap" style="background:rgba(68,138,255,.15);color:#448AFF"><el-icon :size="24"><Connection></Connection></el-icon></div>
               <div class="card-content"><div class="card-label">IP Address</div><div class="card-value">{{status.ipAddress||status.ip||'--'}}</div></div>
             </div>
             <div class="status-card" style="--c:#FF9800">
-              <div class="card-icon-wrap" style="background:rgba(255,152,0,.15);color:#FF9800"><el-icon :size="24"><Timer /></el-icon></div>
+              <div class="card-icon-wrap" style="background:rgba(255,152,0,.15);color:#FF9800"><el-icon :size="24"><Timer></Timer></el-icon></div>
               <div class="card-content"><div class="card-label">Uptime</div><div class="card-value">{{status.uptime||'--'}}</div></div>
             </div>
             <div class="status-card" style="--c:#AB47BC">
-              <div class="card-icon-wrap" style="background:rgba(171,71,188,.15);color:#AB47BC"><el-icon :size="24"><VideoPlay /></el-icon></div>
+              <div class="card-icon-wrap" style="background:rgba(171,71,188,.15);color:#AB47BC"><el-icon :size="24"><VideoPlay></VideoPlay></el-icon></div>
               <div class="card-content"><div class="card-label">Total Media</div><div class="card-value">{{status.mediaCount||0}}</div></div>
             </div>
             <div class="status-card" style="--c:#26C6DA">
-              <div class="card-icon-wrap" style="background:rgba(38,198,218,.15);color:#26C6DA"><el-icon :size="24"><Film /></el-icon></div>
+              <div class="card-icon-wrap" style="background:rgba(38,198,218,.15);color:#26C6DA"><el-icon :size="24"><Film></Film></el-icon></div>
               <div class="card-content"><div class="card-label">Playlist Items</div><div class="card-value">{{playlist.length||0}}</div></div>
             </div>
             <div class="status-card" style="--c:#66BB6A">
-              <div class="card-icon-wrap" style="background:rgba(102,187,106,.15);color:#66BB6A"><el-icon :size="24"><Coin /></el-icon></div>
+              <div class="card-icon-wrap" style="background:rgba(102,187,106,.15);color:#66BB6A"><el-icon :size="24"><Coin></Coin></el-icon></div>
               <div class="card-content"><div class="card-label">Storage Used</div><div class="card-value">{{status.storageUsed||'--'}}</div></div>
             </div>
           </div>
@@ -269,21 +269,21 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <div class="info-grid">
             <!-- Now Playing -->
             <el-card class="info-card">
-              <template #header><div class="card-hdr"><el-icon><VideoPlay /></el-icon><span>Now Playing</span><el-tag v-if="nowPlaying" type="success" effect="dark" size="small" class="live-tag"><span class="live-dot"></span>LIVE</el-tag></div></template>
+              <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>Now Playing</span><el-tag v-if="nowPlaying" type="success" effect="dark" size="small" class="live-tag"><span class="live-dot"></span>LIVE</el-tag></div></template>
               <div v-if="nowPlaying" class="now-playing">
-                <div class="np-thumb"><el-icon :size="32"><VideoPlay /></el-icon></div>
+                <div class="np-thumb"><el-icon :size="32"><VideoPlay></VideoPlay></el-icon></div>
                 <div class="np-info">
                   <div class="np-title">{{nowPlaying.title||'Untitled'}}</div>
                   <div class="np-meta"><span :class="'mtb mtb-'+(nowPlaying.type||'video').toLowerCase()">{{(nowPlaying.type||'VIDEO')}}</span><span class="np-url">{{trunc(nowPlaying.url,50)}}</span></div>
                   <div class="np-duration">{{nowPlaying.duration==='auto'?'Auto (video length)':(nowPlaying.duration?nowPlaying.duration+'s':'--')}}</div>
                 </div>
               </div>
-              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><VideoPause /></el-icon><span>No media currently playing</span></div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><VideoPause></VideoPause></el-icon><span>No media currently playing</span></div>
             </el-card>
 
             <!-- Playlist Summary -->
             <el-card class="info-card">
-              <template #header><div class="card-hdr"><el-icon><List /></el-icon><span>Playlist Summary</span></div></template>
+              <template #header><div class="card-hdr"><el-icon><List></List></el-icon><span>Playlist Summary</span></div></template>
               <div v-if="playlistSummary.length" class="summary-list">
                 <div v-for="s in playlistSummary" :key="s.type" class="summary-row">
                   <span :class="'mtb mtb-'+s.type.toLowerCase()">{{s.type}}</span>
@@ -292,12 +292,12 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                   <span class="summary-pct">{{s.pct}}%</span>
                 </div>
               </div>
-              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><Document /></el-icon><span>Playlist is empty</span></div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><Document></Document></el-icon><span>Playlist is empty</span></div>
             </el-card>
 
             <!-- Device Info -->
             <el-card class="info-card">
-              <template #header><div class="card-hdr"><el-icon><InfoFilled /></el-icon><span>Device Information</span></div></template>
+              <template #header><div class="card-hdr"><el-icon><InfoFilled></InfoFilled></el-icon><span>Device Information</span></div></template>
               <div class="device-info">
                 <div class="info-row"><span class="info-label">Device Name</span><span class="info-value">{{status.deviceName||'ScreenPulse Player'}}</span></div>
                 <div class="info-row"><span class="info-label">Model</span><span class="info-value">{{status.model||'Android TV'}}</span></div>
@@ -330,7 +330,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <el-table-column label="#" width="60">
                 <template #default="{$index}">
                   <div class="drag-handle" :draggable="true" @dragstart="dragStart($event,$index)" @dragover.prevent @drop="dropItem($event,$index)">
-                    <el-icon :size="16"><Rank /></el-icon><span>{{$index+1}}</span>
+                    <el-icon :size="16"><Rank></Rank></el-icon><span>{{$index+1}}</span>
                   </div>
                 </template>
               </el-table-column>
@@ -400,10 +400,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
         <!-- ====== MEDIA LIBRARY VIEW ====== -->
         <div v-if="currentView==='media'" v-loading="mediaLoading">
           <el-card>
-            <template #header><div class="card-hdr"><el-icon><UploadFilled /></el-icon><span>Upload Media Files</span></div></template>
+            <template #header><div class="card-hdr"><el-icon><UploadFilled></UploadFilled></el-icon><span>Upload Media Files</span></div></template>
             <el-upload :action="uploadUrl" :auto-upload="false" :on-change="onFileChange" :on-remove="onFileRemove" :file-list="uploadFiles" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx" drag multiple class="upload-area">
               <div class="upload-content">
-                <el-icon :size="48" class="upload-icon"><UploadFilled /></el-icon>
+                <el-icon :size="48" class="upload-icon"><UploadFilled></UploadFilled></el-icon>
                 <div class="upload-text">Drop files here or click to upload</div>
                 <div class="upload-hint">Supports: Videos (MP4, MKV, AVI), Images (JPG, PNG, GIF), Presentations (PPT, PPTX)</div>
               </div>
@@ -415,7 +415,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           </el-card>
 
           <el-card style="margin-top:20px">
-            <template #header><div class="card-hdr"><el-icon><FolderOpened /></el-icon><span>Media Files</span><el-tag effect="dark" size="small" class="live-tag">{{mediaFiles.length}} files</el-tag></div></template>
+            <template #header><div class="card-hdr"><el-icon><FolderOpened></FolderOpened></el-icon><span>Media Files</span><el-tag effect="dark" size="small" class="live-tag">{{mediaFiles.length}} files</el-tag></div></template>
             <el-table :data="mediaFiles" empty-text="No media files found" style="width:100%">
               <el-table-column label="File" min-width="300">
                 <template #default="{row}">
@@ -453,7 +453,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <div class="settings-grid">
             <!-- Playback -->
             <el-card>
-              <template #header><div class="card-hdr"><el-icon><VideoPlay /></el-icon><span>Playback Settings</span></div></template>
+              <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>Playback Settings</span></div></template>
               <el-form label-position="top">
                 <el-form-item label="Playback Mode">
                   <el-radio-group v-model="cfg.playbackMode">
@@ -465,9 +465,9 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                 </el-form-item>
                 <el-form-item label="Volume">
                   <div class="volume-control">
-                    <el-icon><Mute /></el-icon>
+                    <el-icon><Mute></Mute></el-icon>
                     <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" />
-                    <el-icon><Bell /></el-icon>
+                    <el-icon><Bell></Bell></el-icon>
                     <span class="volume-value">{{cfg.volume}}%</span>
                   </div>
                 </el-form-item>
@@ -480,7 +480,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
             <!-- Interstitial -->
             <el-card>
-              <template #header><div class="card-hdr"><el-icon><Clock /></el-icon><span>Interstitial Settings</span></div></template>
+              <template #header><div class="card-hdr"><el-icon><Clock></Clock></el-icon><span>Interstitial Settings</span></div></template>
               <el-form label-position="top">
                 <el-form-item label="Enable Interstitial Mode">
                   <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" /><span class="toggle-label">{{cfg.interstitialEnabled?'Enabled':'Disabled'}}</span></div>
@@ -500,7 +500,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
             <!-- Device -->
             <el-card>
-              <template #header><div class="card-hdr"><el-icon><Monitor /></el-icon><span>Device Settings</span></div></template>
+              <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>Device Settings</span></div></template>
               <el-form label-position="top">
                 <el-form-item label="Device Name"><el-input v-model="cfg.deviceName" placeholder="Enter device name" clearable /></el-form-item>
                 <el-form-item label="Screen Orientation">
@@ -517,7 +517,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
             <!-- Network -->
             <el-card>
-              <template #header><div class="card-hdr"><el-icon><Connection /></el-icon><span>Network Information</span></div></template>
+              <template #header><div class="card-hdr"><el-icon><Connection></Connection></el-icon><span>Network Information</span></div></template>
               <div class="device-info">
                 <div class="info-row"><span class="info-label">IP Address</span><span class="info-value mono">{{netInfo.ip||'--'}}</span></div>
                 <div class="info-row"><span class="info-label">Gateway</span><span class="info-value mono">{{netInfo.gateway||'--'}}</span></div>
