@@ -317,13 +317,12 @@ class ApiRouter(
     // =====================================================================
 
     fun uploadFile(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
-        // Use app's internal cache dir as temp dir for NanoHTTPD parseBody
-        // Default java.io.tmpdir may not be writable on Android TV
-        val tempDir = File(context.cacheDir, "nanohttpd_tmp")
-        tempDir.mkdirs()
         val files = mutableMapOf<String, String>()
         try {
-            session.parseBody(files, tempDir)
+            // Set temp dir for NanoHTTPD to use app's cache directory
+            // Android TV's default java.io.tmpdir may not be writable
+            System.setProperty("java.io.tmpdir", File(context.cacheDir, "nanohttpd_tmp").also { it.mkdirs() }.absolutePath)
+            session.parseBody(files)
         } catch (e: Exception) {
             Log.e(TAG, "parseBody failed: ${e.message}", e)
             return jsonResponseError("文件上传解析失败: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
@@ -447,7 +446,7 @@ class ApiRouter(
     // =====================================================================
 
     fun getPlaybackStats(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
-        try {
+        return try {
             val manager = WebServer.activePlaylistManager
             if (manager == null) {
                 val empty = JsonObject().apply {
@@ -460,11 +459,12 @@ class ApiRouter(
                     addProperty("playbackMode", "LOOP")
                     addProperty("totalItems", 0)
                 }
-                return jsonResponse(empty)
+                jsonResponse(empty)
+            } else {
+                val stats = manager.getPlaybackStats()
+                val json = gson.toJsonTree(stats).asJsonObject
+                jsonResponse(json)
             }
-            val stats = manager.getPlaybackStats()
-            val json = gson.toJsonTree(stats).asJsonObject
-            jsonResponse(json)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get playback stats", e)
             jsonResponseError("获取播放统计失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
