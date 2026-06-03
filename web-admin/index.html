@@ -1,13 +1,1041 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN" class="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ScreenPulse Admin</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231A237E'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='%23448AFF'>S</text></svg>" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ScreenPulse 管理后台</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231A237E'></rect><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>S</text></svg>">
+<link rel="stylesheet" href="css/index.css">
+<link rel="stylesheet" href="css/dark.css">
+<style>
+/* ===== GLOBAL DARK THEME ===== */
+:root{--ep-color-primary:#448aff;--ep-color-primary-light-3:#6f9fff;--ep-color-primary-light-5:#82b1ff;--ep-color-primary-dark-2:#1a237e;--ep-bg-color:#0d1117;--ep-bg-color-overlay:#161b22;--ep-bg-color-page:#0d1117;--ep-text-color-primary:#e0e0e0;--ep-text-color-regular:#b0bec5;--ep-text-color-secondary:#78909c;--ep-text-color-placeholder:#546e7a;--ep-border-color:#21262d;--ep-border-color-light:#30363d;--ep-border-color-lighter:#21262d;--ep-border-color-extra-light:#1c2128;--ep-fill-color:#161b22;--ep-fill-color-light:#1c2128;--ep-fill-color-lighter:#21262d;--ep-fill-color-blank:#0d1117;--ep-fill-color-dark:#0d1117;--ep-mask-color:rgba(0,0,0,.7);--ep-color-success:#4caf50;--ep-color-warning:#ff9800;--ep-color-danger:#f44336;--ep-color-info:#90a4ae;--el-color-primary:#448aff;--el-color-primary-light-3:#6f9fff;--el-color-primary-light-5:#82b1ff;--el-color-primary-dark-2:#1a237e;--el-bg-color:#0d1117;--el-bg-color-overlay:#161b22;--el-text-color-primary:#e0e0e0;--el-text-color-regular:#b0bec5;--el-text-color-secondary:#78909c;--el-border-color:#21262d;--el-border-color-light:#30363d;--el-fill-color:#161b22;--el-fill-color-light:#1c2128;--el-fill-color-lighter:#21262d;--el-fill-color-blank:#0d1117}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#e0e0e0;-webkit-font-smoothing:antialiased}
+#app{height:100%}
+[v-cloak]{display:none!important}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#0d1117}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#484f58}
+
+/* ===== ELEMENT PLUS DARK OVERRIDES ===== */
+.el-card{--el-card-bg-color:#161b22;--el-card-border-color:#21262d;border-radius:12px!important;transition:box-shadow .3s,border-color .3s}
+.el-card:hover{border-color:#30363d;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.el-button--primary{--el-button-bg-color:#1a237e;--el-button-border-color:#1a237e;--el-button-hover-bg-color:#283593;--el-button-hover-border-color:#283593}
+.el-table{--el-table-bg-color:#161b22;--el-table-tr-bg-color:#161b22;--el-table-header-bg-color:#0d1117;--el-table-header-text-color:#b0bec5;--el-table-text-color:#e0e0e0;--el-table-border-color:#21262d;--el-table-row-hover-bg-color:rgba(68,138,255,.06);border-radius:12px;overflow:hidden}
+.el-table th.el-table__cell{font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.el-dialog{--el-dialog-bg-color:#161b22;border-radius:16px;border:1px solid #21262d}
+.el-dialog__header{border-bottom:1px solid #21262d;padding:16px 24px}
+.el-dialog__body{padding:24px}
+.el-dialog__footer{border-top:1px solid #21262d;padding:12px 24px}
+.el-input__wrapper,.el-textarea__inner{background-color:#0d1117!important;box-shadow:0 0 0 1px #21262d inset!important;border-radius:8px!important}
+.el-input__wrapper:hover{box-shadow:0 0 0 1px #30363d inset!important}
+.el-input__wrapper.is-focus{box-shadow:0 0 0 1px #448aff inset!important}
+.el-switch{--el-switch-on-color:#448aff}
+.el-tag{border-radius:6px;font-weight:500}
+.el-select-dropdown{background:#161b22!important;border:1px solid #21262d!important}
+.el-select-dropdown__item{color:#e0e0e0!important}
+.el-select-dropdown__item.is-hovering{background:rgba(68,138,255,.08)!important}
+.el-select-dropdown__item.is-selected{color:#448aff!important;font-weight:600}
+.el-message-box{--el-messagebox-bg-color:#161b22;border:1px solid #21262d;border-radius:16px}
+.el-loading-mask{background-color:rgba(13,17,23,.8)!important;backdrop-filter:blur(4px)}
+.el-upload-dragger{background:#0d1117!important;border:2px dashed #30363d!important;border-radius:12px!important;transition:border-color .3s,background .3s}
+.el-upload-dragger:hover{border-color:#448aff!important;background:rgba(68,138,255,.04)!important}
+.el-upload-dragger.is-dragover{border-color:#448aff!important;background:rgba(68,138,255,.08)!important}
+.el-slider__runway{background-color:#21262d}
+.el-radio-button__inner{background:#0d1117!important;border-color:#21262d!important;color:#b0bec5!important}
+.el-radio-button__original-radio:checked+.el-radio-button__inner{background:#1a237e!important;border-color:#1a237e!important;color:#fff!important;box-shadow:-1px 0 0 0 #21262d!important}
+.el-radio-button:first-child .el-radio-button__inner{border-left-color:#21262d!important}
+.el-radio-button__inner:hover{color:#448aff!important}
+.el-form-item__label{color:#b0bec5!important;font-weight:500}
+.el-overlay{background:rgba(0,0,0,.7)!important}
+.el-popper.is-light{border-color:#21262d!important}
+.el-popper.is-light .el-popper__arrow::before{border-color:#21262d!important;background:#161b22!important}
+
+/* ===== APP LAYOUT ===== */
+.app-container{height:100vh;background:#0d1117;color:#e0e0e0;overflow:hidden;display:flex}
+.app-aside{width:220px;min-width:64px;background:#161b22;border-right:1px solid #21262d;display:flex;flex-direction:column;transition:width .3s ease;overflow:hidden;flex-shrink:0}
+.app-aside.collapsed{width:64px}
+.logo-area{height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #21262d;gap:10px;flex-shrink:0}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#1a237e,#448aff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
+.logo-text{font-size:16px;font-weight:700;white-space:nowrap;background:linear-gradient(135deg,#448aff,#82b1ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;overflow:hidden}
+.app-menu{flex:1;padding-top:8px;border-right:none!important}
+.app-menu .el-menu-item{margin:2px 8px;border-radius:8px;height:44px;line-height:44px}
+.app-menu .el-menu-item:hover{background:rgba(68,138,255,.08)!important}
+.app-menu .el-menu-item.is-active{background:rgba(68,138,255,.15)!important;color:#448aff!important}
+.aside-footer{padding:12px;border-top:1px solid #21262d;display:flex;justify-content:center;flex-shrink:0}
+.app-main-container{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.app-header{background:#161b22;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;flex-shrink:0}
+.page-title{font-size:18px;font-weight:600;color:#e0e0e0}
+.header-right{display:flex;align-items:center;gap:12px}
+.status-tag{border:none}
+.app-main{background:#0d1117;padding:24px;overflow-y:auto;overflow-x:hidden;flex:1}
+
+/* ===== STATUS GRID ===== */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.status-card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px;display:flex;align-items:center;gap:16px;transition:all .3s ease;cursor:default}
+.status-card:hover{border-color:var(--c);box-shadow:0 4px 20px rgba(0,0,0,.3);transform:translateY(-2px)}
+.card-icon-wrap{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-content{flex:1;min-width:0}
+.card-label{font-size:13px;color:#78909c;font-weight:500;margin-bottom:4px}
+.card-value{font-size:20px;font-weight:700;color:#e0e0e0;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== INFO CARDS ===== */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px}
+.info-card .el-card__header{padding:16px 20px}
+.card-hdr{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px}
+.card-hdr .el-icon{color:#448aff}
+.live-tag{margin-left:auto}
+.live-dot{display:inline-block;width:6px;height:6px;background:#4caf50;border-radius:50%;margin-right:4px;animation:pulse 1.5s ease-in-out infinite}
+
+/* ===== NOW PLAYING ===== */
+.now-playing{display:flex;gap:16px;align-items:flex-start}
+.np-thumb{width:64px;height:64px;background:linear-gradient(135deg,#1a237e,#448aff);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.np-info{flex:1;min-width:0}
+.np-title{font-size:16px;font-weight:600;color:#e0e0e0;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.np-url{font-size:12px;color:#78909c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-duration{font-size:12px;color:#448aff}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:32px;color:#78909c}
+.empty-icon{color:#30363d;font-size:32px}
+
+/* ===== SUMMARY ===== */
+.summary-list{display:flex;flex-direction:column;gap:12px}
+.summary-row{display:flex;align-items:center;gap:12px}
+.summary-bar-wrap{flex:1;height:6px;background:#21262d;border-radius:3px;overflow:hidden}
+.summary-bar{height:100%;border-radius:3px;transition:width .6s ease}
+.summary-count{font-size:12px;color:#b0bec5;min-width:60px;text-align:right}
+.summary-pct{font-size:12px;color:#78909c;min-width:35px;text-align:right}
+
+/* ===== DEVICE INFO ===== */
+.device-info{display:flex;flex-direction:column;gap:0}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #21262d}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:13px;color:#78909c}
+.info-value{font-size:13px;color:#e0e0e0;font-weight:500}
+.info-value.mono{font-family:'JetBrains Mono','Fira Code',monospace}
+
+/* ===== MEDIA TYPE BADGE ===== */
+.mtb{display:inline-flex;align-items:center;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.mtb-video{color:#448aff;background:rgba(68,138,255,.15)}
+.mtb-image{color:#66bb6a;background:rgba(102,187,106,.15)}
+.mtb-ppt{color:#ff9800;background:rgba(255,152,0,.15)}
+.mtb-iptv{color:#ab47bc;background:rgba(171,71,188,.15)}
+.mtb-stream{color:#ef5350;background:rgba(239,83,80,.15)}
+.mtb-web{color:#26c6da;background:rgba(38,198,218,.15)}
+
+/* ===== PLAYLIST ===== */
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.toolbar-left,.toolbar-right{display:flex;gap:10px;flex-wrap:wrap}
+.drag-handle{display:flex;align-items:center;gap:6px;cursor:grab;color:#78909c;padding:4px 6px;border-radius:4px;transition:all .2s;user-select:none}
+.drag-handle:hover{color:#448aff;background:rgba(68,138,255,.1)}
+.drag-handle:active{cursor:grabbing}
+.drag-handle.dragging{opacity:.4}
+.drag-over{border-top:2px solid #448aff}
+.title-cell{display:flex;align-items:center;gap:12px}
+.item-thumb{width:36px;height:36px;background:#21262d;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#448aff;flex-shrink:0}
+.item-title{font-weight:500;color:#e0e0e0}
+.url-text{font-size:13px;color:#78909c;font-family:'JetBrains Mono','Fira Code',monospace}
+.action-buttons{display:flex;justify-content:center;gap:2px}
+.duration-field{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+
+/* ===== UPLOAD ===== */
+.upload-area{width:100%}
+.upload-area .el-upload-dragger{padding:40px}
+.upload-content{display:flex;flex-direction:column;align-items:center;gap:12px}
+.upload-icon{color:#30363d;font-size:48px}
+.upload-text{font-size:16px;color:#b0bec5;font-weight:500}
+.upload-hint{font-size:12px;color:#78909c}
+.upload-actions{display:flex;gap:12px;margin-top:16px}
+.file-cell{display:flex;align-items:center;gap:12px}
+.file-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-icon-wrap.video{background:rgba(68,138,255,.15);color:#448aff}
+.file-icon-wrap.image{background:rgba(102,187,106,.15);color:#66bb6a}
+.file-icon-wrap.document{background:rgba(255,152,0,.15);color:#ff9800}
+.file-name{font-weight:500;color:#e0e0e0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-path{font-size:12px;color:#78909c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:13px;color:#b0bec5;font-family:'JetBrains Mono',monospace}
+.file-date{font-size:13px;color:#78909c}
+
+/* ===== SETTINGS ===== */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}
+.form-hint{font-size:12px;color:#78909c;margin-top:6px}
+.toggle-row{display:flex;align-items:center;gap:12px}
+.toggle-label{font-size:13px;color:#b0bec5}
+.volume-control{display:flex;align-items:center;gap:12px;width:100%}
+.volume-control .el-icon{color:#78909c}
+.volume-slider{flex:1}
+.volume-value{min-width:48px;text-align:right;font-size:14px;font-weight:600;color:#448aff}
+.save-bar{margin-top:32px;display:flex;justify-content:center}
+.save-button{min-width:200px;height:44px;font-size:15px;border-radius:10px}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-enter-active{animation:fadeIn .25s ease}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+.status-grid{grid-template-columns:repeat(2,1fr)}
+.info-grid{grid-template-columns:1fr}
+.settings-grid{grid-template-columns:1fr}
+.app-aside{width:64px}
+.app-aside .logo-text,.app-aside .menu-text{display:none}
+.app-main{padding:16px}
+.toolbar{flex-direction:column;align-items:stretch}
+}
+@media(max-width:480px){
+.status-grid{grid-template-columns:1fr}
+.app-main{padding:12px}
+}
+</style>
 </head>
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+<div id="app" v-cloak>
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <div class="app-aside" :class="{collapsed: isCollapsed}">
+      <div class="logo-area">
+        <div class="logo-icon">S</div>
+        <span v-show="!isCollapsed" class="logo-text">ScreenPulse</span>
+      </div>
+      <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#B0BEC5" active-text-color="#448AFF">
+        <el-menu-item index="dashboard" @click="currentView='dashboard'">
+          <el-icon><Monitor></Monitor></el-icon>
+          <template #title>仪表盘</template>
+        </el-menu-item>
+        <el-menu-item index="playlist" @click="currentView='playlist'">
+          <el-icon><List></List></el-icon>
+          <template #title>播放列表</template>
+        </el-menu-item>
+        <el-menu-item index="media" @click="currentView='media'">
+          <el-icon><FolderOpened></FolderOpened></el-icon>
+          <template #title>媒体库</template>
+        </el-menu-item>
+        <el-menu-item index="settings" @click="currentView='settings'">
+          <el-icon><Setting></Setting></el-icon>
+          <template #title>设置</template>
+        </el-menu-item>
+      </el-menu>
+      <div class="aside-footer">
+        <el-button :icon="isCollapsed?'Expand':'Fold'" circle size="small" text @click="isCollapsed=!isCollapsed" ></el-button>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="app-main-container">
+      <div class="app-header">
+        <h2 class="page-title">{{pageTitle}}</h2>
+        <div class="header-right">
+          <el-tag type="success" effect="dark" size="small" class="status-tag">
+            <el-icon style="margin-right:4px"><CircleCheck></CircleCheck></el-icon> 已连接
+          </el-tag>
+          <el-button :icon="Refresh" circle size="small" @click="refreshView" ></el-button>
+        </div>
+      </div>
+
+      <div class="app-main">
+
+        <!-- ====== 仪表盘视图 ====== -->
+        <div v-if="currentView==='dashboard'" v-loading="dashLoading">
+          <div class="status-grid">
+            <div class="status-card" style="--c:#4CAF50">
+              <div class="card-icon-wrap" style="background:rgba(76,175,80,.15);color:#4CAF50"><el-icon :size="24"><VideoPlay></VideoPlay></el-icon></div>
+              <div class="card-content"><div class="card-label">当前播放</div><div class="card-value" :title="playStats.currentPlayingTitle||'未在播放'">{{playStats.currentPlayingTitle||'未在播放'}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#FF9800">
+              <div class="card-icon-wrap" style="background:rgba(255,152,0,.15);color:#FF9800"><el-icon :size="24"><DataLine></DataLine></el-icon></div>
+              <div class="card-content"><div class="card-label">今日播放次数</div><div class="card-value">{{playStats.totalPlayCount||0}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#AB47BC">
+              <div class="card-icon-wrap" style="background:rgba(171,71,188,.15);color:#AB47BC"><el-icon :size="24"><RefreshRight></RefreshRight></el-icon></div>
+              <div class="card-content"><div class="card-label">循环次数</div><div class="card-value">{{playStats.loopCount||0}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#448AFF">
+              <div class="card-icon-wrap" style="background:rgba(68,138,255,.15);color:#448AFF"><el-icon :size="24"><Connection></Connection></el-icon></div>
+              <div class="card-content"><div class="card-label">IP 地址</div><div class="card-value">{{status.ipAddress||status.ip||'--'}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#26C6DA">
+              <div class="card-icon-wrap" style="background:rgba(38,198,218,.15);color:#26C6DA"><el-icon :size="24"><Film></Film></el-icon></div>
+              <div class="card-content"><div class="card-label">播放列表项</div><div class="card-value">{{playlist.length||0}}</div></div>
+            </div>
+            <div class="status-card" style="--c:#66BB6A">
+              <div class="card-icon-wrap" style="background:rgba(102,187,106,.15);color:#66BB6A"><el-icon :size="24"><Coin></Coin></el-icon></div>
+              <div class="card-content"><div class="card-label">已用存储</div><div class="card-value">{{status.storageUsed||'--'}}</div></div>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <!-- 正在播放 -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>正在播放</span><el-tag v-if="playStats.currentPlayingTitle" type="success" effect="dark" size="small" class="live-tag"><span class="live-dot"></span>播放中</el-tag></div></template>
+              <div v-if="playStats.currentPlayingTitle" class="now-playing">
+                <div class="np-thumb"><el-icon :size="32"><VideoPlay></VideoPlay></el-icon></div>
+                <div class="np-info">
+                  <div class="np-title">{{playStats.currentPlayingTitle}}</div>
+                  <div class="np-meta"><span :class="'mtb mtb-'+(playStats.currentPlayingType||'video').toLowerCase()">{{playStats.currentPlayingType||'VIDEO'}}</span><span class="np-url">第 {{(playStats.currentIndex||0)+1}} / {{playStats.totalItems||playlist.length}} 项</span></div>
+                  <div class="np-duration">播放模式: {{playStats.playbackMode==='LOOP'?'循环':playStats.playbackMode==='SEQUENTIAL'?'顺序':playStats.playbackMode==='RANDOM'?'随机':playStats.playbackMode}}</div>
+                </div>
+              </div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><VideoPause></VideoPause></el-icon><span>当前没有播放媒体</span></div>
+            </el-card>
+
+            <!-- 今日播放统计 -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><TrendCharts></TrendCharts></el-icon><span>今日播放统计</span><el-tag effect="dark" size="small" class="live-tag">{{playStats.totalPlayCount||0}} 次播放</el-tag></div></template>
+              <div v-if="playStats.itemStats && playStats.itemStats.length" class="summary-list">
+                <div v-for="s in playStats.itemStats" :key="s.id" class="summary-row">
+                  <span :class="'mtb mtb-'+(s.type||'video').toLowerCase()">{{s.type||'VIDEO'}}</span>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;color:#e0e0e0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{s.title}}</div></div>
+                  <span class="summary-count">{{s.playCount||0}} 次</span>
+                </div>
+              </div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><TrendCharts></TrendCharts></el-icon><span>今日暂无播放记录</span></div>
+            </el-card>
+
+            <!-- 播放列表摘要 -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><List></List></el-icon><span>播放列表摘要</span></div></template>
+              <div v-if="playlistSummary.length" class="summary-list">
+                <div v-for="s in playlistSummary" :key="s.type" class="summary-row">
+                  <span :class="'mtb mtb-'+s.type.toLowerCase()">{{s.type}}</span>
+                  <div class="summary-bar-wrap"><div class="summary-bar" :style="{width:s.pct+'%',background:s.color}"></div></div>
+                  <span class="summary-count">{{s.count}} 个</span>
+                  <span class="summary-pct">{{s.pct}}%</span>
+                </div>
+              </div>
+              <div v-else class="empty-state"><el-icon :size="32" class="empty-icon"><Document></Document></el-icon><span>播放列表为空</span></div>
+            </el-card>
+
+            <!-- 设备信息 -->
+            <el-card class="info-card">
+              <template #header><div class="card-hdr"><el-icon><InfoFilled></InfoFilled></el-icon><span>设备信息</span></div></template>
+              <div class="device-info">
+                <div class="info-row"><span class="info-label">设备名称</span><span class="info-value">{{status.deviceName||'ScreenPulse Player'}}</span></div>
+                <div class="info-row"><span class="info-label">型号</span><span class="info-value">{{status.model||'Android TV'}}</span></div>
+                <div class="info-row"><span class="info-label">Android 版本</span><span class="info-value">{{status.androidVersion||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">应用版本</span><span class="info-value">{{status.appVersion||'1.0.0'}}</span></div>
+                <div class="info-row"><span class="info-label">MAC 地址</span><span class="info-value mono">{{status.mac||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">分辨率</span><span class="info-value">{{status.resolution||'--'}}</span></div>
+              </div>
+            </el-card>
+          </div>
+        </div>
+
+        <!-- ====== 播放列表视图 ====== -->
+        <div v-if="currentView==='playlist'" v-loading="plLoading">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button type="primary" :icon="Plus" @click="openAddItem">添加项目</el-button>
+              <el-button :icon="Refresh" @click="fetchPlaylist">刷新</el-button>
+            </div>
+            <div class="toolbar-right" v-if="selectedIds.length>0">
+              <el-button :icon="CircleCheck" type="success" plain @click="bulkToggle(true)">启用 ({{selectedIds.length}})</el-button>
+              <el-button :icon="CircleClose" type="warning" plain @click="bulkToggle(false)">禁用 ({{selectedIds.length}})</el-button>
+              <el-button :icon="Delete" type="danger" plain @click="batchDelete">删除 ({{selectedIds.length}})</el-button>
+            </div>
+          </div>
+
+          <el-card>
+            <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="播放列表为空" row-key="_id" style="width:100%">
+              <el-table-column type="selection" width="50" ></el-table-column>
+              <el-table-column label="#" width="60">
+                <template #default="{$index}">
+                  <div class="drag-handle" :draggable="true" @dragstart="dragStart($event,$index)" @dragover.prevent @drop="dropItem($event,$index)">
+                    <el-icon :size="16"><Rank></Rank></el-icon><span>{{$index+1}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="标题" min-width="220" show-overflow-tooltip>
+                <template #default="{row}">
+                  <div class="title-cell">
+                    <div class="item-thumb"><el-icon :size="18"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon></div>
+                    <span class="item-title">{{row.title||'未命名'}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="100" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="URL / 来源" min-width="250" show-overflow-tooltip>
+                <template #default="{row}"><span class="url-text">{{row.url||'--'}}</span></template>
+              </el-table-column>
+              <el-table-column label="时长" width="110" align="center">
+                <template #default="{row}"><el-tag size="small" :type="row.duration==='auto'?'':'info'" effect="plain" round>{{row.duration==='auto'?'自动':row.duration+'s'}}</el-tag></template>
+              </el-table-column>
+              <el-table-column label="已启用" width="90" align="center">
+                <template #default="{row}"><el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" ></el-switch></template>
+              </el-table-column>
+              <el-table-column label="操作" width="150" align="center" fixed="right">
+                <template #default="{row,$index}">
+                  <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text @click="openEditItem(row)" ></el-button>
+                    <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0" ></el-button>
+                    <el-button :icon="Bottom" size="small" text type="primary" @click="moveItem(row,$index,1)" :disabled="$index>=playlist.length-1"></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteItem(row)" ></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- 添加/编辑对话框 -->
+          <el-dialog v-model="plDialog" :title="plEditing?'编辑播放项':'添加播放项'" width="520px" @close="resetItemForm" destroy-on-close>
+            <el-form :model="itemForm" label-position="top">
+              <el-form-item label="标题" required><el-input v-model="itemForm.title" placeholder="请输入标题" clearable ></el-input></el-form-item>
+              <el-form-item label="URL / 来源" required><el-input v-model="itemForm.url" placeholder="文件路径、URL 或流地址" clearable ></el-input></el-form-item>
+              <el-form-item label="媒体类型">
+                <el-select v-model="itemForm.type" placeholder="选择类型" style="width:100%">
+                  <el-option label="视频" value="VIDEO" ></el-option>
+                  <el-option label="图片" value="IMAGE" ></el-option>
+                  <el-option label="PPT / 演示文稿" value="PPT" ></el-option>
+                  <el-option label="IPTV 流" value="IPTV" ></el-option>
+                  <el-option label="网络流" value="STREAM" ></el-option>
+                  <el-option label="网页" value="WEB" ></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="持续时间">
+                <div class="duration-field">
+                  <el-switch v-model="itemForm.autoDuration" active-text="自动（视频时长）" inactive-text="自定义（秒）" inline-prompt @change="onDurationToggle" ></el-switch>
+                  <el-input-number v-if="!itemForm.autoDuration" v-model="itemForm.duration" :min="1" :max="3600" style="width:160px" ></el-input-number>
+                </div>
+              </el-form-item>
+              <el-form-item label="已启用"><el-switch v-model="itemForm.enabled" ></el-switch></el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="plDialog=false">取消</el-button>
+              <el-button type="primary" :loading="plSaving" @click="saveItem">{{plEditing?'更新':'添加'}}</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- ====== 媒体库视图 ====== -->
+        <div v-if="currentView==='media'" v-loading="mediaLoading">
+          <el-card>
+            <template #header><div class="card-hdr"><el-icon><UploadFilled></UploadFilled></el-icon><span>上传媒体文件</span></div></template>
+            <el-upload :action="uploadUrl" :auto-upload="false" :on-change="onFileChange" :on-remove="onFileRemove" :file-list="uploadFiles" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx" drag multiple class="upload-area">
+              <div class="upload-content">
+                <el-icon :size="48" class="upload-icon"><UploadFilled></UploadFilled></el-icon>
+                <div class="upload-text">拖拽文件到此处或点击上传</div>
+                <div class="upload-hint">支持：视频（MP4, MKV, AVI）、图片（JPG, PNG, GIF）、演示文稿（PPT, PPTX）</div>
+              </div>
+            </el-upload>
+            <div class="upload-actions">
+              <el-button type="primary" :icon="UploadFilled" @click="doUpload" :loading="uploading" :disabled="!uploadFiles.length">上传 {{uploadFiles.length}} 个文件</el-button>
+              <el-button :icon="Refresh" @click="scanMedia">扫描本地存储</el-button>
+            </div>
+          </el-card>
+
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><FolderOpened></FolderOpened></el-icon><span>媒体文件</span><el-tag effect="dark" size="small" class="live-tag">{{mediaFiles.length}} 个文件</el-tag></div></template>
+            <el-table :data="mediaFiles" empty-text="未找到媒体文件" style="width:100%">
+              <el-table-column label="文件" min-width="300">
+                <template #default="{row}">
+                  <div class="file-cell">
+                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
+                      <el-icon :size="20"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
+                    </div>
+                    <div><div class="file-name">{{row.name||row.title||'未命名'}}</div><div class="file-path" v-if="row.path">{{row.path}}</div></div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="100" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="大小" width="120" align="right">
+                <template #default="{row}"><span class="file-size">{{fmtSize(row.size)}}</span></template>
+              </el-table-column>
+              <el-table-column label="日期" width="160" align="center">
+                <template #default="{row}"><span class="file-date">{{row.modifiedAt||row.date||'--'}}</span></template>
+              </el-table-column>
+              <el-table-column label="操作" width="150" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text type="primary" @click="openRenameFile(row)" title="重命名" ></el-button>
+                    <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyPath(row)" title="复制路径" ></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteFile(row)" ></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- 重命名对话框 -->
+          <el-dialog v-model="renameDialog" title="重命名文件" width="420px" @close="resetRenameForm" destroy-on-close>
+            <el-form label-position="top">
+              <el-form-item label="新文件名" required>
+                <el-input v-model="renameForm.title" placeholder="请输入新文件名（不含扩展名）" clearable ></el-input>
+              </el-form-item>
+              <el-form-item>
+                <div style="font-size:12px;color:#78909c">原文件：{{renameForm.originalName}}</div>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="renameDialog=false">取消</el-button>
+              <el-button type="primary" :loading="renameSaving" @click="doRename">确认重命名</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- ====== 设置视图 ====== -->
+        <div v-if="currentView==='settings'" v-loading="settingsLoading">
+          <div class="settings-grid">
+            <!-- 播放设置 -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>播放设置</span></div></template>
+              <el-form label-position="top">
+                <el-form-item label="播放模式">
+                  <el-radio-group v-model="cfg.playbackMode">
+                    <el-radio-button value="loop">循环播放</el-radio-button>
+                    <el-radio-button value="sequential">顺序播放</el-radio-button>
+                    <el-radio-button value="random">随机播放</el-radio-button>
+                  </el-radio-group>
+                  <div class="form-hint">{{cfg.playbackMode==='loop'?'循环重复播放列表':cfg.playbackMode==='sequential'?'播放一次后停止':'随机打乱播放'}}</div>
+                </el-form-item>
+                <el-form-item label="音量">
+                  <div class="volume-control">
+                    <el-icon><Mute></Mute></el-icon>
+                    <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" ></el-slider>
+                    <el-icon><Bell></Bell></el-icon>
+                    <span class="volume-value">{{cfg.volume}}%</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="图片显示时长（秒）">
+                  <el-input-number v-model="cfg.imageDuration" :min="1" :max="3600" :step="1" ></el-input-number>
+                  <div class="form-hint">没有自定义时长的图片的默认显示时间。</div>
+                </el-form-item>
+              </el-form>
+            </el-card>
+
+            <!-- 插播设置 -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><Clock></Clock></el-icon><span>插播设置</span></div></template>
+              <el-form label-position="top">
+                <el-form-item label="启用插播模式">
+                  <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" ></el-switch><span class="toggle-label">{{cfg.interstitialEnabled?'已启用':'已禁用'}}</span></div>
+                  <div class="form-hint">仅在指定时段显示内容。</div>
+                </el-form-item>
+                <el-form-item v-if="cfg.interstitialEnabled" label="开始时间">
+                  <el-time-picker v-model="cfg.interstitialStart" placeholder="开始时间" format="HH:mm" style="width:100%" ></el-time-picker>
+                </el-form-item>
+                <el-form-item v-if="cfg.interstitialEnabled" label="结束时间">
+                  <el-time-picker v-model="cfg.interstitialEnd" placeholder="结束时间" format="HH:mm" style="width:100%" ></el-time-picker>
+                </el-form-item>
+                <el-form-item v-if="cfg.interstitialEnabled" label="关屏提示">
+                  <el-input v-model="cfg.offScreenMessage" placeholder="非活跃时段显示的消息" clearable ></el-input>
+                </el-form-item>
+              </el-form>
+            </el-card>
+
+            <!-- 设备设置 -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>设备设置</span></div></template>
+              <el-form label-position="top">
+                <el-form-item label="设备名称"><el-input v-model="cfg.deviceName" placeholder="请输入设备名称" clearable ></el-input></el-form-item>
+                <el-form-item label="屏幕方向">
+                  <el-radio-group v-model="cfg.orientation">
+                    <el-radio-button value="landscape">横屏</el-radio-button>
+                    <el-radio-button value="portrait">竖屏</el-radio-button>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="空闲超时（分钟，0 = 从不）">
+                  <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" ></el-input-number>
+                </el-form-item>
+              </el-form>
+            </el-card>
+
+            <!-- 网络信息 -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><Connection></Connection></el-icon><span>网络信息</span></div></template>
+              <div class="device-info">
+                <div class="info-row"><span class="info-label">IP 地址</span><span class="info-value mono">{{netInfo.ip||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">网关</span><span class="info-value mono">{{netInfo.gateway||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">DNS</span><span class="info-value mono">{{netInfo.dns||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">网络名称</span><span class="info-value mono">{{netInfo.ssid||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">信号强度</span><span class="info-value">{{netInfo.signal||'--'}}</span></div>
+                <div class="info-row"><span class="info-label">MAC 地址</span><span class="info-value mono">{{netInfo.mac||'--'}}</span></div>
+              </div>
+            </el-card>
+          </div>
+          <div class="save-bar">
+            <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">保存设置</el-button>
+          </div>
+        </div>
+
+      </div><!-- /app-main -->
+    </div><!-- /app-main-container -->
+  </div><!-- /app-container -->
+</div><!-- /app -->
+
+<!-- 本地脚本（离线使用内嵌） -->
+<script>
+var __loadErrors = [];
+function __onScriptError(name) {
+  __loadErrors.push(name);
+  console.error('Failed to load script: ' + name);
+}
+</script>
+<script src="js/vue.global.prod.js" onerror="__onScriptError('Vue.js')"></script>
+<script src="js/element-plus.js" onerror="__onScriptError('Element Plus')"></script>
+<script src="js/element-plus-icons.js" onerror="__onScriptError('Element Plus Icons')"></script>
+
+<script>
+// 检查关键脚本是否加载成功
+if (__loadErrors.length > 0) {
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2 style="margin-bottom:16px">管理面板加载失败</h2>' +
+    '<p style="color:#b0bec5;margin-bottom:12px">以下必要脚本加载失败：</p>' +
+    '<p style="color:#ff9800;font-family:monospace">' + __loadErrors.join(', ') + '</p>' +
+    '<p style="color:#78909c;margin-top:16px;font-size:13px">请检查调试端点： <a href="/api/debug/check" style="color:#448aff">/api/debug/check</a></p>' +
+    '</div>';
+  throw new Error('Script load errors: ' + __loadErrors.join(', '));
+}
+
+if (typeof Vue === 'undefined') {
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2>Vue.js 未定义</h2>' +
+    '<p style="color:#b0bec5">请检查 vue.global.prod.js 是否正确加载。</p>' +
+    '</div>';
+  throw new Error('Vue is undefined');
+}
+
+const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
+
+const API = window.location.origin;
+
+// 简单的 fetch 封装
+async function apiGet(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiPost(path, data) {
+  const r = await fetch(API + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiPut(path, data) {
+  const r = await fetch(API + path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiDelete(path) {
+  const r = await fetch(API + path, { method: 'DELETE' });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiUpload(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch(API + '/api/upload', { method: 'POST', body: fd });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+const app = createApp({
+  setup() {
+    // 布局
+    const isCollapsed = ref(false);
+    const currentView = ref('dashboard');
+    const pageTitle = computed(() => ({
+      dashboard: '仪表盘', playlist: '播放列表管理',
+      media: '媒体库', settings: '设备设置'
+    }[currentView.value] || '仪表盘'));
+
+    const refreshView = () => {
+      const loaders = { dashboard: loadDashboard, playlist: fetchPlaylist, media: scanMedia, settings: loadSettings };
+      (loaders[currentView.value] || loadDashboard)();
+    };
+
+    // ========== 仪表盘 ==========
+    const dashLoading = ref(false);
+    const status = ref({});
+    const playlist = ref([]);
+    const mediaFiles = ref([]);
+
+    const nowPlaying = computed(() => {
+      const enabled = playlist.value.filter(p => p.enabled);
+      return enabled[0] || null;
+    });
+
+    const playlistSummary = computed(() => {
+      if (!playlist.value.length) return [];
+      const types = {};
+      playlist.value.forEach(i => { types[i.type || 'VIDEO'] = (types[i.type || 'VIDEO'] || 0) + 1; });
+      const colors = { VIDEO:'#448aff', IMAGE:'#66bb6a', PPT:'#ff9800', IPTV:'#ab47bc', STREAM:'#ef5350', WEB:'#26c6da' };
+      return Object.entries(types).map(([type, count]) => ({
+        type, count, pct: Math.round((count / playlist.value.length) * 100), color: colors[type] || '#448aff'
+      })).sort((a, b) => b.count - a.count);
+    });
+
+    const trunc = (s, n) => (!s ? '' : s.length > n ? s.substring(0, n) + '...' : s);
+
+    const playStats = ref({});
+
+    const loadDashboard = async () => {
+      dashLoading.value = true;
+      try {
+        const [s, p, ps] = await Promise.allSettled([apiGet('/api/status'), apiGet('/api/playlist'), apiGet('/api/playback-stats')]);
+        if (s.status === 'fulfilled') status.value = s.value || {};
+        if (p.status === 'fulfilled') playlist.value = Array.isArray(p.value) ? p.value : (p.value?.items || []);
+        if (ps.status === 'fulfilled') playStats.value = ps.value || {};
+      } catch (e) { console.error(e); }
+      dashLoading.value = false;
+    };
+
+    // Auto-refresh playback stats every 5 seconds
+    let _statsTimer = null;
+    const startStatsPolling = () => {
+      stopStatsPolling();
+      _statsTimer = setInterval(async () => {
+        try { const r = await apiGet('/api/playback-stats'); playStats.value = r || {}; } catch(_) {}
+      }, 5000);
+    };
+    const stopStatsPolling = () => { if (_statsTimer) { clearInterval(_statsTimer); _statsTimer = null; } };
+
+    // ========== 播放列表 ==========
+    const plLoading = ref(false);
+    const plSaving = ref(false);
+    const plDialog = ref(false);
+    const plEditing = ref(false);
+    const editId = ref(null);
+    const selectedIds = ref([]);
+    const dragIdx = ref(null);
+
+    const defaultItemForm = () => ({ title:'', url:'', type:'VIDEO', duration:'auto', enabled:true, autoDuration:true });
+    const itemForm = reactive(defaultItemForm());
+
+    const fetchPlaylist = async () => {
+      plLoading.value = true;
+      try {
+        const data = await apiGet('/api/playlist');
+        playlist.value = Array.isArray(data) ? data : (data?.items || []);
+      } catch (e) { ElementPlus.ElMessage.error('播放列表加载失败'); }
+      plLoading.value = false;
+    };
+
+    const onSelectionChange = (rows) => { selectedIds.value = rows.map(r => r._id || r.id); };
+
+    // 拖拽排序
+    const dragStart = (e, idx) => {
+      dragIdx.value = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', idx);
+    };
+    const dropItem = (e, toIdx) => {
+      e.preventDefault();
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      if (isNaN(fromIdx) || fromIdx === toIdx) return;
+      const item = playlist.value.splice(fromIdx, 1)[0];
+      playlist.value.splice(toIdx, 0, item);
+      saveOrder();
+    };
+
+    const saveOrder = async () => {
+      try { await apiPut('/api/playlist', playlist.value); ElementPlus.ElMessage.success('排序已更新'); }
+      catch (e) { ElementPlus.ElMessage.error('排序更新失败'); }
+    };
+
+    const moveItem = (row, idx, dir) => {
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= playlist.value.length) return;
+      const item = playlist.value.splice(idx, 1)[0];
+      playlist.value.splice(newIdx, 0, item);
+      saveOrder();
+    };
+
+    const openAddItem = () => {
+      plEditing.value = false; editId.value = null;
+      Object.assign(itemForm, defaultItemForm());
+      plDialog.value = true;
+    };
+
+    const openEditItem = (row) => {
+      plEditing.value = true; editId.value = row._id || row.id;
+      Object.assign(itemForm, { ...row, autoDuration: row.duration === 'auto' });
+      plDialog.value = true;
+    };
+
+    const onDurationToggle = (val) => { itemForm.duration = val ? 'auto' : 10; };
+
+    const resetItemForm = () => { Object.assign(itemForm, defaultItemForm()); };
+
+    const saveItem = async () => {
+      if (!itemForm.title) { ElementPlus.ElMessage.warning('请输入标题'); return; }
+      if (!itemForm.url) { ElementPlus.ElMessage.warning('请输入 URL'); return; }
+      plSaving.value = true;
+      try {
+        const payload = { ...itemForm };
+        if (payload.autoDuration) payload.duration = 'auto';
+        delete payload.autoDuration;
+        if (plEditing.value) {
+          await apiPut('/api/playlist/' + editId.value, payload);
+          ElementPlus.ElMessage.success('项目已更新');
+        } else {
+          await apiPost('/api/playlist', payload);
+          ElementPlus.ElMessage.success('项目已添加');
+        }
+        plDialog.value = false;
+        await fetchPlaylist();
+      } catch (e) { ElementPlus.ElMessage.error('保存失败'); }
+      plSaving.value = false;
+    };
+
+    const toggleItem = async (row) => {
+      try { await apiPut('/api/playlist/' + (row._id || row.id), { enabled: row.enabled }); }
+      catch (e) { row.enabled = !row.enabled; ElementPlus.ElMessage.error('更新失败'); }
+    };
+
+    const confirmDeleteItem = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + (row.title || '未命名') + '" 吗？', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/playlist/' + (row._id || row.id)); ElementPlus.ElMessage.success('已删除'); fetchPlaylist(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
+    const bulkToggle = async (enabled) => {
+      try {
+        for (const row of playlist.value) {
+          if (selectedIds.value.includes(row._id || row.id)) {
+            row.enabled = enabled;
+            await apiPut('/api/playlist/' + (row._id || row.id), { enabled });
+          }
+        }
+        ElementPlus.ElMessage.success('已更新 ' + selectedIds.value.length + ' 个项目');
+        selectedIds.value = [];
+      } catch (e) { ElementPlus.ElMessage.error('批量操作失败'); }
+    };
+
+    const batchDelete = () => {
+      ElementPlus.ElMessageBox.confirm('确定删除选中的 ' + selectedIds.value.length + ' 个项目吗？', '批量删除', {
+        confirmButtonText: '全部删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try {
+          for (const id of selectedIds.value) await apiDelete('/api/playlist/' + id);
+          ElementPlus.ElMessage.success('已删除');
+          fetchPlaylist();
+        } catch (e) { ElementPlus.ElMessage.error('批量删除失败'); }
+      }).catch(() => {});
+    };
+
+    // ========== 媒体库 ==========
+    const mediaLoading = ref(false);
+    const uploading = ref(false);
+    const uploadFiles = ref([]);
+    const uploadUrl = API + '/api/upload';
+
+    const onFileChange = (file, files) => { uploadFiles.value = files; };
+    const onFileRemove = (file, files) => { uploadFiles.value = files; };
+
+    const doUpload = async () => {
+      if (!uploadFiles.value.length) return;
+      uploading.value = true;
+      let ok = 0, fail = 0;
+      for (const f of uploadFiles.value) {
+        try { await apiUpload(f.raw); ok++; } catch (e) { fail++; }
+      }
+      uploading.value = false;
+      if (fail === 0) { ElementPlus.ElMessage.success(ok + ' 个文件上传成功'); uploadFiles.value = []; }
+      else ElementPlus.ElMessage.warning(ok + ' 个上传成功，' + fail + ' 个上传失败');
+      scanMedia();
+    };
+
+    const scanMedia = async () => {
+      mediaLoading.value = true;
+      try {
+        const r = await apiGet('/api/scan');
+        mediaFiles.value = r?.files || (Array.isArray(r) ? r : []);
+      } catch (e) { console.error(e); }
+      mediaLoading.value = false;
+    };
+
+    const isVideo = (n) => /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(n || '');
+    const isImage = (n) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(n || '');
+    const getMediaType = (n) => {
+      if (isVideo(n)) return 'VIDEO';
+      if (isImage(n)) return 'IMAGE';
+      if (/\.(ppt|pptx)$/i.test(n || '')) return 'PPT';
+      return 'VIDEO';
+    };
+
+    const fmtSize = (b) => {
+      if (!b && b !== 0) return '--';
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB';
+      return (b / 1073741824).toFixed(2) + ' GB';
+    };
+
+    const copyPath = (row) => {
+      const p = row.path || row.name;
+      navigator.clipboard?.writeText(p).then(() => ElementPlus.ElMessage.success('路径已复制')).catch(() => ElementPlus.ElMessage.info(p));
+    };
+
+    const renameDialog = ref(false);
+    const renameSaving = ref(false);
+    const renameForm = reactive({ id: null, title: '', originalName: '' });
+
+    const openRenameFile = (row) => {
+      renameForm.id = row.id;
+      renameForm.title = row.title || row.name.substringBeforeLast('.') || '';
+      renameForm.originalName = row.name || row.title || '';
+      renameDialog.value = true;
+    };
+
+    const resetRenameForm = () => { renameForm.id = null; renameForm.title = ''; renameForm.originalName = ''; };
+
+    const doRename = async () => {
+      if (!renameForm.title) { ElementPlus.ElMessage.warning('请输入文件名'); return; }
+      renameSaving.value = true;
+      try {
+        await apiPut('/api/media/' + renameForm.id, { title: renameForm.title });
+        ElementPlus.ElMessage.success('重命名成功');
+        renameDialog.value = false;
+        scanMedia();
+      } catch (e) { ElementPlus.ElMessage.error('重命名失败'); }
+      renameSaving.value = false;
+    };
+
+    const confirmDeleteFile = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + (row.name || row.title) + '" 吗？文件将从磁盘上永久删除。', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/media/' + row.id); ElementPlus.ElMessage.success('已删除'); scanMedia(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
+    // ========== 设置 ==========
+    const settingsLoading = ref(false);
+    const settingsSaving = ref(false);
+    const netInfo = ref({});
+    const cfg = reactive({
+      playbackMode: 'loop', volume: 50, imageDuration: 10,
+      interstitialEnabled: false, interstitialStart: null, interstitialEnd: null,
+      offScreenMessage: '', deviceName: 'ScreenPulse Player',
+      orientation: 'landscape', idleTimeout: 0
+    });
+
+    const loadSettings = async () => {
+      settingsLoading.value = true;
+      try {
+        const [s, c] = await Promise.allSettled([apiGet('/api/status'), apiGet('/api/config')]);
+        if (s.status === 'fulfilled' && s.value) {
+          const d = s.value;
+          netInfo.value = { ip: d.ip, gateway: d.gateway, dns: d.dns, ssid: d.ssid, signal: d.signal, mac: d.mac };
+        }
+        if (c.status === 'fulfilled' && c.value) {
+          Object.assign(cfg, {
+            playbackMode: c.value.playbackMode || cfg.playbackMode,
+            volume: c.value.volume ?? cfg.volume,
+            imageDuration: c.value.imageDuration || cfg.imageDuration,
+            interstitialEnabled: !!c.value.interstitialEnabled,
+            interstitialStart: c.value.interstitialStart || null,
+            interstitialEnd: c.value.interstitialEnd || null,
+            offScreenMessage: c.value.offScreenMessage || '',
+            deviceName: c.value.deviceName || cfg.deviceName,
+            orientation: c.value.orientation || cfg.orientation,
+            idleTimeout: c.value.idleTimeout ?? cfg.idleTimeout
+          });
+        }
+      } catch (e) { console.error(e); }
+      settingsLoading.value = false;
+    };
+
+    const saveSettings = async () => {
+      settingsSaving.value = true;
+      try {
+        await apiPut('/api/config', { ...cfg });
+        ElementPlus.ElMessage.success('设置已保存');
+      } catch (e) { ElementPlus.ElMessage.error('设置保存失败'); }
+      settingsSaving.value = false;
+    };
+
+    // ========== 初始化 ==========
+    onMounted(() => { loadDashboard(); startStatsPolling(); });
+
+    return {
+      isCollapsed, currentView, pageTitle, refreshView,
+      dashLoading, status, playlist, mediaFiles, nowPlaying, playlistSummary, trunc,
+      playStats,
+      plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds,
+      dragStart, dropItem, fetchPlaylist, onSelectionChange, moveItem,
+      openAddItem, openEditItem, onDurationToggle, resetItemForm, saveItem,
+      toggleItem, confirmDeleteItem, bulkToggle, batchDelete,
+      mediaLoading, uploading, uploadFiles, uploadUrl,
+      onFileChange, onFileRemove, doUpload, scanMedia,
+      isVideo, isImage, getMediaType, fmtSize, copyPath, confirmDeleteFile,
+      renameDialog, renameSaving, renameForm, openRenameFile, resetRenameForm, doRename,
+      settingsLoading, settingsSaving, netInfo, cfg, saveSettings
+    };
+  }
+});
+
+// 注册 Element Plus（带错误处理）
+try {
+  if (typeof ElementPlus === 'undefined') {
+    throw new Error('ElementPlus is not defined. Check that element-plus.js is the correct IIFE browser build.');
+  }
+  app.use(ElementPlus);
+  console.log('Element Plus 注册成功');
+} catch (err) {
+  console.error('Failed to register Element Plus:', err);
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2>Element Plus 注册失败</h2>' +
+    '<pre style="color:#b0bec5;text-align:left;max-width:600px;margin:16px auto;font-size:13px">' + err.message + '</pre>' +
+    '<p style="color:#78909c;font-size:13px">element-plus.js 必须是 IIFE 浏览器版本</p>' +
+    '</div>';
+  throw err;
+}
+
+// 注册所有图标（带错误处理）
+try {
+  if (typeof ElementPlusIconsVue === 'undefined') {
+    console.warn('ElementPlusIconsVue is not defined, skipping icon registration');
+  } else {
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+      app.component(key, component);
+    }
+    console.log('已注册 ' + Object.keys(ElementPlusIconsVue).length + ' 个图标');
+  }
+} catch (err) {
+  console.warn('Some icons failed to register:', err);
+}
+
+// 挂载应用（带错误处理）
+try {
+  app.mount('#app');
+  console.log('ScreenPulse 管理面板挂载成功');
+} catch (err) {
+  console.error('Failed to mount Vue app:', err);
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2>应用挂载失败</h2>' +
+    '<pre style="color:#b0bec5;text-align:left;max-width:600px;margin:16px auto;font-size:13px">' + err.message + '\n' + (err.stack || '') + '</pre>' +
+    '</div>';
+}
+</script>
 </body>
 </html>
