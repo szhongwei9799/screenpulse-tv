@@ -260,6 +260,9 @@ class WebServer(
             session.method == Method.POST && session.uri == "/api/playlist/reorder" -> {
                 apiRouter.reorderPlaylist(session)
             }
+            session.method == Method.GET && session.uri == "/api/config" -> {
+                apiRouter.getConfig(session)
+            }
             session.method == Method.PUT && session.uri == "/api/config" -> {
                 apiRouter.updateConfig(session)
             }

@@ -95,6 +95,44 @@ object NetworkUtil {
     }
 
     /**
+     * Returns the device's MAC address.
+     * Tries Wi-Fi first (requires ACCESS_FINE_LOCATION on newer Android),
+     * then falls back to enumerating network interfaces.
+     */
+    fun getMacAddress(context: Context): String? {
+        // Try Wi-Fi MAC first
+        try {
+            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            val wifiInfo = wifiManager?.connectionInfo
+            if (wifiInfo != null) {
+                val mac = wifiInfo.macAddress
+                if (mac != null && mac != "02:00:00:00:00:00") {
+                    return mac
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to get Wi-Fi MAC address", e)
+        }
+
+        // Fallback: enumerate network interfaces
+        return try {
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            while (interfaces?.hasMoreElements() == true) {
+                val ni = interfaces.nextElement()
+                if (ni.isLoopback || !ni.isUp) continue
+                val mac = ni.hardwareAddress
+                if (mac != null && mac.isNotEmpty()) {
+                    return mac.joinToString(":") { "%02X".format(it) }
+                }
+            }
+            null
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to enumerate MAC addresses", e)
+            null
+        }
+    }
+
+    /**
      * Checks if the device currently has network connectivity.
      *
      * @return true if the device has an active network connection.

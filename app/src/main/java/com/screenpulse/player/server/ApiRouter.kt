@@ -227,6 +227,32 @@ class ApiRouter(
     }
 
     // =====================================================================
+    //  GET /api/config
+    // =====================================================================
+
+    fun getConfig(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val config = configDao.getConfigOnce() ?: PlaylistConfig()
+                val ipAddress = NetworkUtil.getDeviceIpAddress(context) ?: "unknown"
+                val netInfo = JsonObject().apply {
+                    addProperty("ip", ipAddress)
+                    addProperty("mac", NetworkUtil.getMacAddress(context) ?: "--")
+                }
+
+                val json = gson.toJson(config)
+                val result = JsonParser.parseString(json).asJsonObject
+                result.add("network", netInfo)
+
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get config", e)
+                jsonResponseError("Failed to get config: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
     //  PUT /api/config
     // =====================================================================
 

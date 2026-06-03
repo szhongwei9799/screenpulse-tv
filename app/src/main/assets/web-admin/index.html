@@ -13,6 +13,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#e0e0e0;-webkit-font-smoothing:antialiased}
 #app{height:100%}
+[v-cloak]{display:none!important}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:#0d1117}
 ::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
@@ -191,7 +192,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 </style>
 </head>
 <body>
-<div id="app">
+<div id="app" v-cloak>
   <div class="app-container">
     <!-- Sidebar -->
     <div class="app-aside" :class="{collapsed: isCollapsed}">
@@ -538,11 +539,41 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 </div><!-- /app -->
 
 <!-- Local Scripts (embedded for offline use) -->
-<script src="js/vue.global.prod.js"></script>
-<script src="js/element-plus.js"></script>
-<script src="js/element-plus-icons.js"></script>
+<script>
+var __loadErrors = [];
+function __onScriptError(name) {
+  __loadErrors.push(name);
+  console.error('Failed to load script: ' + name);
+}
+</script>
+<script src="js/vue.global.prod.js" onerror="__onScriptError('Vue.js')"></script>
+<script src="js/element-plus.js" onerror="__onScriptError('Element Plus')"></script>
+<script src="js/element-plus-icons.js" onerror="__onScriptError('Element Plus Icons')"></script>
 
 <script>
+// Check if critical scripts loaded successfully
+if (__loadErrors.length > 0) {
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2 style="margin-bottom:16px">Failed to Load Admin Panel</h2>' +
+    '<p style="color:#b0bec5;margin-bottom:12px">The following required scripts failed to load:</p>' +
+    '<p style="color:#ff9800;font-family:monospace">' + __loadErrors.join(', ') + '</p>' +
+    '<p style="color:#78909c;margin-top:16px;font-size:13px">Please check the debug endpoint: <a href="/api/debug/check" style="color:#448aff">/api/debug/check</a></p>' +
+    '</div>';
+  throw new Error('Script load errors: ' + __loadErrors.join(', '));
+}
+
+if (typeof Vue === 'undefined') {
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2>Vue.js is not defined</h2>' +
+    '<p style="color:#b0bec5">Check that vue.global.prod.js loaded correctly.</p>' +
+    '</div>';
+  throw new Error('Vue is undefined');
+}
+
 const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
 
 const API = window.location.origin;
@@ -889,15 +920,52 @@ const app = createApp({
   }
 });
 
-// Register Element Plus
-app.use(ElementPlus);
-
-// Register all icons
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component);
+// Register Element Plus with error handling
+try {
+  if (typeof ElementPlus === 'undefined') {
+    throw new Error('ElementPlus is not defined. Check that element-plus.js is the correct IIFE browser build.');
+  }
+  app.use(ElementPlus);
+  console.log('Element Plus registered successfully');
+} catch (err) {
+  console.error('Failed to register Element Plus:', err);
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2>Element Plus Registration Failed</h2>' +
+    '<pre style="color:#b0bec5;text-align:left;max-width:600px;margin:16px auto;font-size:13px">' + err.message + '</pre>' +
+    '<p style="color:#78909c;font-size:13px">element-plus.js must be the IIFE browser build (index.full.min.js), not the CJS/UMD build.</p>' +
+    '</div>';
+  throw err;
 }
 
-app.mount('#app');
+// Register all icons with error handling
+try {
+  if (typeof ElementPlusIconsVue === 'undefined') {
+    console.warn('ElementPlusIconsVue is not defined, skipping icon registration');
+  } else {
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+      app.component(key, component);
+    }
+    console.log('Registered ' + Object.keys(ElementPlusIconsVue).length + ' icons');
+  }
+} catch (err) {
+  console.warn('Some icons failed to register:', err);
+}
+
+// Mount the app with error handling
+try {
+  app.mount('#app');
+  console.log('ScreenPulse Admin mounted successfully');
+} catch (err) {
+  console.error('Failed to mount Vue app:', err);
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f44336;text-align:center">' +
+    '<h2>Application Mount Failed</h2>' +
+    '<pre style="color:#b0bec5;text-align:left;max-width:600px;margin:16px auto;font-size:13px">' + err.message + '\n' + (err.stack || '') + '</pre>' +
+    '</div>';
+}
 </script>
 </body>
 </html>
