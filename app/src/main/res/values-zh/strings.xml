@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ScreenPulse Player - 字符串资源（中文） -->
+<!-- ScreenPulse Player - 中文字符串资源 -->
 <resources>
     <string name="app_name">ScreenPulse</string>
     <string name="scan_qr">扫描二维码进行管理</string>

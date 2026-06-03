@@ -313,32 +313,24 @@ class ApiRouter(
                     }
                 }
 
-                // Optionally auto-add to playlist
-                val autoAdd = session.parameters["autoAdd"]?.firstOrNull()?.toBoolean() ?: false
-                var mediaItem: MediaItem? = null
-
-                if (autoAdd) {
-                    val type = detectMediaType(safeName)
-                    mediaItem = MediaItem(
-                        title = safeName.substringBeforeLast("."),
-                        url = destFile.absolutePath,
-                        type = type,
-                        durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
-                        sortOrder = mediaItemDao.getTotalCount()
-                    )
-                    val id = mediaItemDao.insert(mediaItem)
-                    mediaItem.id = id
-                }
+                // Always auto-add to playlist database
+                val type = detectMediaType(safeName)
+                val mediaItem = MediaItem(
+                    title = safeName.substringBeforeLast("."),
+                    url = destFile.absolutePath,
+                    type = type,
+                    durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
+                    sortOrder = mediaItemDao.getTotalCount()
+                )
+                val id = mediaItemDao.insert(mediaItem)
+                mediaItem.id = id
 
                 val result = JsonObject().apply {
                     addProperty("success", true)
                     addProperty("filename", safeName)
                     addProperty("url", destFile.absolutePath)
                     addProperty("size", destFile.length())
-                    addProperty("autoAdded", autoAdd)
-                    if (mediaItem != null) {
-                        add("mediaItem", gson.toJsonTree(mediaItem))
-                    }
+                    add("mediaItem", gson.toJsonTree(mediaItem))
                 }
 
                 jsonResponse(result)
@@ -390,10 +382,14 @@ class ApiRouter(
                     }
                 }
 
+                // Fetch all media items from database to return as files array
+                val allItems = mediaItemDao.getAllItemsOnce()
+                val filesArray = gson.toJsonTree(allItems).asJsonArray
+
                 val result = JsonObject().apply {
                     addProperty("success", true)
-                    addProperty("scannedDirectories", scanDirs.map { it.absolutePath }.toString())
                     addProperty("filesFound", foundCount)
+                    add("files", filesArray)
                 }
                 jsonResponse(result)
             } catch (e: Exception) {
