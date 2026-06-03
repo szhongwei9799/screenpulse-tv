@@ -39,6 +39,15 @@ class WebServer(
     companion object {
         private const val TAG = "WebServer"
         private const val UPLOAD_DIR = "screenpulse_uploads"
+
+        /** Global singleton reference to the active PlaylistManager for API access. */
+        @Volatile
+        var activePlaylistManager: com.screenpulse.player.player.PlaylistManager? = null
+            private set
+
+        fun setPlaylistManager(manager: com.screenpulse.player.player.PlaylistManager?) {
+            activePlaylistManager = manager
+        }
     }
 
     private val apiRouter: ApiRouter
@@ -228,12 +237,10 @@ class WebServer(
      * Routes API requests to [ApiRouter].
      */
     private fun serveApi(session: IHTTPSession): Response {
-        // Parse multipart form data if needed
-        if (session.method == Method.POST && session.headers.containsKey("content-type") &&
-            session.headers["content-type"]?.contains("multipart") == true
-        ) {
-            session.parseBody(mapOf())
-        }
+        // NOTE: Do NOT call session.parseBody() here!
+        // Each handler (e.g. uploadFile) calls parseBody() itself.
+        // Calling parseBody() twice on the same session causes the second
+        // call to fail because the input stream is already consumed.
 
         return when {
             session.method == Method.GET && session.uri == "/api/status" -> {
@@ -271,6 +278,21 @@ class WebServer(
             }
             session.method == Method.GET && session.uri == "/api/scan" -> {
                 apiRouter.triggerScan(session)
+            }
+            session.method == Method.GET && session.uri == "/api/playback-stats" -> {
+                apiRouter.getPlaybackStats(session)
+            }
+            session.method == Method.DELETE && session.uri.matches(Regex("^/api/media/\\d+$")) -> {
+                val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(
+                    Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}"""
+                )
+                apiRouter.deleteMediaItem(session, id)
+            }
+            session.method == Method.PUT && session.uri.matches(Regex("^/api/media/\\d+$")) -> {
+                val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(
+                    Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}"""
+                )
+                apiRouter.renameMediaItem(session, id)
             }
             else -> {
                 newFixedLengthResponse(
