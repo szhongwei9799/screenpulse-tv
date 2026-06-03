@@ -29,7 +29,7 @@ jobs:
       - name: Build Web Admin
         run: |
           cd web-admin
-          npm ci
+          npm install
           npm run build
           ls -la ../app/src/main/assets/web-admin/
 
