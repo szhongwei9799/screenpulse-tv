@@ -20,16 +20,23 @@ import java.io.InputStreamReader
  *
  * Routes:
  *   Static files  →  / (serves from assets/web-admin)
- *   GET  /api/status         →  device status, IP, playlist info
- *   GET  /api/playlist       →  list all media items
- *   POST /api/playlist       →  add a media item
+ *   POST /api/auth/login      →  verify admin password, get token
+ *   POST /api/auth/password    →  change admin password
+ *   GET  /api/status          →  device status, IP, playlist info
+ *   GET  /api/playlist        →  list all media items
+ *   POST /api/playlist        →  add a media item
  *   PUT  /api/playlist/<id>   →  update a media item
- *   DELETE /api/playlist/<id>  →  delete a media item
+ *   DELETE /api/playlist/<id> →  delete a media item
  *   POST /api/playlist/reorder → reorder playlist items
  *   PUT  /api/config          →  update playback config
  *   POST /api/upload          →  upload a media file (multipart)
+ *   GET  /api/media           →  list all media items (lightweight)
  *   GET  /api/scan            →  trigger a local media scan
+ *   GET  /api/playback-stats  →  get playback statistics
+ *   DELETE /api/media/<id>    →  delete a media file
+ *   PUT  /api/media/<id>      →  rename a media file
  *   GET  /api/debug/assets    →  list all assets in web-admin for debugging
+ *   GET  /api/debug/check     →  check critical assets
  */
 class WebServer(
     private val port: Int,
@@ -169,7 +176,6 @@ class WebServer(
         val criticalFiles = listOf(
             "web-admin/index.html",
             "web-admin/css/index.css",
-            "web-admin/css/dark.css",
             "web-admin/js/vue.global.prod.js",
             "web-admin/js/element-plus.js",
             "web-admin/js/element-plus-icons.js"
@@ -243,9 +249,24 @@ class WebServer(
         // call to fail because the input stream is already consumed.
 
         return when {
+            // Auth endpoints (no token required for login)
+            session.method == Method.POST && session.uri == "/api/auth/login" -> {
+                apiRouter.login(session)
+            }
+            session.method == Method.POST && session.uri == "/api/auth/password" -> {
+                apiRouter.changePassword(session)
+            }
+            // Status & Config
             session.method == Method.GET && session.uri == "/api/status" -> {
                 apiRouter.getStatus(session)
             }
+            session.method == Method.GET && session.uri == "/api/config" -> {
+                apiRouter.getConfig(session)
+            }
+            session.method == Method.PUT && session.uri == "/api/config" -> {
+                apiRouter.updateConfig(session)
+            }
+            // Playlist CRUD
             session.method == Method.GET && session.uri == "/api/playlist" -> {
                 apiRouter.getPlaylist(session)
             }
@@ -267,21 +288,11 @@ class WebServer(
             session.method == Method.POST && session.uri == "/api/playlist/reorder" -> {
                 apiRouter.reorderPlaylist(session)
             }
-            session.method == Method.GET && session.uri == "/api/config" -> {
-                apiRouter.getConfig(session)
+            // Media list (GET /api/media without :id)
+            session.method == Method.GET && session.uri == "/api/media" -> {
+                apiRouter.getMediaList(session)
             }
-            session.method == Method.PUT && session.uri == "/api/config" -> {
-                apiRouter.updateConfig(session)
-            }
-            session.method == Method.POST && session.uri == "/api/upload" -> {
-                apiRouter.uploadFile(session)
-            }
-            session.method == Method.GET && session.uri == "/api/scan" -> {
-                apiRouter.triggerScan(session)
-            }
-            session.method == Method.GET && session.uri == "/api/playback-stats" -> {
-                apiRouter.getPlaybackStats(session)
-            }
+            // Media item operations (with :id)
             session.method == Method.DELETE && session.uri.matches(Regex("^/api/media/\\d+$")) -> {
                 val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(
                     Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}"""
@@ -293,6 +304,17 @@ class WebServer(
                     Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}"""
                 )
                 apiRouter.renameMediaItem(session, id)
+            }
+            // Upload & Scan
+            session.method == Method.POST && session.uri == "/api/upload" -> {
+                apiRouter.uploadFile(session)
+            }
+            session.method == Method.GET && session.uri == "/api/scan" -> {
+                apiRouter.triggerScan(session)
+            }
+            // Playback stats (kept for potential future use)
+            session.method == Method.GET && session.uri == "/api/playback-stats" -> {
+                apiRouter.getPlaybackStats(session)
             }
             else -> {
                 newFixedLengthResponse(

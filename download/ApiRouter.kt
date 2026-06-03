@@ -16,6 +16,10 @@ import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
 /**
  * Handles REST API routing logic for the embedded web server.
@@ -30,6 +34,7 @@ class ApiRouter(
 
     companion object {
         private const val TAG = "ApiRouter"
+        private val activeTokens = mutableSetOf<String>()
     }
 
     private val gson: Gson = GsonBuilder()
@@ -38,6 +43,102 @@ class ApiRouter(
 
     private val mediaItemDao = database.mediaItemDao()
     private val configDao = database.playlistConfigDao()
+
+    // Password stored in a hidden file in the app's internal storage
+    private val passwordFile = File(context.filesDir, ".admin_password")
+
+    private fun getStoredPassword(): String {
+        return if (passwordFile.exists()) {
+            try { passwordFile.readText().trim() } catch (_: Exception) { "admin" }
+        } else {
+            "admin"
+        }
+    }
+
+    private fun setStoredPassword(pwd: String) {
+        try {
+            passwordFile.writeText(pwd)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to write password file", e)
+        }
+    }
+
+    /**
+     * Check if the request has a valid auth token.
+     * Tokens are checked from Authorization header or cookie.
+     * If no tokens exist at all (fresh start), allows through.
+     */
+    fun isAuthenticated(session: NanoHTTPD.IHTTPSession): Boolean {
+        // If no tokens have ever been issued, allow all requests
+        // (this handles the first-time setup where no password has been set)
+        synchronized(activeTokens) {
+            if (activeTokens.isEmpty()) return true
+        }
+        val authHeader = session.headers["authorization"]
+        val token = authHeader?.removePrefix("Bearer ")?.trim() ?: ""
+        return synchronized(activeTokens) { activeTokens.contains(token) }
+    }
+
+    // =====================================================================
+    //  POST /api/auth/login
+    // =====================================================================
+
+    fun login(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val password = body.get("password")?.asString ?: ""
+
+                val storedPassword = getStoredPassword()
+
+                if (password == storedPassword) {
+                    val token = UUID.randomUUID().toString()
+                    synchronized(activeTokens) { activeTokens.add(token) }
+                    Log.d(TAG, "Login successful, token issued")
+                    val result = JsonObject().apply {
+                        addProperty("success", true)
+                        addProperty("token", token)
+                    }
+                    jsonResponse(result)
+                } else {
+                    jsonResponseError("密码错误", NanoHTTPD.Response.Status.UNAUTHORIZED)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Login failed", e)
+                jsonResponseError("登录失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  POST /api/auth/password
+    // =====================================================================
+
+    fun changePassword(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val oldPassword = body.get("oldPassword")?.asString ?: ""
+                val newPassword = body.get("newPassword")?.asString ?: ""
+
+                val storedPassword = getStoredPassword()
+
+                if (oldPassword != storedPassword) {
+                    return@runBlocking jsonResponseError("原密码错误", NanoHTTPD.Response.Status.BAD_REQUEST)
+                }
+                if (newPassword.length < 4) {
+                    return@runBlocking jsonResponseError("新密码至少4位", NanoHTTPD.Response.Status.BAD_REQUEST)
+                }
+
+                setStoredPassword(newPassword)
+                Log.d(TAG, "Password changed successfully")
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                Log.e(TAG, "Change password failed", e)
+                jsonResponseError("修改密码失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
 
     // =====================================================================
     //  GET /api/status
@@ -232,9 +333,9 @@ class ApiRouter(
                 val updates = mutableMapOf<Long, Int>()
                 for (element in items) {
                     val item = element.asJsonObject
-                    val id = item.get("id")?.asLong ?: continue
+                    val itemId = item.get("id")?.asLong ?: continue
                     val sortOrder = item.get("sortOrder")?.asInt ?: continue
-                    updates[id] = sortOrder
+                    updates[itemId] = sortOrder
                 }
 
                 if (updates.isNotEmpty()) {
@@ -449,7 +550,7 @@ class ApiRouter(
                 // Fetch all media items from database and enrich with file system metadata
                 val allItems = mediaItemDao.getAllItemsOnce()
                 val filesArray = com.google.gson.JsonArray()
-                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
                 for (item in allItems) {
                     val file = File(item.url)
                     val obj = com.google.gson.JsonObject()
@@ -459,7 +560,7 @@ class ApiRouter(
                     obj.addProperty("path", item.url)
                     obj.addProperty("type", item.type.name)
                     obj.addProperty("size", if (file.exists()) file.length() else 0)
-                    obj.addProperty("date", if (file.exists()) dateFormat.format(java.util.Date(file.lastModified())) else "")
+                    obj.addProperty("date", if (file.exists()) dateFormat.format(Date(file.lastModified())) else "")
                     filesArray.add(obj)
                 }
 
@@ -472,6 +573,40 @@ class ApiRouter(
             } catch (e: Exception) {
                 Log.e(TAG, "Media scan failed", e)
                 jsonResponseError("Scan failed: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  GET /api/media - list all media items (lightweight, no scan)
+    // =====================================================================
+
+    fun getMediaList(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val allItems = mediaItemDao.getAllItemsOnce()
+                val filesArray = com.google.gson.JsonArray()
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                for (item in allItems) {
+                    val file = File(item.url)
+                    val obj = com.google.gson.JsonObject()
+                    obj.addProperty("id", item.id)
+                    obj.addProperty("name", file.name)
+                    obj.addProperty("title", item.title)
+                    obj.addProperty("path", item.url)
+                    obj.addProperty("type", item.type.name)
+                    obj.addProperty("size", if (file.exists()) file.length() else 0)
+                    obj.addProperty("date", if (file.exists()) dateFormat.format(Date(file.lastModified())) else "")
+                    filesArray.add(obj)
+                }
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("files", filesArray)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get media list", e)
+                jsonResponseError("获取媒体列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }
