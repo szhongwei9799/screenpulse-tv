@@ -4,17 +4,18 @@ plugins {
     id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
 }
 
-allprojects {
+tasks.register('clean', Delete) {
+    delete rootProject.buildDir
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         maven { url 'https://maven.aliyun.com/repository/google' }
         maven { url 'https://maven.aliyun.com/repository/central' }
         google()
         mavenCentral()
     }
-}
-
-tasks.register('clean', Delete) {
-    delete rootProject.buildDir
 }
 
 rootProject.name = "ScreenPulse-TV-Player"
