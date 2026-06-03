@@ -330,9 +330,18 @@ class ApiRouter(
             try {
                 val originalName = session.parameters["filename"]?.firstOrNull() ?: "upload_${System.currentTimeMillis()}"
 
-                // Sanitize filename
-                val safeName = originalName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
-                val destFile = File(uploadDir, safeName)
+                // ⚠️ Only strip path separators and control characters — preserve Unicode (Chinese, spaces, etc.)
+                val safeName = originalName.replace(Regex("[/\\\\\\0]"), "_")
+                // Ensure file doesn't already exist; if so, append counter
+                var destFile = File(uploadDir, safeName)
+                var counter = 1
+                while (destFile.exists()) {
+                    val name = safeName.substringBeforeLast(".")
+                    val ext = safeName.substringAfterLast(".", "")
+                    val suffix = if (ext.isEmpty() || ext == safeName) "_$counter" else "_$counter.$ext"
+                    destFile = File(uploadDir, "$name$suffix")
+                    counter++
+                }
 
                 // Copy uploaded file to persistent storage
                 java.io.FileInputStream(tempFile).use { input ->
@@ -343,8 +352,10 @@ class ApiRouter(
 
                 // Always auto-add to playlist database
                 val type = detectMediaType(safeName)
+                // Use original (unsanitized) filename as the display title
+                val displayTitle = originalName.substringBeforeLast(".").take(200)
                 val mediaItem = MediaItem(
-                    title = safeName.substringBeforeLast("."),
+                    title = displayTitle,
                     url = destFile.absolutePath,
                     type = type,
                     durationSeconds = if (type == MediaType.IMAGE) 10 else 0,

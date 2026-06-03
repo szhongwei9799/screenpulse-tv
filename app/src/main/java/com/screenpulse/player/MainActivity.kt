@@ -348,18 +348,16 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val bitmap = withContext(Dispatchers.IO) {
-                    val url = if (item.url.startsWith("http", ignoreCase = true) || item.url.startsWith("content://")) {
-                        item.url
-                    } else if (item.url.startsWith("/")) {
-                        "file://$item.url"
-                    } else {
-                        "file://${android.os.Environment.getExternalStorageDirectory()}/${item.url}"
-                    }
-                    BitmapFactory.decodeStream(
-                        android.net.Uri.parse(url).let { uri ->
-                            contentResolver.openInputStream(uri)
+                    val path = item.url
+                    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("content://")) {
+                        // Remote or content URI: use ContentResolver
+                        contentResolver.openInputStream(Uri.parse(path))?.use { input ->
+                            BitmapFactory.decodeStream(input)
                         }
-                    )
+                    } else {
+                        // Local file path: use decodeFile directly (more reliable)
+                        BitmapFactory.decodeFile(path)
+                    }
                 }
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap)

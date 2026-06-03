@@ -35,8 +35,8 @@
         <el-button type="primary" :icon="UploadFilled" @click="uploadFiles" :loading="uploading" :disabled="!fileList.length">
           Upload {{ fileList.length }} file{{ fileList.length !== 1 ? 's' : '' }}
         </el-button>
-        <el-button :icon="Refresh" @click="scanMediaFiles">
-          Scan Local Storage
+        <el-button :icon="Refresh" @click="fetchMediaFiles">
+          Refresh List
         </el-button>
       </div>
     </el-card>
@@ -51,20 +51,20 @@
         </div>
       </template>
 
-      <el-table :data="mediaFiles" empty-text="No media files found" class="files-table">
+      <el-table :data="mediaFiles" empty-text="No media files found" class="files-table" row-key="id">
         <el-table-column label="File" min-width="300">
           <template #default="{ row }">
             <div class="file-cell">
-              <div class="file-icon-wrapper" :class="getFileType(row.name)">
+              <div class="file-icon-wrapper" :class="getFileType(row.type)">
                 <el-icon :size="20">
-                  <VideoPlay v-if="isVideo(row.name)" />
-                  <Picture v-else-if="isImage(row.name)" />
+                  <VideoPlay v-if="row.type === 'VIDEO'" />
+                  <Picture v-else-if="row.type === 'IMAGE'" />
                   <Document v-else />
                 </el-icon>
               </div>
               <div class="file-info">
-                <div class="file-name">{{ row.name }}</div>
-                <div class="file-path" v-if="row.path">{{ row.path }}</div>
+                <div class="file-name" :title="row.title">{{ row.title || 'Untitled' }}</div>
+                <div class="file-path" v-if="row.url" :title="row.url">{{ row.url }}</div>
               </div>
             </div>
           </template>
@@ -72,41 +72,67 @@
 
         <el-table-column label="Type" width="100" align="center">
           <template #default="{ row }">
-            <MediaTypeBadge :type="getMediaType(row.name)" />
+            <MediaTypeBadge :type="row.type || 'VIDEO'" />
           </template>
         </el-table-column>
 
-        <el-table-column label="Size" width="120" align="right">
+        <el-table-column label="Duration" width="100" align="center">
           <template #default="{ row }">
-            <span class="file-size">{{ formatSize(row.size) }}</span>
+            <span class="file-duration">
+              {{ row.type === 'IMAGE' ? (row.durationSeconds || 10) + 's' : row.type === 'VIDEO' ? 'Auto' : '--' }}
+            </span>
           </template>
         </el-table-column>
 
         <el-table-column label="Date" width="160" align="center">
           <template #default="{ row }">
-            <span class="file-date">{{ row.modifiedAt || row.date || '--' }}</span>
+            <span class="file-date">{{ formatDate(row.createdAt) }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="Actions" width="100" align="center" fixed="right">
+        <el-table-column label="Actions" width="160" align="center" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyPath(row)" title="Copy path" />
+              <el-button :icon="Edit" size="small" text type="primary" @click="openRenameDialog(row)" title="Rename" />
+              <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyUrl(row)" title="Copy URL" />
               <el-button :icon="Delete" size="small" text type="danger" @click="confirmDelete(row)" />
             </div>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- Rename Dialog -->
+    <el-dialog
+      v-model="renameDialogVisible"
+      title="Rename File"
+      width="420px"
+      destroy-on-close
+    >
+      <el-form
+        ref="renameFormRef"
+        :model="renameForm"
+        :rules="renameRules"
+        label-position="top"
+      >
+        <el-form-item label="New Name" prop="title">
+          <el-input v-model="renameForm.title" placeholder="Enter new file name" clearable />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="renameDialogVisible = false">Cancel</el-button>
+        <el-button type="primary" :loading="renaming" @click="confirmRename">Save</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UploadFilled, FolderOpened, VideoPlay, Picture, Document, CopyDocument, Delete, Refresh } from '@element-plus/icons-vue'
+import { UploadFilled, FolderOpened, VideoPlay, Picture, Document, CopyDocument, Delete, Refresh, Edit } from '@element-plus/icons-vue'
 import MediaTypeBadge from '../components/MediaTypeBadge.vue'
-import { uploadFile, scanMedia } from '../api'
+import { uploadFile, getPlaylist, deletePlaylistItem, updatePlaylistItem } from '../api'
 
 const uploadUrl = `${window.location.origin}/api/upload`
 const loading = ref(false)
@@ -116,29 +142,17 @@ const mediaFiles = ref([])
 
 const acceptTypes = '.mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx'
 
-const isVideo = (name) => /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(name)
-const isImage = (name) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(name)
-const isPPT = (name) => /\.(ppt|pptx)$/i.test(name)
-
-const getFileType = (name) => {
-  if (isVideo(name)) return 'video'
-  if (isImage(name)) return 'image'
+const getFileType = (type) => {
+  if (type === 'VIDEO') return 'video'
+  if (type === 'IMAGE') return 'image'
   return 'document'
 }
 
-const getMediaType = (name) => {
-  if (isVideo(name)) return 'VIDEO'
-  if (isImage(name)) return 'IMAGE'
-  if (isPPT(name)) return 'PPT'
-  return 'VIDEO'
-}
-
-const formatSize = (bytes) => {
-  if (!bytes && bytes !== 0) return '--'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+const formatDate = (ts) => {
+  if (!ts) return '--'
+  const d = new Date(ts)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 const handleFileChange = (file, files) => {
@@ -183,39 +197,23 @@ const uploadFiles = async () => {
   fetchMediaFiles()
 }
 
-const scanMediaFiles = async () => {
-  try {
-    const result = await scanMedia()
-    if (result?.files) {
-      mediaFiles.value = result.files
-    } else if (Array.isArray(result)) {
-      mediaFiles.value = result
-    }
-    ElMessage.success('Media scan complete')
-  } catch (e) {
-    ElMessage.error('Media scan failed')
-  }
-}
-
-const copyPath = (row) => {
-  const path = row.path || row.name
-  navigator.clipboard?.writeText(path).then(() => {
-    ElMessage.success('Path copied')
+const copyUrl = (row) => {
+  const text = row.url || ''
+  navigator.clipboard?.writeText(text).then(() => {
+    ElMessage.success('URL copied')
   }).catch(() => {
-    ElMessage.info(path)
+    ElMessage.info(text)
   })
 }
 
 const confirmDelete = (row) => {
   ElMessageBox.confirm(
-    `Delete "${row.name}"?`,
+    `Delete "${row.title || 'Untitled'}"? This will remove it from the playlist and delete the uploaded file.`,
     'Confirm Delete',
     { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' }
   ).then(async () => {
     try {
-      // Try delete via API - the endpoint may vary
-      const api = (await import('../api')).default
-      await api.delete(`/api/media/${encodeURIComponent(row.name)}`)
+      await deletePlaylistItem(row.id)
       ElMessage.success('File deleted')
       fetchMediaFiles()
     } catch (e) {
@@ -224,15 +222,45 @@ const confirmDelete = (row) => {
   }).catch(() => {})
 }
 
+// ── Rename ──
+const renameDialogVisible = ref(false)
+const renameFormRef = ref(null)
+const renaming = ref(false)
+const renameTarget = ref(null)
+const renameForm = ref({ title: '' })
+const renameRules = {
+  title: [{ required: true, message: 'Name is required', trigger: 'blur' }]
+}
+
+const openRenameDialog = (row) => {
+  renameTarget.value = row
+  renameForm.value = { title: row.title || '' }
+  renameDialogVisible.value = true
+}
+
+const confirmRename = async () => {
+  try {
+    await renameFormRef.value?.validate()
+  } catch { return }
+
+  renaming.value = true
+  try {
+    await updatePlaylistItem(renameTarget.value.id, { title: renameForm.value.title })
+    ElMessage.success('Renamed successfully')
+    renameDialogVisible.value = false
+    fetchMediaFiles()
+  } catch (e) {
+    ElMessage.error('Failed to rename file')
+  } finally {
+    renaming.value = false
+  }
+}
+
 const fetchMediaFiles = async () => {
   loading.value = true
   try {
-    const result = await scanMedia()
-    if (result?.files) {
-      mediaFiles.value = result.files
-    } else if (Array.isArray(result)) {
-      mediaFiles.value = result
-    }
+    const data = await getPlaylist()
+    mediaFiles.value = Array.isArray(data) ? data : (data?.items || [])
   } catch (e) {
     console.error('Failed to fetch media files:', e)
   } finally {
@@ -357,10 +385,9 @@ onMounted(fetchMediaFiles)
   white-space: nowrap;
 }
 
-.file-size {
+.file-duration {
   font-size: 13px;
   color: #B0BEC5;
-  font-family: 'JetBrains Mono', monospace;
 }
 
 .file-date {
