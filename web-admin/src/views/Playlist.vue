@@ -28,7 +28,7 @@
       <el-table
         ref="tableRef"
         :data="playlist"
-        row-key="id"
+        row-key="(row) => row.id + '_' + row.title"
         @selection-change="handleSelectionChange"
         empty-text="No items in playlist"
         class="playlist-table"
