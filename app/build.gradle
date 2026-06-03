@@ -54,6 +54,12 @@ android {
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
+
+    // Prevent AAPT from compressing web-admin assets
+    // Large JS files (element-plus.js ~1MB) can fail to decompress at runtime
+    aaptOptions {
+        noCompress 'js', 'css', 'html', 'json', 'map', 'svg', 'woff', 'woff2', 'ttf', 'eot'
+    }
 }
 
 dependencies {
@@ -95,7 +101,7 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 
     // Material Design
-    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'com.google.material:material:1.11.0'
 
     // Leanback (Android TV)
     implementation 'androidx.leanback:leanback:1.0.0'
