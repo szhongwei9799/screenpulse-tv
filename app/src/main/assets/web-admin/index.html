@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ScreenPulse Admin</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231A237E'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>S</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231A237E'></rect><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>S</text></svg>">
 <link rel="stylesheet" href="css/index.css">
 <link rel="stylesheet" href="css/dark.css">
 <style>
@@ -219,7 +219,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
         </el-menu-item>
       </el-menu>
       <div class="aside-footer">
-        <el-button :icon="isCollapsed?'Expand':'Fold'" circle size="small" text @click="isCollapsed=!isCollapsed" />
+        <el-button :icon="isCollapsed?'Expand':'Fold'" circle size="small" text @click="isCollapsed=!isCollapsed" ></el-button>
       </div>
     </div>
 
@@ -231,7 +231,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <el-tag type="success" effect="dark" size="small" class="status-tag">
             <el-icon style="margin-right:4px"><CircleCheck></CircleCheck></el-icon> Connected
           </el-tag>
-          <el-button :icon="Refresh" circle size="small" @click="refreshView" />
+          <el-button :icon="Refresh" circle size="small" @click="refreshView" ></el-button>
         </div>
       </div>
 
@@ -326,7 +326,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
           <el-card>
             <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="No items in playlist" row-key="_id" style="width:100%">
-              <el-table-column type="selection" width="50" />
+              <el-table-column type="selection" width="50" ></el-table-column>
               <el-table-column label="#" width="60">
                 <template #default="{$index}">
                   <div class="drag-handle" :draggable="true" @dragstart="dragStart($event,$index)" @dragover.prevent @drop="dropItem($event,$index)">
@@ -337,7 +337,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <el-table-column label="Title" min-width="220" show-overflow-tooltip>
                 <template #default="{row}">
                   <div class="title-cell">
-                    <div class="item-thumb"><el-icon :size="18"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"/><Picture v-else-if="row.type==='IMAGE'"/><Document v-else /></el-icon></div>
+                    <div class="item-thumb"><el-icon :size="18"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon></div>
                     <span class="item-title">{{row.title||'Untitled'}}</span>
                   </div>
                 </template>
@@ -352,15 +352,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                 <template #default="{row}"><el-tag size="small" :type="row.duration==='auto'?'':'info'" effect="plain" round>{{row.duration==='auto'?'Auto':row.duration+'s'}}</el-tag></template>
               </el-table-column>
               <el-table-column label="Enabled" width="90" align="center">
-                <template #default="{row}"><el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" /></template>
+                <template #default="{row}"><el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" ></el-switch></template>
               </el-table-column>
               <el-table-column label="Actions" width="150" align="center" fixed="right">
                 <template #default="{row,$index}">
                   <div class="action-buttons">
-                    <el-button :icon="Edit" size="small" text @click="openEditItem(row)" />
-                    <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0" />
-                    <el-button :icon="Bottom" size="small" text type="primary" @click="moveItem(row,$index,1)" :disabled="$index>=playlist.length-1" />
-                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteItem(row)" />
+                    <el-button :icon="Edit" size="small" text @click="openEditItem(row)" ></el-button>
+                    <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0" ></el-button>
+                    <el-button :icon="Bottom" size="small" text type="primary" @click="moveItem(row,$index,1)" :disabled="$index>=playlist.length-1"></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteItem(row)" ></el-button>
                   </div>
                 </template>
               </el-table-column>
@@ -370,25 +370,25 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <!-- Add/Edit Dialog -->
           <el-dialog v-model="plDialog" :title="plEditing?'Edit Playlist Item':'Add Playlist Item'" width="520px" @close="resetItemForm" destroy-on-close>
             <el-form :model="itemForm" label-position="top">
-              <el-form-item label="Title" required><el-input v-model="itemForm.title" placeholder="Enter item title" clearable /></el-form-item>
-              <el-form-item label="URL / Source" required><el-input v-model="itemForm.url" placeholder="File path, URL, or stream address" clearable /></el-form-item>
+              <el-form-item label="Title" required><el-input v-model="itemForm.title" placeholder="Enter item title" clearable ></el-input></el-form-item>
+              <el-form-item label="URL / Source" required><el-input v-model="itemForm.url" placeholder="File path, URL, or stream address" clearable ></el-input></el-form-item>
               <el-form-item label="Media Type">
                 <el-select v-model="itemForm.type" placeholder="Select type" style="width:100%">
-                  <el-option label="Video" value="VIDEO" />
-                  <el-option label="Image" value="IMAGE" />
-                  <el-option label="PPT / Presentation" value="PPT" />
-                  <el-option label="IPTV Stream" value="IPTV" />
-                  <el-option label="Web Stream" value="STREAM" />
-                  <el-option label="Web Page" value="WEB" />
+                  <el-option label="Video" value="VIDEO" ></el-option>
+                  <el-option label="Image" value="IMAGE" ></el-option>
+                  <el-option label="PPT / Presentation" value="PPT" ></el-option>
+                  <el-option label="IPTV Stream" value="IPTV" ></el-option>
+                  <el-option label="Web Stream" value="STREAM" ></el-option>
+                  <el-option label="Web Page" value="WEB" ></el-option>
                 </el-select>
               </el-form-item>
               <el-form-item label="Duration">
                 <div class="duration-field">
-                  <el-switch v-model="itemForm.autoDuration" active-text="Auto (video length)" inactive-text="Custom (seconds)" inline-prompt @change="onDurationToggle" />
-                  <el-input-number v-if="!itemForm.autoDuration" v-model="itemForm.duration" :min="1" :max="3600" style="width:160px" />
+                  <el-switch v-model="itemForm.autoDuration" active-text="Auto (video length)" inactive-text="Custom (seconds)" inline-prompt @change="onDurationToggle" ></el-switch>
+                  <el-input-number v-if="!itemForm.autoDuration" v-model="itemForm.duration" :min="1" :max="3600" style="width:160px" ></el-input-number>
                 </div>
               </el-form-item>
-              <el-form-item label="Enabled"><el-switch v-model="itemForm.enabled" /></el-form-item>
+              <el-form-item label="Enabled"><el-switch v-model="itemForm.enabled" ></el-switch></el-form-item>
             </el-form>
             <template #footer>
               <el-button @click="plDialog=false">Cancel</el-button>
@@ -421,7 +421,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                 <template #default="{row}">
                   <div class="file-cell">
                     <div :class="'file-icon-wrap '+(isVideo(row.name)?'video':isImage(row.name)?'image':'document')">
-                      <el-icon :size="20"><VideoPlay v-if="isVideo(row.name)"/><Picture v-else-if="isImage(row.name)"/><Document v-else /></el-icon>
+                      <el-icon :size="20"><VideoPlay v-if="isVideo(row.name)"></VideoPlay><Picture v-else-if="isImage(row.name)"></Picture><Document v-else ></Document></el-icon>
                     </div>
                     <div><div class="file-name">{{row.name}}</div><div class="file-path" v-if="row.path">{{row.path}}</div></div>
                   </div>
@@ -439,8 +439,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <el-table-column label="Actions" width="100" align="center">
                 <template #default="{row}">
                   <div class="action-buttons">
-                    <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyPath(row)" title="Copy path" />
-                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteFile(row)" />
+                    <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyPath(row)" title="Copy path" ></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteFile(row)" ></el-button>
                   </div>
                 </template>
               </el-table-column>
@@ -466,13 +466,13 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                 <el-form-item label="Volume">
                   <div class="volume-control">
                     <el-icon><Mute></Mute></el-icon>
-                    <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" />
+                    <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" ></el-slider>
                     <el-icon><Bell></Bell></el-icon>
                     <span class="volume-value">{{cfg.volume}}%</span>
                   </div>
                 </el-form-item>
                 <el-form-item label="Image Duration (seconds)">
-                  <el-input-number v-model="cfg.imageDuration" :min="1" :max="3600" :step="1" />
+                  <el-input-number v-model="cfg.imageDuration" :min="1" :max="3600" :step="1" ></el-input-number>
                   <div class="form-hint">Default display duration for image items without custom duration.</div>
                 </el-form-item>
               </el-form>
@@ -483,17 +483,17 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <template #header><div class="card-hdr"><el-icon><Clock></Clock></el-icon><span>Interstitial Settings</span></div></template>
               <el-form label-position="top">
                 <el-form-item label="Enable Interstitial Mode">
-                  <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" /><span class="toggle-label">{{cfg.interstitialEnabled?'Enabled':'Disabled'}}</span></div>
+                  <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" ></el-switch><span class="toggle-label">{{cfg.interstitialEnabled?'Enabled':'Disabled'}}</span></div>
                   <div class="form-hint">Display content only during specified hours.</div>
                 </el-form-item>
                 <el-form-item v-if="cfg.interstitialEnabled" label="Active Start Hour">
-                  <el-time-picker v-model="cfg.interstitialStart" placeholder="Start time" format="HH:mm" style="width:100%" />
+                  <el-time-picker v-model="cfg.interstitialStart" placeholder="Start time" format="HH:mm" style="width:100%" ></el-time-picker>
                 </el-form-item>
                 <el-form-item v-if="cfg.interstitialEnabled" label="Active End Hour">
-                  <el-time-picker v-model="cfg.interstitialEnd" placeholder="End time" format="HH:mm" style="width:100%" />
+                  <el-time-picker v-model="cfg.interstitialEnd" placeholder="End time" format="HH:mm" style="width:100%" ></el-time-picker>
                 </el-form-item>
                 <el-form-item v-if="cfg.interstitialEnabled" label="Off-Screen Message">
-                  <el-input v-model="cfg.offScreenMessage" placeholder="Message shown outside active hours" clearable />
+                  <el-input v-model="cfg.offScreenMessage" placeholder="Message shown outside active hours" clearable ></el-input>
                 </el-form-item>
               </el-form>
             </el-card>
@@ -502,7 +502,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             <el-card>
               <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>Device Settings</span></div></template>
               <el-form label-position="top">
-                <el-form-item label="Device Name"><el-input v-model="cfg.deviceName" placeholder="Enter device name" clearable /></el-form-item>
+                <el-form-item label="Device Name"><el-input v-model="cfg.deviceName" placeholder="Enter device name" clearable ></el-input></el-form-item>
                 <el-form-item label="Screen Orientation">
                   <el-radio-group v-model="cfg.orientation">
                     <el-radio-button value="landscape">Landscape</el-radio-button>
@@ -510,7 +510,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                   </el-radio-group>
                 </el-form-item>
                 <el-form-item label="Idle Timeout (minutes, 0 = never)">
-                  <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" />
+                  <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" ></el-input-number>
                 </el-form-item>
               </el-form>
             </el-card>
