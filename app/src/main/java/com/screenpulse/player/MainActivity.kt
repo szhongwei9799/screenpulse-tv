@@ -212,8 +212,6 @@ class MainActivity : AppCompatActivity() {
                 start()
                 Log.d(TAG, "Web server started on port $WEB_SERVER_PORT")
             }
-            // Generate and display QR code
-            displayQrSplash()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start web server", e)
         }
@@ -285,6 +283,7 @@ class MainActivity : AppCompatActivity() {
     private fun updatePlaylistManager(items: List<com.screenpulse.player.data.entity.MediaItem>) {
         if (playlistManager == null) {
             playlistManager = PlaylistManager(items.toMutableList())
+            WebServer.setPlaylistManager(playlistManager!!)
             playCurrentItem()
         } else {
             val changed = playlistManager!!.updateItems(items)
@@ -504,6 +503,7 @@ class MainActivity : AppCompatActivity() {
         exoPlayer = null
         webServer?.stop()
         webServer = null
+        WebServer.setPlaylistManager(null)
         playlistManager = null
         try {
             networkReceiver?.let { unregisterReceiver(it) }
