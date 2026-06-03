@@ -268,7 +268,17 @@ const fetchMediaFiles = async () => {
   }
 }
 
-onMounted(fetchMediaFiles)
+onMounted(async () => {
+    await fetchMediaFiles()
+    // Auto-scan if media list is empty (files may exist on disk but not yet in DB)
+    if (mediaFiles.value.length === 0) {
+      try {
+        const scanResp = await fetch('/api/scan')
+        const scanData = await scanResp.json()
+        mediaFiles.value = scanData?.files || (Array.isArray(scanData) ? scanData : [])
+      } catch (e) { console.error('Auto-scan failed:', e) }
+    }
+  })
 </script>
 
 <style scoped>
