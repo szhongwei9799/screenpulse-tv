@@ -6,6 +6,9 @@
 <title>ScreenPulse 管理后台</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23409EFF'></rect><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>S</text></svg>">
 <link rel="stylesheet" href="css/index.css">
+<script src="js/vue.global.prod.js"></script>
+<script src="js/element-plus.js"></script>
+<script src="js/element-plus-icons.js"></script>
 <style>
 /* ===== GLOBAL LIGHT THEME ===== */
 :root{--ep-color-primary:#409EFF;--ep-color-primary-light-3:#79bbff;--ep-color-primary-light-5:#a0cfff;--ep-color-primary-dark-2:#337ecc;--ep-bg-color:#f5f7fa;--ep-bg-color-overlay:#ffffff;--ep-bg-color-page:#f5f7fa;--ep-text-color-primary:#303133;--ep-text-color-regular:#606266;--ep-text-color-secondary:#909399;--ep-text-color-placeholder:#a8abb2;--ep-border-color:#e4e7ed;--ep-border-color-light:#e4e7ed;--ep-border-color-lighter:#ebeef5;--ep-border-color-extra-light:#f2f6fc;--ep-fill-color:#f0f2f5;--ep-fill-color-light:#f5f7fa;--ep-fill-color-lighter:#fafafa;--ep-fill-color-blank:#ffffff;--ep-fill-color-dark:#f5f7fa;--ep-mask-color:rgba(0,0,0,.5);--ep-color-success:#67c23a;--ep-color-warning:#e6a23c;--ep-color-danger:#f56c6c;--ep-color-info:#909399;--el-color-primary:#409EFF;--el-color-primary-light-3:#79bbff;--el-color-primary-light-5:#a0cfff;--el-color-primary-dark-2:#337ecc;--el-bg-color:#f5f7fa;--el-bg-color-overlay:#ffffff;--el-text-color-primary:#303133;--el-text-color-regular:#606266;--el-text-color-secondary:#909399;--el-border-color:#e4e7ed;--el-border-color-light:#e4e7ed;--el-fill-color:#f0f2f5;--el-fill-color-light:#f5f7fa;--el-fill-color-lighter:#fafafa;--el-fill-color-blank:#ffffff}
@@ -242,7 +245,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           </div>
 
           <el-card>
-            <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="播放列表为空" :row-key="function(row){return 'pl_' + (row.id || row.title || Math.random())}" style="width:100%">
+            <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="播放列表为空" :row-key="function(row){return 'pl_' + row.id}" style="width:100%">
               <el-table-column type="selection" width="50" ></el-table-column>
               <el-table-column label="#" width="60">
                 <template #default="{$index}">
@@ -502,61 +505,16 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
   </div><!-- /app-container -->
 </div><!-- /app -->
 
-<!-- 本地脚本（离线使用内嵌） -->
 <script>
-var __loadErrors = [];
-var __retryCount = 0;
-var __MAX_RETRIES = 2;
-var __scriptUrls = [
-  'js/vue.global.prod.js',
-  'js/element-plus.js',
-  'js/element-plus-icons.js'
-];
-function __onScriptError(name) {
-  __loadErrors.push(name);
-  console.error('Failed to load script: ' + name);
-}
-function __loadScripts() {
-  __loadErrors = [];
-  __scriptUrls.forEach(function(url) {
-    var s = document.createElement('script');
-    s.src = url + (__retryCount > 0 ? '?t=' + Date.now() : '');
-    s.onerror = (function(n) { return function() { __onScriptError(n); }; })(url.split('/').pop());
-    document.head.appendChild(s);
-  });
-  setTimeout(function() {
-    if (__loadErrors.length > 0 && __retryCount < __MAX_RETRIES) {
-      __retryCount++;
-      console.warn('Retrying script load (attempt ' + __retryCount + ')...');
-      __loadScripts();
-    }
-  }, 3000);
-}
-</script>
-<script>__loadScripts();</script>
-
-<script>
-// 检查关键脚本是否加载成功
-if (__loadErrors.length > 0) {
-  document.getElementById('app').removeAttribute('v-cloak');
-  document.getElementById('app').innerHTML =
-    '<div style="padding:40px;color:#f56c6c;text-align:center">' +
-    '<h2 style="margin-bottom:16px">管理面板加载失败</h2>' +
-    '<p style="color:#606266;margin-bottom:12px">以下必要脚本加载失败：</p>' +
-    '<p style="color:#e6a23c;font-family:monospace">' + __loadErrors.join(', ') + '</p>' +
-    '<p style="color:#909399;margin-top:16px;font-size:13px">请检查调试端点： <a href="/api/debug/check" style="color:#409EFF">/api/debug/check</a></p>' +
-    '</div>';
-  throw new Error('Script load errors: ' + __loadErrors.join(', '));
-}
-
 if (typeof Vue === 'undefined') {
   document.getElementById('app').removeAttribute('v-cloak');
   document.getElementById('app').innerHTML =
     '<div style="padding:40px;color:#f56c6c;text-align:center">' +
-    '<h2>Vue.js 未定义</h2>' +
-    '<p style="color:#606266">请检查 vue.global.prod.js 是否正确加载。</p>' +
+    '<h2>管理面板加载失败</h2>' +
+    '<p style="color:#606266;margin-top:8px">Vue.js 脚本未能加载，请刷新页面重试。</p>' +
+    '<p style="color:#909399;margin-top:16px;font-size:13px">调试端点: <a href="/api/debug/check" style="color:#409EFF">/api/debug/check</a></p>' +
     '</div>';
-  throw new Error('Vue is undefined');
+  throw new Error('Vue.js failed to load');
 }
 
 const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
@@ -993,7 +951,7 @@ const app = createApp({
           await doScanAndRefresh();
         }
       } else if (newView === 'playlist') fetchPlaylistAndSettings();
-    });
+    }, { immediate: true });
 
     // 初始化
     onMounted(() => {
