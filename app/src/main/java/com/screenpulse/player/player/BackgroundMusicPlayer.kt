@@ -67,7 +67,7 @@ class BackgroundMusicPlayer(private val context: Context) {
                 setOnPreparedListener { mp ->
                     mp.setVolume(volumePercent / 100f, volumePercent / 100f)
                     mp.start()
-                    isPlaying = true
+                    this@BackgroundMusicPlayer.isPlaying = true
                     Log.d(TAG, "Playing: $path")
                 }
                 setOnCompletionListener {

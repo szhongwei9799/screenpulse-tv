@@ -128,7 +128,7 @@ class TtsEngine(private val context: Context) {
                 }
 
                 override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                    if (bytes.size() > 2) {
+                    if (bytes.size > 2) {
                         val audioBytes = bytes.substring(2).toByteArray()
                         audioChunks.add(audioBytes)
                     }

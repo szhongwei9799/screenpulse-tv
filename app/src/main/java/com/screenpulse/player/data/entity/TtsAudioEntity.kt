@@ -11,7 +11,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "tts_audio")
 data class TtsAudioEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    var id: Long = 0,
 
     @ColumnInfo(name = "title")
     val title: String,
