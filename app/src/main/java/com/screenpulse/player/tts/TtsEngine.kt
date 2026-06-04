@@ -3,26 +3,22 @@ package com.screenpulse.player.tts
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
-import okio.ByteString
 import java.io.File
 import java.io.FileOutputStream
+import java.net.Socket
+import java.net.URI
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLSocketFactory
 import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /**
- * Core Edge TTS engine using Microsoft's free TTS service via WebSocket.
+ * Edge TTS engine using raw Java Socket for WebSocket connection.
+ * Bypasses OkHttp WebSocket to have complete control over HTTP upgrade headers.
  * Matches the rany2/edge-tts v7.2.8 Python library algorithm exactly.
  */
 class TtsEngine(private val context: Context) {
@@ -30,14 +26,12 @@ class TtsEngine(private val context: Context) {
     companion object {
         private const val TAG = "TtsEngine"
 
-        // Constants from edge-tts constants.py
-        private const val WSS_BASE =
-            "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1"
-        private const val TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"
+        private const val WSS_HOST = "speech.platform.bing.com"
+        private const val WSS_PATH = "/consumer/speech/synthesize/readaloud/edge/v1"
+        private const val TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D4"
         private const val SEC_MS_GEC_VERSION = "1-131.0.2903.51"
-        private const val CHROMIUM_VERSION = "131.0.2903.51"
         private const val TTS_DIR = "screenpulse_tts"
-        private const val WIN_EPOCH = 11644473600L // seconds between 1970-01-01 and 1601-01-01
+        private const val WIN_EPOCH = 11644473600L
 
         data class EdgeVoice(val id: String, val name: String)
 
@@ -75,31 +69,22 @@ class TtsEngine(private val context: Context) {
         )
 
         /**
-         * Exact replica of edge-tts DRM.generate_sec_ms_gec() from Python source.
-         *
-         * Python algorithm:
-         *   ticks = get_unix_timestamp()
-         *   ticks += WIN_EPOCH          # 11644473600
-         *   ticks -= ticks % 300        # round down to nearest 5 minutes (in seconds)
-         *   ticks *= S_TO_NS / 100      # 1e9 / 100 = 1e7, convert to 100-nanosecond intervals
-         *   str_to_hash = f"{ticks:.0f}{TRUSTED_CLIENT_TOKEN}"
-         *   return sha256(str_to_hash).hexdigest().upper()
+         * Exact replica of edge-tts DRM.generate_sec_ms_gec().
+         * Python: ticks = unix_ts + WIN_EPOCH; ticks -= ticks % 300; ticks *= 1e7;
+         *         SHA256(f"{ticks:.0f}{TOKEN}").upper()
          */
         fun generateSecMsGec(clockSkewSeconds: Double = 0.0): String {
             var ticks = (System.currentTimeMillis() / 1000.0) + clockSkewSeconds
             ticks += WIN_EPOCH.toDouble()
-            ticks -= ticks % 300.0        // round down to 5-minute boundary in seconds
-            ticks *= 1e7                  // convert to 100-nanosecond intervals (FILETIME)
-            val strToHash = "${ticks.toLong()}$TRUSTED_CLIENT_TOKEN"
-            Log.d(TAG, "Sec-MS-GEC input: $strToHash")
+            ticks -= ticks % 300.0
+            ticks *= 1e7
+            val strToHash = "${Math.floor(ticks).toLong()}$TRUSTED_CLIENT_TOKEN"
+            Log.d(TAG, "GEC input: $strToHash")
             val md = MessageDigest.getInstance("SHA-256")
             val hash = md.digest(strToHash.toByteArray(Charsets.US_ASCII))
-            val result = hash.joinToString("") { "%02X".format(it) }
-            Log.d(TAG, "Sec-MS-GEC token: $result")
-            return result
+            return hash.joinToString("") { "%02X".format(it) }
         }
 
-        /** Generate random MUID (32 hex chars, uppercase). */
         fun generateMuid(): String {
             val random = SecureRandom()
             val bytes = ByteArray(16)
@@ -107,192 +92,266 @@ class TtsEngine(private val context: Context) {
             return bytes.joinToString("") { "%02X".format(it) }
         }
 
-        /**
-         * Parse RFC 2616 date header to Unix timestamp.
-         * Format: "Thu, 04 Jun 2026 06:00:00 GMT"
-         */
-        fun parseServerDate(dateStr: String): Long? {
-            return try {
-                val sdf = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US)
-                sdf.timeZone = TimeZone.getTimeZone("GMT")
-                sdf.parse(dateStr)?.time?.let { it / 1000 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to parse server date: $dateStr", e)
-                null
-            }
+        fun generateWebSocketKey(): String {
+            val random = SecureRandom()
+            val bytes = ByteArray(16)
+            random.nextBytes(bytes)
+            return Base64.getEncoder().encodeToString(bytes)
         }
     }
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
-
     /**
-     * Internal WebSocket connection attempt.
-     * Returns the error message (null on success) and optionally the server Date header.
+     * Attempt TTS generation with a given clock skew.
      */
-    private data class WsAttemptResult(
-        val success: Boolean,
-        val filePath: String? = null,
-        val fileSize: Long = 0,
-        val duration: Long = 0,
-        val error: String? = null,
-        val serverDate: String? = null
-    )
+    private suspend fun attemptGenerate(
+        text: String, voiceId: String, clockSkewSeconds: Double = 0.0
+    ): TtsResult = withContext(Dispatchers.IO) {
+        suspendCoroutine { continuation ->
+            try {
+                val connectionId = UUID.randomUUID().toString().replace("-", "")
+                val secMsGec = generateSecMsGec(clockSkewSeconds)
+                val muid = generateMuid()
+                val wsKey = generateWebSocketKey()
 
-    private suspend fun attemptGenerateSpeech(
-        text: String,
-        voiceId: String,
-        clockSkewSeconds: Double = 0.0
-    ): WsAttemptResult = withContext(Dispatchers.IO) {
-        suspendCancellableCoroutine { continuation ->
-            val connectionId = UUID.randomUUID().toString().replace("-", "")
-            val secMsGec = generateSecMsGec(clockSkewSeconds)
-            val muid = generateMuid()
-            val audioChunks = mutableListOf<ByteArray>()
-            val latch = CountDownLatch(1)
-            var errorMessage: String? = null
-            var success = false
-            var serverDateHeader: String? = null
+                val chromiumMajor = SEC_MS_GEC_VERSION.substringAfter("1-").split(".")[0]
 
-            // Build URL exactly like edge-tts
-            val wsUrl = "$WSS_BASE" +
-                "?TrustedClientToken=$TRUSTED_CLIENT_TOKEN" +
-                "&ConnectionId=$connectionId" +
-                "&Sec-MS-GEC=$secMsGec" +
-                "&Sec-MS-GEC-Version=$SEC_MS_GEC_VERSION"
+                // Build exact URL path with all query params (in the same order as edge-tts)
+                val fullPath = "$WSS_PATH" +
+                    "?TrustedClientToken=$TRUSTED_CLIENT_TOKEN" +
+                    "&ConnectionId=$connectionId" +
+                    "&Sec-MS-GEC=$secMsGec" +
+                    "&Sec-MS-GEC-Version=$SEC_MS_GEC_VERSION"
 
-            Log.d(TAG, "TTS WebSocket URL: $wsUrl")
+                Log.d(TAG, "=== Edge TTS Attempt ===")
+                Log.d(TAG, "Host: $WSS_HOST")
+                Log.d(TAG, "Path: $fullPath")
+                Log.d(TAG, "WS-Key: $wsKey")
+                Log.d(TAG, "MUID: $muid")
 
-            val chromiumMajor = CHROMIUM_VERSION.split(".")[0]
-            val request = Request.Builder()
-                .url(wsUrl)
-                .header("Pragma", "no-cache")
-                .header("Cache-Control", "no-cache")
-                .header("Origin", "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold")
-                .header("Sec-WebSocket-Version", "13")
-                .header("Accept-Encoding", "gzip, deflate, br")
-                .header("Accept-Language", "en-US,en;q=0.9")
-                .header(
-                    "User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-                        "(KHTML, like Gecko) Chrome/$chromiumMajor.0.0.0 Safari/537.36 " +
-                        "Edg/$chromiumMajor.0.0.0"
-                )
-                .header("Cookie", "muid=$muid;")
-                .build()
+                // Build the HTTP upgrade request with EXACT headers
+                val httpRequest = "GET $fullPath HTTP/1.1\r\n" +
+                    "Host: $WSS_HOST\r\n" +
+                    "Connection: Upgrade\r\n" +
+                    "Pragma: no-cache\r\n" +
+                    "Cache-Control: no-cache\r\n" +
+                    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromiumMajor.0.0.0 Safari/537.36 Edg/$chromiumMajor.0.0.0\r\n" +
+                    "Origin: chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold\r\n" +
+                    "Sec-WebSocket-Key: $wsKey\r\n" +
+                    "Sec-WebSocket-Version: 13\r\n" +
+                    "Accept-Encoding: gzip, deflate, br\r\n" +
+                    "Accept-Language: en-US,en;q=0.9\r\n" +
+                    "Cookie: muid=$muid;\r\n" +
+                    "\r\n"
 
-            Log.d(TAG, "TTS Headers: Origin=chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold, UA=Chrome/$chromiumMajor Edg/$chromiumMajor, MUID=$muid")
+                Log.d(TAG, "Request headers:\n$httpRequest")
 
-            val ws = client.newWebSocket(request, object : WebSocketListener() {
-                override fun onOpen(webSocket: WebSocket, response: Response) {
-                    Log.d(TAG, "WebSocket OPEN - connected successfully")
-                    webSocket.send(buildConfigMessage())
-                    webSocket.send(buildSsmlMessage(text, voiceId, connectionId))
-                }
+                // Connect using raw SSL socket
+                val socketFactory = SSLSocketFactory.getDefault() as SSLSocketFactory
+                val socket = socketFactory.createSocket(WSS_HOST, 443) as java.net.SSLSocket
+                socket.soTimeout = 30000
+                socket.tcpNoDelay = true
 
-                override fun onMessage(webSocket: WebSocket, text: String) {
-                    when {
-                        text.contains("Path:turn.start") -> {
-                            Log.d(TAG, "TTS synthesis started")
-                        }
-                        text.contains("Path:turn.end") -> {
-                            Log.d(TAG, "TTS synthesis completed")
-                            success = true
-                            webSocket.close(1000, "Synthesis complete")
-                            latch.countDown()
-                        }
-                        text.contains("error") || text.contains("Error") -> {
-                            Log.e(TAG, "TTS error response: $text")
-                            errorMessage = extractErrorMessage(text) ?: "TTS synthesis error"
-                            webSocket.close(1002, "Error")
-                            latch.countDown()
+                val outputStream = socket.outputStream
+                val inputStream = socket.inputStream
+
+                // Send HTTP upgrade request
+                outputStream.write(httpRequest.toByteArray(Charsets.US_ASCII))
+                outputStream.flush()
+
+                // Read HTTP response
+                val responseReader = BufferedReader(inputStream.reader())
+                val statusLine = responseReader.readLine()
+                Log.d(TAG, "Response status: $statusLine")
+
+                if (statusLine == null || !statusLine.contains("101")) {
+                    // Read rest of response for debugging
+                    val headers = StringBuilder()
+                    var line: String?
+                    var serverDate: String? = null
+                    while (responseReader.readLine().also { line = it } != null && line!!.isNotEmpty()) {
+                        headers.append(line).append("\n")
+                        if (line!!.startsWith("Date:", ignoreCase = true)) {
+                            serverDate = line!!.substring(5).trim()
                         }
                     }
+                    Log.e(TAG, "Full response:\n$statusLine\n$headers")
+                    socket.close()
+
+                    // If 403, try clock skew correction
+                    if (statusLine != null && statusLine.contains("403")) {
+                        continuation.resume(TtsResult(
+                            success = false,
+                            error = "HTTP 403 Forbidden",
+                            // We'll handle retry in generateSpeech()
+                        ))
+                    } else {
+                        continuation.resume(TtsResult(
+                            success = false,
+                            error = "WebSocket upgrade failed: $statusLine"
+                        ))
+                    }
+                    return@withContext
                 }
 
-                override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                    if (bytes.size > 2) {
-                        val audioBytes = bytes.substring(2).toByteArray()
-                        audioChunks.add(audioBytes)
+                // Success - WebSocket connected
+                Log.d(TAG, "WebSocket connected successfully!")
+
+                // Skip remaining HTTP headers
+                var headerLine: String?
+                var serverDate: String? = null
+                while (responseReader.readLine().also { headerLine = it } != null && headerLine!!.isNotEmpty()) {
+                    if (headerLine!!.startsWith("Date:", ignoreCase = true)) {
+                        serverDate = headerLine!!.substring(5).trim()
                     }
                 }
 
-                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                    val code = response?.code ?: -1
-                    Log.e(TAG, "WebSocket FAILURE: ${t.message}, HTTP code=$code")
-                    if (response != null) {
-                        serverDateHeader = response.header("Date")
-                        Log.e(TAG, "Server Date header: $serverDateHeader")
-                        Log.e(TAG, "All response headers: ${response.headers}")
+                // Send config message
+                sendWebSocketFrame(outputStream, buildConfigMessage())
+                Log.d(TAG, "Sent config message")
+
+                // Send SSML message
+                val ssml = buildSsmlMessage(text, voiceId, connectionId)
+                sendWebSocketFrame(outputStream, ssml)
+                Log.d(TAG, "Sent SSML message")
+
+                // Read WebSocket frames
+                val audioChunks = mutableListOf<ByteArray>()
+                var synthesisSuccess = false
+                var errorMsg: String? = null
+
+                // Simple frame reader (handles text frames for now)
+                // For binary frames we need a byte-level reader
+                val byteInput = BufferedInputStream(inputStream)
+                var readCount = 0
+                val maxReads = 600 // 60 seconds timeout at 100ms per read
+                val startTime = System.currentTimeMillis()
+
+                while (readCount < maxReads && !synthesisSuccess && errorMsg == null) {
+                    if (System.currentTimeMillis() - startTime > 65000) {
+                        errorMsg = "TTS timeout after 65 seconds"
+                        break
                     }
-                    errorMessage = t.message ?: "WebSocket connection failed"
-                    if (code == 403) {
-                        errorMessage += " (HTTP 403 Forbidden - Sec-MS-GEC token rejected)"
-                    } else if (code > 0) {
-                        errorMessage += " (HTTP $code)"
+
+                    // Check if there's data available
+                    if (byteInput.available() > 0) {
+                        val opcode = byteInput.read() and 0xFF
+                        val payloadLenByte = byteInput.read() and 0xFF
+                        val isMasked = (opcode and 0x80) != 0
+                        val frameOpcode = opcode and 0x0F
+
+                        var payloadLen = payloadLenByte.toLong()
+                        if (payloadLenByte == 126) {
+                            payloadLen = ((byteInput.read() and 0xFF) shl 8) or (byteInput.read() and 0xFF)
+                        } else if (payloadLenByte == 127) {
+                            payloadLen = 0L
+                            for (i in 7 downTo 0) {
+                                payloadLen = (payloadLen shl 8) or (byteInput.read() and 0xFF).toLong()
+                            }
+                        }
+
+                        val maskKey = if (isMasked) ByteArray(4) { byteInput.read().toByte() } else null
+
+                        if (payloadLen > 0 && payloadLen < 10_000_000) {
+                            val payload = ByteArray(payloadLen.toInt())
+                            var offset = 0
+                            while (offset < payload.size) {
+                                val read = byteInput.read(payload, offset, payload.size - offset)
+                                if (read <= 0) break
+                                offset += read
+                            }
+
+                            // Unmask if needed
+                            if (isMasked && maskKey != null) {
+                                for (i in payload.indices) {
+                                    payload[i] = (payload[i].toInt() xor maskKey[i % 4].toInt()).toByte()
+                                }
+                            }
+
+                            when (frameOpcode) {
+                                1 -> { // Text frame
+                                    val textMsg = String(payload, Charsets.UTF_8)
+                                    Log.d(TAG, "WS Text (${payload.size}B): ${textMsg.take(200)}")
+                                    when {
+                                        textMsg.contains("Path:turn.start") -> {
+                                            Log.d(TAG, "Synthesis started")
+                                        }
+                                        textMsg.contains("Path:turn.end") -> {
+                                            Log.d(TAG, "Synthesis completed")
+                                            synthesisSuccess = true
+                                        }
+                                        textMsg.contains("error") || textMsg.contains("Error") -> {
+                                            Log.e(TAG, "TTS Error: $textMsg")
+                                            errorMsg = extractErrorMessage(textMsg) ?: "TTS synthesis error"
+                                        }
+                                    }
+                                }
+                                2 -> { // Binary frame (audio data)
+                                    if (payload.size > 2) {
+                                        // Skip 2-byte header, rest is audio
+                                        val audioData = payload.copyOfRange(2, payload.size)
+                                        audioChunks.add(audioData)
+                                        Log.d(TAG, "Audio chunk: ${audioData.size} bytes")
+                                    }
+                                }
+                                8 -> { // Close frame
+                                    Log.d(TAG, "Server sent close frame")
+                                    synthesisSuccess = true // treat as done
+                                }
+                                9 -> { // Ping - send pong
+                                    sendPongFrame(outputStream, payload)
+                                }
+                            }
+                        } else if (frameOpcode == 8) {
+                            // Close frame with no payload
+                            synthesisSuccess = true
+                        }
+                        readCount = 0
+                    } else {
+                        readCount++
+                        Thread.sleep(100)
                     }
-                    latch.countDown()
                 }
 
-                override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                    latch.countDown()
-                }
-            })
+                // Send close frame
+                try {
+                    sendCloseFrame(outputStream)
+                    socket.close()
+                } catch (_: Exception) {}
 
-            continuation.invokeOnCancellation {
-                ws.close(1001, "Cancelled")
-                latch.countDown()
-            }
+                if (synthesisSuccess && audioChunks.isNotEmpty()) {
+                    val ttsDir = getTtsDir()
+                    val textHash = MessageDigest.getInstance("MD5")
+                        .digest(text.toByteArray())
+                        .joinToString("") { "%02x".format(it) }
+                        .take(8)
+                    val safeVoiceId = voiceId.replace("-", "_")
+                    val fileName = "${System.currentTimeMillis()}_${safeVoiceId}_${textHash}.mp3"
+                    val file = File(ttsDir, fileName)
 
-            latch.await(60, TimeUnit.SECONDS)
-
-            if (success && audioChunks.isNotEmpty()) {
-                val ttsDir = getTtsDir()
-                val textHash = MessageDigest.getInstance("MD5")
-                    .digest(text.toByteArray())
-                    .joinToString("") { "%02x".format(it) }
-                    .take(8)
-                val safeVoiceId = voiceId.replace("-", "_")
-                val fileName = "${System.currentTimeMillis()}_${safeVoiceId}_${textHash}.mp3"
-                val file = File(ttsDir, fileName)
-
-                var totalBytes = 0L
-                FileOutputStream(file).use { fos ->
-                    for (chunk in audioChunks) {
-                        fos.write(chunk)
-                        totalBytes += chunk.size
+                    var totalBytes = 0L
+                    FileOutputStream(file).use { fos ->
+                        for (chunk in audioChunks) {
+                            fos.write(chunk)
+                            totalBytes += chunk.size
+                        }
                     }
+
+                    val estimatedDuration = totalBytes / 6000
+                    Log.d(TAG, "Saved: ${file.absolutePath} ($totalBytes bytes, ~${estimatedDuration}s)")
+                    continuation.resume(TtsResult(true, file.absolutePath, totalBytes, estimatedDuration))
+                } else {
+                    continuation.resume(TtsResult(false, error = errorMsg ?: "No audio data received"))
                 }
 
-                val estimatedDuration = totalBytes / 6000
-                Log.d(TAG, "Saved TTS audio: ${file.absolutePath} ($totalBytes bytes, ~${estimatedDuration}s)")
-                continuation.resume(
-                    WsAttemptResult(
-                        success = true,
-                        filePath = file.absolutePath,
-                        fileSize = totalBytes,
-                        duration = estimatedDuration,
-                        serverDate = serverDateHeader
-                    )
-                )
-            } else {
-                continuation.resume(
-                    WsAttemptResult(
-                        success = false,
-                        error = errorMessage ?: "No audio data received",
-                        serverDate = serverDateHeader
-                    )
-                )
+            } catch (e: Exception) {
+                Log.e(TAG, "TTS generation error", e)
+                continuation.resume(TtsResult(false, error = e.message ?: "Unknown error"))
             }
         }
     }
 
     /**
-     * Generate speech with automatic 403 retry and clock skew adjustment.
-     * Matches edge-tts communicate.py retry logic exactly.
+     * Generate speech with 403 retry and clock skew adjustment (matching edge-tts).
      */
     suspend fun generateSpeech(
         text: String,
@@ -300,33 +359,48 @@ class TtsEngine(private val context: Context) {
         title: String = text.take(50)
     ): TtsResult {
         // First attempt
-        var result = attemptGenerateSpeech(text, voiceId)
+        val result = attemptGenerate(text, voiceId)
+        if (result.success) return result
 
-        if (result.success) {
-            return TtsResult(true, result.filePath, result.fileSize, result.duration)
-        }
+        // If 403, retry with clock skew correction
+        if (result.error?.contains("403") == true) {
+            Log.w(TAG, "Got 403, will retry in generateSpeech after getting server time...")
 
-        // If 403 and we got a server Date header, adjust clock skew and retry once
-        if (result.error?.contains("403") == true && result.serverDate != null) {
-            Log.w(TAG, "Got 403, adjusting clock skew using server Date: ${result.serverDate}")
-
-            val serverTimestamp = parseServerDate(result.serverDate!!)
-            if (serverTimestamp != null) {
-                val clientTimestamp = System.currentTimeMillis() / 1000
-                val clockSkew = (serverTimestamp - clientTimestamp).toDouble()
-                Log.w(TAG, "Clock skew: server=$serverTimestamp, client=$clientTimestamp, skew=${clockSkew}s")
-
-                // Retry with corrected clock skew
-                Log.i(TAG, "Retrying TTS with clock skew adjustment...")
-                result = attemptGenerateSpeech(text, voiceId, clockSkew)
-
-                if (result.success) {
-                    return TtsResult(true, result.filePath, result.fileSize, result.duration)
+            // Try to get server time via HTTP GET first
+            var serverTime: Long? = null
+            try {
+                val serverSocket = (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket(WSS_HOST, 443)
+                serverSocket.soTimeout = 10000
+                val out = serverSocket.outputStream
+                val `in` = BufferedReader(serverSocket.inputStream.reader())
+                out.write("HEAD / HTTP/1.1\r\nHost: $WSS_HOST\r\nConnection: close\r\n\r\n".toByteArray())
+                out.flush()
+                var line: String?
+                while (`in`.readLine().also { line = it } != null) {
+                    if (line!!.startsWith("Date:", ignoreCase = true)) {
+                        val dateStr = line!!.substring(5).trim()
+                        val sdf = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US)
+                        sdf.timeZone = TimeZone.getTimeZone("GMT")
+                        serverTime = sdf.parse(dateStr)?.time?.let { it / 1000 }
+                        Log.d(TAG, "Server time: $dateStr -> $serverTime")
+                        break
+                    }
                 }
+                serverSocket.close()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get server time", e)
+            }
+
+            if (serverTime != null) {
+                val clientTime = System.currentTimeMillis() / 1000
+                val clockSkew = (serverTime - clientTime).toDouble()
+                Log.w(TAG, "Clock skew: server=$serverTime, client=$clientTime, diff=${clockSkew}s")
+
+                return attemptGenerate(text, voiceId, clockSkew)
             }
         }
 
-        return TtsResult(false, error = result.error)
+        return result
     }
 
     fun getTtsDir(): File {
@@ -335,19 +409,91 @@ class TtsEngine(private val context: Context) {
         return dir
     }
 
-    fun deleteFile(filePath: String): Boolean {
-        return File(filePath).delete()
+    fun deleteFile(filePath: String): Boolean = File(filePath).delete()
+
+    /**
+     * Send a WebSocket text frame (masked, as required by client).
+     */
+    private fun sendWebSocketFrame(outputStream: java.io.OutputStream, message: String) {
+        val msgBytes = message.toByteArray(Charsets.UTF_8)
+        val maskKey = ByteArray(4) { (Math.random() * 256).toInt().toByte() }
+
+        val firstByte = 0x81.toByte() // FIN + opcode 1 (text)
+        var secondByte: Byte
+
+        val headerLen = if (msgBytes.size <= 125) {
+            secondByte = (msgBytes.size or 0x80).toByte() // MASK bit set
+            2
+        } else if (msgBytes.size <= 65535) {
+            secondByte = (126 or 0x80).toByte()
+            4
+        } else {
+            secondByte = (127 or 0x80).toByte()
+            10
+        }
+
+        val frame = java.io.ByteArrayOutputStream()
+        frame.write(firstByte.toInt())
+        frame.write(secondByte.toInt())
+
+        if (msgBytes.size > 65535) {
+            val len = msgBytes.size.toLong()
+            frame.write(((len ushr 56) and 0xFF).toInt())
+            frame.write(((len ushr 48) and 0xFF).toInt())
+            frame.write(((len ushr 40) and 0xFF).toInt())
+            frame.write(((len ushr 32) and 0xFF).toInt())
+            frame.write(((len ushr 24) and 0xFF).toInt())
+            frame.write(((len ushr 16) and 0xFF).toInt())
+            frame.write(((len ushr 8) and 0xFF).toInt())
+            frame.write((len and 0xFF).toInt())
+        } else if (msgBytes.size > 125) {
+            frame.write((msgBytes.size ushr 8) and 0xFF)
+            frame.write(msgBytes.size and 0xFF)
+        }
+
+        frame.write(maskKey)
+
+        // Write masked payload
+        val masked = ByteArray(msgBytes.size)
+        for (i in msgBytes.indices) {
+            masked[i] = (msgBytes[i].toInt() xor maskKey[i % 4].toInt()).toByte()
+        }
+        frame.write(masked)
+
+        outputStream.write(frame.toByteArray())
+        outputStream.flush()
+    }
+
+    private fun sendPongFrame(outputStream: java.io.OutputStream, payload: ByteArray) {
+        outputStream.write(byteArrayOf(0x8A, payload.size.toByte()))
+        outputStream.write(payload)
+        outputStream.flush()
+    }
+
+    private fun sendCloseFrame(outputStream: java.io.OutputStream) {
+        try {
+            val maskKey = ByteArray(4) { (Math.random() * 256).toInt().toByte() }
+            val payload = byteArrayOf(0x03, 0xE8) // close code 1000
+            val masked = ByteArray(2)
+            for (i in payload.indices) {
+                masked[i] = (payload[i].toInt() xor maskKey[i % 4].toInt()).toByte()
+            }
+            outputStream.write(byteArrayOf(0x88, 0x82)) // FIN + close, masked, len=2
+            outputStream.write(maskKey)
+            outputStream.write(masked)
+            outputStream.flush()
+        } catch (_: Exception) {}
     }
 
     private fun buildConfigMessage(): String {
         val date = SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US).format(Date())
         return "X-Timestamp:$date\r\n" +
-                "Content-Type:application/json; charset=utf-8\r\n" +
-                "Path:speech.config\r\n" +
-                "\r\n" +
-                "{\"context\":{\"synthesis\":{\"audio\":{\"metadataoptions\":{" +
-                "\"sentenceBoundaryEnabled\":\"false\",\"wordBoundaryEnabled\":\"true\"}," +
-                "\"outputFormat\":\"audio-24khz-48kbitrate-mono-mp3\"}}}}\r\n"
+            "Content-Type:application/json; charset=utf-8\r\n" +
+            "Path:speech.config\r\n" +
+            "\r\n" +
+            "{\"context\":{\"synthesis\":{\"audio\":{\"metadataoptions\":{" +
+            "\"sentenceBoundaryEnabled\":\"false\",\"wordBoundaryEnabled\":\"true\"}," +
+            "\"outputFormat\":\"audio-24khz-48kbitrate-mono-mp3\"}}}}\r\n"
     }
 
     private fun buildSsmlMessage(text: String, voiceId: String, requestId: String): String {
@@ -360,17 +506,17 @@ class TtsEngine(private val context: Context) {
             .replace("'", "&apos;")
 
         return "X-Timestamp:$date\r\n" +
-                "Content-Type:application/ssml+xml\r\n" +
-                "X-RequestId:$requestId\r\n" +
-                "Path:ssml\r\n" +
-                "\r\n" +
-                "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'>" +
-                "<voice name='$voiceId'>" +
-                "<prosody pitch='+0Hz' rate='+0%' volume='+0%'>" +
-                "$escapedText" +
-                "</prosody>" +
-                "</voice>" +
-                "</speak>\r\n"
+            "Content-Type:application/ssml+xml\r\n" +
+            "X-RequestId:$requestId\r\n" +
+            "Path:ssml\r\n" +
+            "\r\n" +
+            "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'>" +
+            "<voice name='$voiceId'>" +
+            "<prosody pitch='+0Hz' rate='+0%' volume='+0%'>" +
+            "$escapedText" +
+            "</prosody>" +
+            "</voice>" +
+            "</speak>\r\n"
     }
 
     private fun extractErrorMessage(response: String): String? {
