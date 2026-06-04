@@ -213,10 +213,6 @@ class PresentationRenderer {
             color = Color.WHITE
             textSize = (width * 0.05f).coerceAtLeast(32f)
             typeface = Typeface.DEFAULT_BOLD
-            isShadowLayer = true
-            shadowColor = Color.argb(50, 0, 0, 0)
-            shadowDx = 2f
-            shadowDy = 2f
         }
 
         val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
