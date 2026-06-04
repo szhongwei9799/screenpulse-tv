@@ -4,14 +4,15 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
-import java.net.Socket
-import java.net.URI
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -146,8 +147,7 @@ class TtsEngine(private val context: Context) {
                 Log.d(TAG, "Request headers:\n$httpRequest")
 
                 // Connect using raw SSL socket
-                val socketFactory = SSLSocketFactory.getDefault() as SSLSocketFactory
-                val socket = socketFactory.createSocket(WSS_HOST, 443) as java.net.SSLSocket
+                val socket = (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket(WSS_HOST, 443) as SSLSocket
                 socket.soTimeout = 30000
                 socket.tcpNoDelay = true
 
