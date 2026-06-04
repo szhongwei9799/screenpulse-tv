@@ -209,7 +209,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <template #title>播放列表</template>
         </el-menu-item>
         <el-menu-item index="media" @click="currentView='media'">
-          <el-icon><FolderOpened></FolderOpened></el-icon>
+          <el-icon><Folder></Folder></el-icon>
           <template #title>媒体库</template>
         </el-menu-item>
         <el-menu-item index="bgmusic" @click="currentView='bgmusic'">
@@ -547,7 +547,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           </el-card>
 
           <el-card style="margin-top:20px">
-            <template #header><div class="card-hdr"><el-icon><FolderOpened></FolderOpened></el-icon><span>媒体文件</span><el-tag effect="light" size="small" class="live-tag">{{mediaFiles.length}} 个文件</el-tag></div></template>
+            <template #header><div class="card-hdr"><el-icon><Folder></Folder></el-icon><span>媒体文件</span><el-tag effect="light" size="small" class="live-tag">{{mediaFiles.length}} 个文件</el-tag></div></template>
             <el-table :data="mediaFiles" empty-text="未找到媒体文件" style="width:100%">
               <el-table-column label="文件" min-width="300">
                 <template #default="{row}">
@@ -1171,7 +1171,7 @@ const app = createApp({
       CircleClose: ElementPlusIconsVue.CircleClose,
       Check: ElementPlusIconsVue.Check,
       List: ElementPlusIconsVue.List,
-      FolderOpened: ElementPlusIconsVue.FolderOpened,
+      Folder: ElementPlusIconsVue.Folder,
       UploadFilled: ElementPlusIconsVue.UploadFilled,
       CopyDocument: ElementPlusIconsVue.CopyDocument,
       Rank: ElementPlusIconsVue.Rank,

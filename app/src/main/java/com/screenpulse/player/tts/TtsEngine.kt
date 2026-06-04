@@ -14,6 +14,7 @@ import okio.ByteString
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
+import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -23,15 +24,18 @@ import kotlin.coroutines.resume
 /**
  * Core Edge TTS engine using Microsoft's free TTS service via WebSocket.
  * No API key required. Connects to wss://speech.platform.bing.com.
+ * Updated 2026-06: Added Sec-MS-GEC token, MUID cookie, updated headers.
  */
 class TtsEngine(private val context: Context) {
 
     companion object {
         private const val TAG = "TtsEngine"
-        private const val WS_URL =
-            "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1" +
-                "?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId="
+        private const val WSS_BASE =
+            "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1"
+        private const val TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"
+        private const val SEC_MS_GEC_VERSION = "1-143.0.3650.75"
         private const val TTS_DIR = "screenpulse_tts"
+        private const val WIN_EPOCH = 11644473600L // seconds between 1970-01-01 and 1601-01-01
 
         data class EdgeVoice(
             val id: String,
@@ -70,12 +74,37 @@ class TtsEngine(private val context: Context) {
             val duration: Long = 0,
             val error: String? = null
         )
+
+        /**
+         * Generate Sec-MS-GEC anti-abuse token.
+         * Algorithm: SHA256( rounded_windows_ticks + TRUSTED_CLIENT_TOKEN )
+         * Ticks are rounded down to the nearest 5-minute boundary.
+         */
+        fun generateSecMsGec(): String {
+            val now = System.currentTimeMillis() / 1000
+            val ticks = now + WIN_EPOCH
+            val ticksNs = ticks * 10_000_000L
+            val roundedTicks = ticksNs - (ticksNs % 3_000_000_000L)
+            val strToHash = "${roundedTicks}$TRUSTED_CLIENT_TOKEN"
+            val md = MessageDigest.getInstance("SHA-256")
+            val hash = md.digest(strToHash.toByteArray())
+            return hash.joinToString("") { "%02X".format(it) }
+        }
+
+        /** Generate a random MUID (32 hex chars) for the cookie. */
+        fun generateMuid(): String {
+            val random = SecureRandom()
+            val bytes = ByteArray(16)
+            random.nextBytes(bytes)
+            return bytes.joinToString("") { "%02x".format(it) }
+        }
     }
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
+        .followRedirects(true)
         .build()
 
     suspend fun generateSpeech(
@@ -84,27 +113,41 @@ class TtsEngine(private val context: Context) {
         title: String = text.take(50)
     ): TtsResult = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { continuation ->
-            val requestId = UUID.randomUUID().toString()
+            val connectionId = UUID.randomUUID().toString().replace("-", "")
+            val secMsGec = generateSecMsGec()
+            val muid = generateMuid()
             val audioChunks = mutableListOf<ByteArray>()
             val latch = CountDownLatch(1)
             var errorMessage: String? = null
             var success = false
 
+            val wsUrl = "$WSS_BASE" +
+                "?TrustedClientToken=$TRUSTED_CLIENT_TOKEN" +
+                "&Sec-MS-GEC=$secMsGec" +
+                "&Sec-MS-GEC-Version=$SEC_MS_GEC_VERSION" +
+                "&ConnectionId=$connectionId"
+
+            Log.d(TAG, "Connecting to Edge TTS: $wsUrl")
+
             val request = Request.Builder()
-                .url(WS_URL + requestId)
-                .header("Origin", "chrome-extension://jdiccldimpiaibgdkfjclkfpkccgoecg")
+                .url(wsUrl)
+                .header("Origin", "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold")
                 .header(
                     "User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0"
                 )
+                .header("Accept-Encoding", "gzip, deflate, br")
+                .header("Accept-Language", "en-US,en;q=0.9")
                 .header("Pragma", "no-cache")
+                .header("Cache-Control", "no-cache")
+                .header("Cookie", "muid=$muid;")
                 .build()
 
             val ws = client.newWebSocket(request, object : WebSocketListener() {
                 override fun onOpen(webSocket: WebSocket, response: Response) {
-                    Log.d(TAG, "WebSocket connected for requestId=$requestId")
+                    Log.d(TAG, "WebSocket connected for connectionId=$connectionId")
                     webSocket.send(buildConfigMessage())
-                    webSocket.send(buildSsmlMessage(text, voiceId, requestId))
+                    webSocket.send(buildSsmlMessage(text, voiceId, connectionId))
                 }
 
                 override fun onMessage(webSocket: WebSocket, text: String) {
@@ -135,8 +178,11 @@ class TtsEngine(private val context: Context) {
                 }
 
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                    Log.e(TAG, "WebSocket failure", t)
+                    Log.e(TAG, "WebSocket failure: ${t.message}, response=$response")
                     errorMessage = t.message ?: "WebSocket connection failed"
+                    if (response != null) {
+                        errorMessage += " (HTTP ${response.code})"
+                    }
                     latch.countDown()
                 }
 
