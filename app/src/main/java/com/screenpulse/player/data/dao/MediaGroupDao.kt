@@ -13,10 +13,10 @@ interface MediaGroupDao {
 
     // ===== Group CRUD =====
 
-    @Query("SELECT * FROM media_groups ORDER BY sortOrder ASC, id ASC")
+    @Query("SELECT * FROM media_groups ORDER BY sort_order ASC, id ASC")
     fun getAllGroups(): Flow<List<MediaGroup>>
 
-    @Query("SELECT * FROM media_groups ORDER BY sortOrder ASC, id ASC")
+    @Query("SELECT * FROM media_groups ORDER BY sort_order ASC, id ASC")
     suspend fun getAllGroupsOnce(): List<MediaGroup>
 
     @Query("SELECT * FROM media_groups WHERE id = :id")
@@ -57,18 +57,18 @@ interface MediaGroupDao {
     @Query("DELETE FROM media_group_items WHERE media_id = :mediaId")
     suspend fun removeMediaFromAllGroups(mediaId: Long)
 
-    @Query("SELECT * FROM media_group_items WHERE group_id = :groupId ORDER BY sortOrder ASC, id ASC")
+    @Query("SELECT * FROM media_group_items WHERE group_id = :groupId ORDER BY sort_order ASC, id ASC")
     suspend fun getItemsInGroup(groupId: Long): List<MediaGroupItem>
 
     @Query("SELECT * FROM media_group_items WHERE media_id = :mediaId")
     suspend fun getGroupsForMedia(mediaId: Long): List<MediaGroupItem>
 
-    @Query("SELECT g.* FROM media_groups g INNER JOIN media_group_items mgi ON g.id = mgi.group_id WHERE mgi.media_id = :mediaId ORDER BY g.sortOrder ASC")
+    @Query("SELECT g.* FROM media_groups g INNER JOIN media_group_items mgi ON g.id = mgi.group_id WHERE mgi.media_id = :mediaId ORDER BY g.sort_order ASC")
     suspend fun getGroupsContainingMedia(mediaId: Long): List<MediaGroup>
 
     @Query("SELECT COUNT(*) FROM media_group_items WHERE group_id = :groupId")
     suspend fun getItemCountInGroup(groupId: Long): Int
 
-    @Query("SELECT media_id FROM media_group_items WHERE group_id = :groupId ORDER BY sortOrder ASC")
+    @Query("SELECT media_id FROM media_group_items WHERE group_id = :groupId ORDER BY sort_order ASC")
     suspend fun getMediaIdsInGroup(groupId: Long): List<Long>
 }
