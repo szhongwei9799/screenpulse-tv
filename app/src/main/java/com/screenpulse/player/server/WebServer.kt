@@ -224,13 +224,16 @@ class WebServer(
                 val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}""")
                 apiRouter.deleteBgMusic(session, id)
             }
-            // TTS APIs
-            session.method == Method.GET && session.uri == "/api/tts" -> apiRouter.getTtsList(session)
-            session.method == Method.GET && session.uri == "/api/tts/voices" -> apiRouter.getTtsVoices(session)
-            session.method == Method.POST && session.uri == "/api/tts/generate" -> apiRouter.generateTts(session)
-            session.method == Method.DELETE && session.uri.matches(Regex("^/api/tts/\\d+$")) -> {
+            // Schedule APIs
+            session.method == Method.GET && session.uri == "/api/schedules" -> apiRouter.getSchedules(session)
+            session.method == Method.POST && session.uri == "/api/schedules" -> apiRouter.createSchedule(session)
+            session.method == Method.PUT && session.uri.matches(Regex("^/api/schedules/\\d+$")) -> {
                 val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}""")
-                apiRouter.deleteTts(session, id)
+                apiRouter.updateSchedule(session, id)
+            }
+            session.method == Method.DELETE && session.uri.matches(Regex("^/api/schedules/\\d+$")) -> {
+                val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}""")
+                apiRouter.deleteSchedule(session, id)
             }
             else -> newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", """{"error":"Endpoint not found: ${session.uri}"}""")
         }

@@ -14,8 +14,7 @@ import com.screenpulse.player.data.entity.MediaItem
 import com.screenpulse.player.data.entity.MediaType
 import com.screenpulse.player.data.entity.PlaylistConfig
 import com.screenpulse.player.data.entity.PlaybackMode
-import com.screenpulse.player.data.entity.TtsAudioEntity
-import com.screenpulse.player.tts.TtsEngine
+
 import com.screenpulse.player.util.NetworkUtil
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.runBlocking
@@ -48,10 +47,8 @@ class ApiRouter(
 
     private val mediaItemDao = database.mediaItemDao()
     private val configDao = database.playlistConfigDao()
-    private val ttsAudioDao = database.ttsAudioDao()
     private val bgMusicDao = database.backgroundMusicDao()
     private val mediaGroupDao = database.mediaGroupDao()
-    private val ttsEngine = TtsEngine(context)
 
     // Password stored in a hidden file in the app's internal storage
     private val passwordFile = File(context.filesDir, ".admin_password")
@@ -570,6 +567,13 @@ class ApiRouter(
                     obj.addProperty("type", item.type.name)
                     obj.addProperty("size", if (file.exists()) file.length() else 0)
                     obj.addProperty("date", if (file.exists()) dateFormat.format(Date(file.lastModified())) else "")
+                    // Add group IDs
+                    val groupIds = com.google.gson.JsonArray()
+                    try {
+                        val itemGroups = mediaGroupDao.getGroupsContainingMedia(item.id)
+                        for (g in itemGroups) groupIds.add(g.id)
+                    } catch (_: Exception) {}
+                    obj.add("groupIds", groupIds)
                     filesArray.add(obj)
                 }
 
@@ -606,6 +610,13 @@ class ApiRouter(
                     obj.addProperty("type", item.type.name)
                     obj.addProperty("size", if (file.exists()) file.length() else 0)
                     obj.addProperty("date", if (file.exists()) dateFormat.format(Date(file.lastModified())) else "")
+                    // Add group IDs
+                    val groupIds = com.google.gson.JsonArray()
+                    try {
+                        val itemGroups = mediaGroupDao.getGroupsContainingMedia(item.id)
+                        for (g in itemGroups) groupIds.add(g.id)
+                    } catch (_: Exception) {}
+                    obj.add("groupIds", groupIds)
                     filesArray.add(obj)
                 }
                 val result = JsonObject().apply {
@@ -1013,96 +1024,86 @@ class ApiRouter(
     }
 
     // =====================================================================
-    //  TTS APIs
+    //  Schedule APIs
     // =====================================================================
 
-    fun getTtsList(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+    fun getSchedules(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         return runBlocking {
             try {
-                val items = ttsAudioDao.getAll()
-                val arr = com.google.gson.JsonArray()
-                for (item in items) {
-                    val obj = gson.toJsonTree(item).asJsonObject
-                    arr.add(obj)
-                }
-                val result = JsonObject().apply {
-                    addProperty("success", true)
-                    add("items", arr)
-                }
-                jsonResponse(result)
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                jsonResponse(JsonObject().apply { addProperty("success", true); add("items", arr) })
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to get TTS list", e)
-                jsonResponseError("获取TTS列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+                jsonResponseError("获取定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }
 
-    fun generateTts(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+    fun createSchedule(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         return runBlocking {
             try {
                 val body = parseBody(session)
-                val text = body.get("text")?.asString ?: return@runBlocking jsonResponseError("请输入文字", NanoHTTPD.Response.Status.BAD_REQUEST)
-                val voice = body.get("voice")?.asString ?: "zh-CN-XiaoxiaoNeural"
-                val title = body.get("title")?.asString ?: text.take(50)
-
-                if (text.isBlank()) return@runBlocking jsonResponseError("文字内容不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
-                if (text.length > 5000) return@runBlocking jsonResponseError("文字内容不能超过5000字", NanoHTTPD.Response.Status.BAD_REQUEST)
-
-                Log.d(TAG, "Generating TTS: voice=$voice, text length=${text.length}")
-                val result = ttsEngine.generateSpeech(text, voice, title)
-
-                if (result.success && result.filePath != null) {
-                    val entity = TtsAudioEntity(
-                        title = title,
-                        text = text,
-                        voice = voice,
-                        filePath = result.filePath,
-                        fileSize = result.fileSize,
-                        duration = result.duration
-                    )
-                    val id = ttsAudioDao.insert(entity)
-                    entity.id = id
-
-                    jsonResponse(JsonObject().apply {
-                        addProperty("success", true)
-                        add("item", gson.toJsonTree(entity))
-                    })
-                } else {
-                    jsonResponseError("TTS生成失败: ${result.error ?: "未知错误"}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+                val name = body.get("name")?.asString ?: "Unnamed Schedule"
+                val cron = body.get("cron")?.asString ?: ""
+                val enabled = body.get("enabled")?.asBoolean ?: true
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                val newId = System.currentTimeMillis()
+                val obj = JsonObject().apply {
+                    addProperty("id", newId)
+                    addProperty("name", name)
+                    addProperty("cron", cron)
+                    addProperty("enabled", enabled)
+                    addProperty("content", body.get("content")?.asString ?: "__all__")
                 }
+                arr.add(obj)
+                prefs.edit().putString("schedules_list", gson.toJson(arr)).apply()
+                jsonResponse(obj)
             } catch (e: Exception) {
-                Log.e(TAG, "TTS generation failed", e)
-                jsonResponseError("TTS生成失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+                jsonResponseError("创建定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }
 
-    fun getTtsVoices(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
-        val arr = com.google.gson.JsonArray()
-        for (voice in TtsEngine.AVAILABLE_VOICES) {
-            val obj = JsonObject().apply {
-                addProperty("id", voice.id)
-                addProperty("name", voice.name)
-            }
-            arr.add(obj)
-        }
-        return jsonResponse(JsonObject().apply {
-            addProperty("success", true)
-            add("voices", arr)
-        })
-    }
-
-    fun deleteTts(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+    fun updateSchedule(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
         return runBlocking {
             try {
-                val item = ttsAudioDao.getById(id)
-                if (item != null) {
-                    ttsEngine.deleteFile(item.filePath)
-                    ttsAudioDao.deleteById(id)
+                val body = parseBody(session)
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                for (element in arr) {
+                    val obj = element.asJsonObject
+                    if (obj.get("id")?.asLong == id) {
+                        if (body.has("enabled")) obj.addProperty("enabled", body.get("enabled").asBoolean)
+                        if (body.has("name")) obj.addProperty("name", body.get("name").asString)
+                        if (body.has("cron")) obj.addProperty("cron", body.get("cron").asString)
+                    }
                 }
+                prefs.edit().putString("schedules_list", gson.toJson(arr)).apply()
                 jsonResponse(JsonObject().apply { addProperty("success", true) })
             } catch (e: Exception) {
-                jsonResponseError("删除TTS失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+                jsonResponseError("更新定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun deleteSchedule(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                val newArr = com.google.gson.JsonArray()
+                for (element in arr) {
+                    if (element.asJsonObject.get("id")?.asLong != id) newArr.add(element)
+                }
+                prefs.edit().putString("schedules_list", gson.toJson(newArr)).apply()
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                jsonResponseError("删除定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }

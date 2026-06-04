@@ -219,6 +219,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
         </div>
       </div>
       <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#606266" active-text-color="#409EFF">
+        <el-menu-item index="dashboard" @click="currentView='dashboard'">
+          <el-icon><Monitor></Monitor></el-icon>
+          <template #title>仪表盘</template>
+        </el-menu-item>
         <el-menu-item index="playlist" @click="currentView='playlist'">
           <el-icon><List></List></el-icon>
           <template #title>播放列表</template>
@@ -263,6 +267,39 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
       </div>
 
       <div class="app-main">
+
+        <!-- ========================================== -->
+        <!-- ====== 仪表盘视图 ====== -->
+        <!-- ========================================== -->
+        <div v-if="currentView==='dashboard'" v-loading="dashboardLoading">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px">
+            <!-- 设备信息卡片 -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>设备信息</span></div></template>
+              <div class="device-info">
+                <div class="info-row"><span class="info-label">IP 地址</span><span class="info-value mono">{{dashboardStatus.ip || '--'}}</span></div>
+                <div class="info-row"><span class="info-label">MAC 地址</span><span class="info-value mono">{{dashboardStatus.mac || '--'}}</span></div>
+                <div class="info-row"><span class="info-label">设备型号</span><span class="info-value">{{dashboardStatus.model || '--'}}</span></div>
+                <div class="info-row"><span class="info-label">运行时间</span><span class="info-value">{{dashboardStatus.uptime || '--'}}</span></div>
+                <div class="info-row"><span class="info-label">存储使用</span><span class="info-value">{{dashboardStatus.storageUsed || '--'}}</span></div>
+                <div class="info-row"><span class="info-label">系统版本</span><span class="info-value">{{dashboardStatus.androidVersion || '--'}}</span></div>
+                <div class="info-row"><span class="info-label">App 版本</span><span class="info-value">{{appVersion}}</span></div>
+              </div>
+            </el-card>
+            <!-- 播放统计卡片 -->
+            <el-card>
+              <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>播放统计</span></div></template>
+              <div class="device-info">
+                <div class="info-row"><span class="info-label">当前播放</span><span class="info-value" style="color:#409EFF">{{playbackStats.currentPlayingTitle || '未在播放'}}</span></div>
+                <div class="info-row"><span class="info-label">媒体总数</span><span class="info-value">{{dashboardStatus.mediaCount || 0}} 个</span></div>
+                <div class="info-row"><span class="info-label">已启用</span><span class="info-value">{{dashboardStatus.activeItems || 0}} 个</span></div>
+                <div class="info-row"><span class="info-label">播放模式</span><span class="info-value">{{dashboardStatus.playbackMode || 'LOOP'}}</span></div>
+                <div class="info-row"><span class="info-label">播放轮次</span><span class="info-value">{{playbackStats.loopCount || 0}}</span></div>
+                <div class="info-row"><span class="info-label">总播放次数</span><span class="info-value">{{playbackStats.totalPlayCount || 0}}</span></div>
+              </div>
+            </el-card>
+          </div>
+        </div>
 
         <!-- ========================================== -->
         <!-- ====== 播放列表视图 ====== -->
@@ -758,52 +795,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             </el-table>
           </el-card>
 
-          <!-- TTS 文字转语音 -->
-          <el-card style="margin-top:20px">
-            <template #header><div class="card-hdr"><el-icon><ChatDotRound></ChatDotRound></el-icon><span>文字转语音 (Edge TTS)</span></div></template>
-            <el-form label-position="top">
-              <el-form-item label="语音内容">
-                <el-input v-model="ttsForm.text" type="textarea" :rows="4" placeholder="请输入要转换为语音的文字内容（最多5000字）" maxlength="5000" show-word-limit></el-input>
-              </el-form-item>
-              <el-form-item label="发音人">
-                <el-select v-model="ttsForm.voice" placeholder="选择发音人" style="width:100%" filterable>
-                  <el-option v-for="v in ttsVoices" :key="v.id" :label="v.name" :value="v.id">
-                    <span style="float:left;font-weight:500">{{v.name}}</span>
-                    <span style="float:right;color:#909399;font-size:12px">{{v.id}}</span>
-                  </el-option>
-                </el-select>
-              </el-form-item>
-              <el-form-item label="标题（可选）">
-                <el-input v-model="ttsForm.title" placeholder="给这段语音起个名字，留空自动取前50字" clearable></el-input>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" :icon="ChatDotRound" @click="generateTts" :loading="ttsGenerating" :disabled="!ttsForm.text.trim()">生成语音</el-button>
-              </el-form-item>
-            </el-form>
-          </el-card>
-
-          <!-- TTS 列表 -->
-          <el-card style="margin-top:20px">
-            <template #header><div class="card-hdr"><el-icon><Microphone></Microphone></el-icon><span>语音合成列表</span><el-tag effect="light" size="small" class="live-tag">{{ttsItems.length}} 条</el-tag></div></template>
-            <el-table :data="ttsItems" empty-text="暂无语音合成" style="width:100%">
-              <el-table-column label="标题" min-width="150" show-overflow-tooltip>
-                <template #default="{row}"><span class="file-name">{{row.title}}</span></template>
-              </el-table-column>
-              <el-table-column label="发音人" width="180" show-overflow-tooltip>
-                <template #default="{row}"><span style="font-size:12px;color:#909399">{{row.voice}}</span></template>
-              </el-table-column>
-              <el-table-column label="时长" width="80" align="center">
-                <template #default="{row}"><span class="file-size">~{{row.duration}}s</span></template>
-              </el-table-column>
-              <el-table-column label="操作" width="100" align="center">
-                <template #default="{row}">
-                  <div class="action-buttons">
-                    <el-button :icon="Delete" size="small" text type="danger" @click="deleteTts(row)"></el-button>
-                  </div>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
         </div>
 
         <!-- ========================================== -->
@@ -1082,9 +1073,9 @@ const app = createApp({
     };
 
     // ========== 布局 ==========
-    const appVersion = ref('1.0.6');
+    const appVersion = ref('1.1.0');
     const isCollapsed = ref(false);
-    const currentView = ref('playlist');
+    const currentView = ref('dashboard');
 
     const onUserCommand = (cmd) => {
       if (cmd === 'logout') doLogout();
@@ -1094,7 +1085,8 @@ const app = createApp({
       playlist: '播放列表管理',
       media: '媒体库',
       schedule: '定时播放',
-      bgmusic: '背景音乐与语音合成',
+      dashboard: '仪表盘',
+      bgmusic: '背景音乐',
       settings: '设置'
     }[currentView.value] || '播放列表管理'));
 
@@ -1642,16 +1634,27 @@ const app = createApp({
       }).catch(() => {});
     };
 
-    // ========== 背景音乐 + TTS ==========
+    // ========== Dashboard ==========
+    const dashboardLoading = ref(false);
+    const dashboardStatus = ref({});
+    const playbackStats = ref({});
+
+    const loadDashboard = async () => {
+      dashboardLoading.value = true;
+      try {
+        const [s, p] = await Promise.allSettled([apiGet('/api/status'), apiGet('/api/playback-stats')]);
+        if (s.status === 'fulfilled') dashboardStatus.value = s.value || {};
+        if (p.status === 'fulfilled') playbackStats.value = p.value || {};
+      } catch (e) { console.error(e); }
+      dashboardLoading.value = false;
+    };
+
+    // ========== 背景音乐 ==========
     const bgmLoading = ref(false);
     const bgmUploading = ref(false);
     const bgmUploadFiles = ref([]);
     const bgmUploadUrl = API + '/api/bgmusic/upload';
     const bgMusicItems = ref([]);
-    const ttsItems = ref([]);
-    const ttsGenerating = ref(false);
-    const ttsForm = reactive({ text: '', voice: 'zh-CN-XiaoxiaoNeural', title: '' });
-    const ttsVoices = ref([]);
 
     const onBgmFileChange = (file, files) => { bgmUploadFiles.value = files; };
     const onBgmFileRemove = (file, files) => { bgmUploadFiles.value = files; };
@@ -1688,38 +1691,12 @@ const app = createApp({
       }).catch(() => {});
     };
 
-    const loadTtsList = async () => {
-      try { const r = await apiGet('/api/tts'); ttsItems.value = r?.items || []; } catch (e) { console.error(e); }
-    };
 
-    const loadTtsVoices = async () => {
-      try { const r = await apiGet('/api/tts/voices'); ttsVoices.value = r?.voices || []; } catch (e) { console.error(e); }
-    };
-
-    const generateTts = async () => {
-      if (!ttsForm.text.trim()) { ElementPlus.ElMessage.warning('请输入文字内容'); return; }
-      ttsGenerating.value = true;
-      try {
-        await apiPost('/api/tts/generate', { text: ttsForm.text, voice: ttsForm.voice, title: ttsForm.title || undefined });
-        ElementPlus.ElMessage.success('语音生成成功');
-        ttsForm.text = ''; ttsForm.title = '';
-        loadTtsList();
-      } catch (e) { ElementPlus.ElMessage.error(e.message || '语音生成失败'); }
-      ttsGenerating.value = false;
-    };
-
-    const deleteTts = (row) => {
-      ElementPlus.ElMessageBox.confirm('确定删除 "' + row.title + '" 吗？', '确认删除', {
-        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
-      }).then(async () => {
-        try { await apiDelete('/api/tts/' + row.id); ElementPlus.ElMessage.success('已删除'); loadTtsList(); }
-        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
-      }).catch(() => {});
-    };
 
     // Watch currentView to auto-load data when switching tabs
     watch(currentView, async (newView) => {
-      if (newView === 'media') {
+      if (newView === 'dashboard') loadDashboard();
+      else if (newView === 'media') {
         await loadMediaList();
         await loadGroups();
         if (mediaFiles.value.length === 0) {
@@ -1728,8 +1705,7 @@ const app = createApp({
       } else if (newView === 'playlist') {
         fetchPlaylistAndSettings();
       } else if (newView === 'bgmusic') {
-        loadBgMusicList(); loadTtsList();
-        if (ttsVoices.value.length === 0) loadTtsVoices();
+        loadBgMusicList();
       } else if (newView === 'schedule') {
         loadSchedules();
       } else if (newView === 'settings') {
@@ -1740,6 +1716,7 @@ const app = createApp({
     // 初始化
     onMounted(() => {
       if (isLoggedIn.value) {
+        loadDashboard();
         fetchPlaylistAndSettings();
         loadMediaList();
         loadGroups();
@@ -1775,12 +1752,12 @@ const app = createApp({
       scheduleLoading, scheduleSaving, scheduleDialog, scheduleEditing, schedules, scheduleForm,
       loadSchedules, openAddSchedule, openEditSchedule, resetScheduleForm, saveSchedule,
       toggleSchedule, confirmDeleteSchedule,
-      // BGM + TTS
+      // Dashboard
+      dashboardLoading, dashboardStatus, playbackStats, loadDashboard,
+      // BGM
       bgmLoading, bgmUploading, bgmUploadFiles, bgmUploadUrl,
       onBgmFileChange, onBgmFileRemove, doBgmUpload,
       bgMusicItems, loadBgMusicList, deleteBgMusic,
-      ttsItems, ttsGenerating, ttsForm, ttsVoices,
-      loadTtsList, loadTtsVoices, generateTts, deleteTts,
       // Icons
       Lock: ElementPlusIconsVue.Lock,
       SwitchButton: ElementPlusIconsVue.SwitchButton,
@@ -1812,8 +1789,7 @@ const app = createApp({
       Expand: ElementPlusIconsVue.Expand,
       Fold: ElementPlusIconsVue.Fold,
       Headset: ElementPlusIconsVue.Headset,
-      ChatDotRound: ElementPlusIconsVue.ChatDotRound,
-      Microphone: ElementPlusIconsVue.Microphone,
+
       Timer: ElementPlusIconsVue.Timer,
       Link: ElementPlusIconsVue.Link,
       Grid: ElementPlusIconsVue.Grid,
