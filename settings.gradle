@@ -6,15 +6,5 @@ pluginManagement {
     }
 }
 
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://dl.google.com/dl/android/maven2/' }
-        maven { url 'https://jitpack.io' }
-    }
-}
-
 rootProject.name = "ScreenPulse-TV-Player"
 include ':app'
