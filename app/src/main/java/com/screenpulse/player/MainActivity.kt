@@ -41,6 +41,7 @@ import com.screenpulse.player.data.entity.MediaType
 import com.screenpulse.player.data.entity.PlaylistConfig
 import com.screenpulse.player.player.BackgroundMusicPlayer
 import com.screenpulse.player.player.PlaylistManager
+import com.screenpulse.player.player.PresentationRenderer
 import com.screenpulse.player.qrcode.QRCodeGenerator
 import com.screenpulse.player.server.WebServer
 import com.screenpulse.player.util.NetworkUtil
@@ -88,6 +89,8 @@ class MainActivity : AppCompatActivity() {
 
     // ── Image display timer ──────────────────────────────────────────────
     private var imageDisplayJob: Job? = null
+    private var presentationSlides: List<PresentationRenderer.SlideResult> = emptyList()
+    private var currentSlideIndex: Int = 0
 
     // ── Background music ──────────────────────────────────────────────
     private var bgMusicPlayer: BackgroundMusicPlayer? = null
@@ -369,7 +372,7 @@ class MainActivity : AppCompatActivity() {
         val contentView = when (item.type) {
             MediaType.VIDEO, MediaType.IPTV, MediaType.STREAM -> playerView
             MediaType.IMAGE -> imageView
-            MediaType.PPT -> webView
+            MediaType.PPT -> imageView // Use ImageView for rendered PPT slides
         }
         if (transitionEnabled) {
             applyRandomTransition(contentView)
@@ -446,30 +449,60 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun displayPresentation(item: com.screenpulse.player.data.entity.MediaItem) {
-        showWebView()
+        showImageView()
 
-        val url = if (item.url.startsWith("http", ignoreCase = true)) {
-            item.url
-        } else {
-            "file://${android.os.Environment.getExternalStorageDirectory()}/${item.url}"
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+
+        lifecycleScope.launch {
+            val slides = withContext(Dispatchers.IO) {
+                val renderer = PresentationRenderer()
+                renderer.render(item.url, screenWidth, screenHeight)
+            }
+
+            if (slides.isEmpty()) {
+                Log.e(TAG, "No slides rendered for: ${item.url}")
+                onCurrentItemFinished()
+                return@launch
+            }
+
+            Log.d(TAG, "Rendered ${slides.size} slides from: ${item.url}")
+            presentationSlides = slides
+            currentSlideIndex = 0
+            showSlide(item.durationSeconds)
+        }
+    }
+
+    /**
+     * Display the current PPT slide and schedule the next one.
+     */
+    private fun showSlide(durationSeconds: Int) {
+        if (currentSlideIndex >= presentationSlides.size) {
+            // All slides shown, move to next playlist item
+            onCurrentItemFinished()
+            return
         }
 
-        webView.loadUrl(url)
+        val slide = presentationSlides[currentSlideIndex]
+        imageView.setImageBitmap(slide.bitmap)
 
-        // If PPT has a custom duration, auto-advance after that time
-        if (item.durationSeconds > 0) {
-            imageDisplayJob?.cancel()
-            imageDisplayJob = lifecycleScope.launch {
-                delay(item.durationSeconds * 1000L)
-                onCurrentItemFinished()
-            }
+        if (transitionEnabled) {
+            applyRandomTransition(imageView)
+        }
+
+        imageDisplayJob?.cancel()
+        val slideDurationMs = if (durationSeconds > 0 && presentationSlides.size == 1) {
+            durationSeconds * 1000L
         } else {
-            // Default PPT duration: 60 seconds
-            imageDisplayJob?.cancel()
-            imageDisplayJob = lifecycleScope.launch {
-                delay(60_000L)
-                onCurrentItemFinished()
-            }
+            slide.durationMs
+        }
+
+        imageDisplayJob = lifecycleScope.launch {
+            delay(slideDurationMs)
+            currentSlideIndex++
+            showSlide(durationSeconds)
         }
     }
 
