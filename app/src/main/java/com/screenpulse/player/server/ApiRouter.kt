@@ -7,10 +7,13 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.screenpulse.player.data.AppDatabase
+import com.screenpulse.player.data.entity.BackgroundMusic
 import com.screenpulse.player.data.entity.MediaItem
 import com.screenpulse.player.data.entity.MediaType
 import com.screenpulse.player.data.entity.PlaylistConfig
 import com.screenpulse.player.data.entity.PlaybackMode
+import com.screenpulse.player.data.entity.TtsAudioEntity
+import com.screenpulse.player.tts.TtsEngine
 import com.screenpulse.player.util.NetworkUtil
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.runBlocking
@@ -43,6 +46,9 @@ class ApiRouter(
 
     private val mediaItemDao = database.mediaItemDao()
     private val configDao = database.playlistConfigDao()
+    private val ttsAudioDao = database.ttsAudioDao()
+    private val bgMusicDao = database.backgroundMusicDao()
+    private val ttsEngine = TtsEngine(context)
 
     // Password stored in a hidden file in the app's internal storage
     private val passwordFile = File(context.filesDir, ".admin_password")
@@ -771,5 +777,194 @@ class ApiRouter(
             addProperty("error", message)
         }
         return NanoHTTPD.newFixedLengthResponse(status, "application/json", gson.toJson(error))
+    }
+
+    // =====================================================================
+    //  Background Music APIs
+    // =====================================================================
+
+    fun getBgMusicList(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val items = bgMusicDao.getAll()
+                val arr = com.google.gson.JsonArray()
+                for (item in items) {
+                    val obj = gson.toJsonTree(item).asJsonObject
+                    arr.add(obj)
+                }
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("items", arr)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get bg music list", e)
+                jsonResponseError("获取背景音乐列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun uploadBgMusic(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        val files = mutableMapOf<String, String>()
+        try {
+            System.setProperty("java.io.tmpdir", File(context.cacheDir, "nanohttpd_tmp").also { it.mkdirs() }.absolutePath)
+            session.parseBody(files)
+        } catch (e: Exception) {
+            return jsonResponseError("上传解析失败: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
+        }
+        val tempFilePath = files["file"] ?: return jsonResponseError("未找到上传文件", NanoHTTPD.Response.Status.BAD_REQUEST)
+        val tempFile = File(tempFilePath)
+        if (!tempFile.exists()) return jsonResponseError("临时文件不存在", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+
+        val originalName = session.parameters["file"]?.firstOrNull()?.substringAfterLast('/') ?: tempFile.name
+
+        return runBlocking {
+            try {
+                val safeName = originalName.replace("\\0", "").replace("..", "_")
+                val destFile = File(uploadDir, safeName)
+                var finalFile = destFile
+                var counter = 1
+                while (finalFile.exists() && finalFile != tempFile) {
+                    val base = safeName.substringBeforeLast('.')
+                    val ext = safeName.substringAfterLast('.')
+                    finalFile = File(uploadDir, "${base}_${counter}.${ext}")
+                    counter++
+                }
+                java.io.FileInputStream(tempFile).use { input ->
+                    FileOutputStream(finalFile).use { output -> input.copyTo(output) }
+                }
+                try { tempFile.delete() } catch (_: Exception) {}
+
+                val count = bgMusicDao.getCount()
+                val music = BackgroundMusic(
+                    title = originalName.substringBeforeLast(".").take(200),
+                    filePath = finalFile.absolutePath,
+                    fileSize = finalFile.length(),
+                    sortOrder = count
+                )
+                val id = bgMusicDao.insert(music)
+                music.id = id
+
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    addProperty("id", id)
+                    add("item", gson.toJsonTree(music))
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to upload bg music", e)
+                jsonResponseError("上传背景音乐失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun deleteBgMusic(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val item = bgMusicDao.getById(id)
+                if (item != null) {
+                    File(item.filePath).delete()
+                    bgMusicDao.deleteById(id)
+                }
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                jsonResponseError("删除背景音乐失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  TTS APIs
+    // =====================================================================
+
+    fun getTtsList(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val items = ttsAudioDao.getAll()
+                val arr = com.google.gson.JsonArray()
+                for (item in items) {
+                    val obj = gson.toJsonTree(item).asJsonObject
+                    arr.add(obj)
+                }
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("items", arr)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get TTS list", e)
+                jsonResponseError("获取TTS列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun generateTts(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val text = body.get("text")?.asString ?: return@runBlocking jsonResponseError("请输入文字", NanoHTTPD.Response.Status.BAD_REQUEST)
+                val voice = body.get("voice")?.asString ?: "zh-CN-XiaoxiaoNeural"
+                val title = body.get("title")?.asString ?: text.take(50)
+
+                if (text.isBlank()) return@runBlocking jsonResponseError("文字内容不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                if (text.length > 5000) return@runBlocking jsonResponseError("文字内容不能超过5000字", NanoHTTPD.Response.Status.BAD_REQUEST)
+
+                Log.d(TAG, "Generating TTS: voice=$voice, text length=${text.length}")
+                val result = ttsEngine.generateSpeech(text, voice, title)
+
+                if (result.success && result.filePath != null) {
+                    val entity = TtsAudioEntity(
+                        title = title,
+                        text = text,
+                        voice = voice,
+                        filePath = result.filePath,
+                        fileSize = result.fileSize,
+                        duration = result.duration
+                    )
+                    val id = ttsAudioDao.insert(entity)
+                    entity.id = id
+
+                    jsonResponse(JsonObject().apply {
+                        addProperty("success", true)
+                        add("item", gson.toJsonTree(entity))
+                    })
+                } else {
+                    jsonResponseError("TTS生成失败: ${result.error ?: "未知错误"}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "TTS generation failed", e)
+                jsonResponseError("TTS生成失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun getTtsVoices(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        val arr = com.google.gson.JsonArray()
+        for (voice in TtsEngine.AVAILABLE_VOICES) {
+            val obj = JsonObject().apply {
+                addProperty("id", voice.id)
+                addProperty("name", voice.name)
+            }
+            arr.add(obj)
+        }
+        return jsonResponse(JsonObject().apply {
+            addProperty("success", true)
+            add("voices", arr)
+        })
+    }
+
+    fun deleteTts(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val item = ttsAudioDao.getById(id)
+                if (item != null) {
+                    ttsEngine.deleteFile(item.filePath)
+                    ttsAudioDao.deleteById(id)
+                }
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                jsonResponseError("删除TTS失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
     }
 }

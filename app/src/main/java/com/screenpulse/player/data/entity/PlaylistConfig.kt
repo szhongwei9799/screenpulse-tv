@@ -5,7 +5,6 @@ import androidx.room.PrimaryKey
 
 /**
  * Global playback configuration stored as a single-row table.
- * Holds settings that affect how the playlist is played back.
  */
 @Entity(tableName = "playlist_config")
 data class PlaylistConfig(
@@ -17,17 +16,18 @@ data class PlaylistConfig(
     val interstitialEndHour: Int = 13,
     val interstitialPlaylistName: String = "interstitial",
     val volumeLevel: Int = 80,
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = System.currentTimeMillis(),
+    // Background music settings
+    val bgMusicEnabled: Boolean = false,
+    val bgMusicVolume: Int = 50,
+    val bgMusicLoop: Boolean = true,
+    val bgMusicShuffle: Boolean = false,
+    // Transition animation settings
+    val transitionEnabled: Boolean = true
 )
 
-/**
- * Determines how media items are sequenced during playback.
- */
 enum class PlaybackMode {
-    /** Repeat the playlist from the beginning after the last item. */
     LOOP,
-    /** Play through once and stop. */
     SEQUENTIAL,
-    /** Shuffle items each cycle. */
     RANDOM
 }

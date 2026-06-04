@@ -19,6 +19,11 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
+import android.view.animation.TranslateAnimation
+import android.view.animation.ScaleAnimation
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.viewModels
@@ -34,6 +39,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.screenpulse.player.data.entity.MediaType
 import com.screenpulse.player.data.entity.PlaylistConfig
+import com.screenpulse.player.player.BackgroundMusicPlayer
 import com.screenpulse.player.player.PlaylistManager
 import com.screenpulse.player.qrcode.QRCodeGenerator
 import com.screenpulse.player.server.WebServer
@@ -82,6 +88,12 @@ class MainActivity : AppCompatActivity() {
 
     // ── Image display timer ──────────────────────────────────────────────
     private var imageDisplayJob: Job? = null
+
+    // ── Background music ──────────────────────────────────────────────
+    private var bgMusicPlayer: BackgroundMusicPlayer? = null
+    private var bgMusicEnabled = false
+    private var transitionEnabled = true
+    private val transitionTypes = listOf("fade", "slide_left", "slide_right", "slide_up", "zoom_in", "zoom_out")
 
     // ── Network receiver ─────────────────────────────────────────────────
     private var networkReceiver: android.content.BroadcastReceiver? = null
@@ -303,6 +315,43 @@ class MainActivity : AppCompatActivity() {
             startHour = config.interstitialStartHour,
             endHour = config.interstitialEndHour
         )
+        // Background music settings
+        bgMusicEnabled = config.bgMusicEnabled
+        transitionEnabled = config.transitionEnabled
+        updateBackgroundMusic(config)
+    }
+
+    private fun updateBackgroundMusic(config: PlaylistConfig) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val bgMusicDao = (application as ScreenPulseApp).database.backgroundMusicDao()
+                val ttsDao = (application as ScreenPulseApp).database.ttsAudioDao()
+                val bgFiles = bgMusicDao.getAll().map { it.filePath }.toMutableList()
+                val ttsFiles = ttsDao.getEnabled().map { it.filePath }
+                bgFiles.addAll(ttsFiles)
+
+                withContext(Dispatchers.Main) {
+                    if (bgMusicEnabled && bgFiles.isNotEmpty()) {
+                        if (bgMusicPlayer == null) {
+                            bgMusicPlayer = BackgroundMusicPlayer(this@MainActivity)
+                        }
+                        bgMusicPlayer?.setVolume(config.bgMusicVolume)
+                        bgMusicPlayer?.setPlaylist(bgFiles, config.bgMusicShuffle, config.bgMusicLoop)
+                        // Mute video audio when bg music is playing
+                        exoPlayer?.volume = 0f
+                        bgMusicPlayer?.play()
+                        Log.d(TAG, "Background music started with ${bgFiles.size} tracks")
+                    } else {
+                        bgMusicPlayer?.stop()
+                        // Restore video volume
+                        exoPlayer?.volume = currentVolume / 100f
+                        Log.d(TAG, "Background music stopped")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update background music", e)
+            }
+        }
     }
 
     // =====================================================================
@@ -315,6 +364,16 @@ class MainActivity : AppCompatActivity() {
         stopAllPlayback()
 
         Log.d(TAG, "Playing item: ${item.title} (${item.type}) URL: ${item.url}")
+
+        // Apply random transition animation
+        val contentView = when (item.type) {
+            MediaType.VIDEO, MediaType.IPTV, MediaType.STREAM -> playerView
+            MediaType.IMAGE -> imageView
+            MediaType.PPT -> webView
+        }
+        if (transitionEnabled) {
+            applyRandomTransition(contentView)
+        }
 
         when (item.type) {
             MediaType.VIDEO, MediaType.IPTV, MediaType.STREAM -> {
@@ -439,6 +498,23 @@ class MainActivity : AppCompatActivity() {
     //  View switching
     // =====================================================================
 
+    private fun applyRandomTransition(view: View) {
+        val type = transitionTypes.random()
+        val duration = 500L
+        val anim: Animation = when (type) {
+            "fade" -> AlphaAnimation(0f, 1f).apply { this.duration = duration }
+            "slide_left" -> TranslateAnimation(-view.width.toFloat(), 0f, 0f, 0f).apply { this.duration = duration }
+            "slide_right" -> TranslateAnimation(view.width.toFloat(), 0f, 0f, 0f).apply { this.duration = duration }
+            "slide_up" -> TranslateAnimation(0f, 0f, -view.height.toFloat(), 0f).apply { this.duration = duration }
+            "zoom_in" -> ScaleAnimation(0.5f, 1f, 0.5f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f).apply { this.duration = duration }
+            "zoom_out" -> ScaleAnimation(1.5f, 1f, 1.5f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f).apply { this.duration = duration }
+            else -> AlphaAnimation(0f, 1f).apply { this.duration = duration }
+        }
+        anim.fillAfter = true
+        view.startAnimation(anim)
+        Log.d(TAG, "Applied transition: $type")
+    }
+
     private fun showPlayerView() {
         playerView.visibility = View.VISIBLE
         imageView.visibility = View.GONE
@@ -499,6 +575,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         imageDisplayJob?.cancel()
+        bgMusicPlayer?.release()
+        bgMusicPlayer = null
         exoPlayer?.release()
         exoPlayer = null
         webServer?.stop()

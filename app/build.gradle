@@ -102,4 +102,7 @@ dependencies {
     // Leanback (Android TV)
     implementation 'androidx.leanback:leanback:1.0.0'
     implementation 'androidx.tvprovider:tvprovider:1.0.0'
+
+    // OkHttp (for Edge TTS WebSocket)
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }

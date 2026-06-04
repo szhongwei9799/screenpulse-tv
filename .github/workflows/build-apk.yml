@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
     paths:
       - 'app/**'
+      - 'android/**'
       - '.github/**'
       - 'build.gradle'
       - 'settings.gradle'

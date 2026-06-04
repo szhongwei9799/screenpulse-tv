@@ -209,6 +209,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <el-icon><FolderOpened></FolderOpened></el-icon>
           <template #title>媒体库</template>
         </el-menu-item>
+        <el-menu-item index="bgmusic" @click="currentView='bgmusic'">
+          <el-icon><Headset></Headset></el-icon>
+          <template #title>背景音乐</template>
+        </el-menu-item>
       </el-menu>
       <div class="aside-footer">
         <el-button :icon="isCollapsed?'Expand':'Fold'" circle size="small" text @click="isCollapsed=!isCollapsed" ></el-button>
@@ -430,6 +434,121 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <el-button type="primary" :loading="pwdSaving" @click="doChangePassword">确认修改</el-button>
             </template>
           </el-dialog>
+        </div>
+
+        <!-- ====== 背景音乐与TTS视图 ====== -->
+        <div v-if="currentView==='bgmusic'" v-loading="bgmLoading">
+          <!-- 背景音乐设置 -->
+          <el-card>
+            <template #header><div class="card-hdr"><el-icon><Headset></Headset></el-icon><span>背景音乐设置</span></div></template>
+            <el-form label-position="top">
+              <el-form-item label="启用背景音乐">
+                <div class="toggle-row"><el-switch v-model="cfg.bgMusicEnabled"></el-switch><span class="toggle-label">{{cfg.bgMusicEnabled?'已启用':'已禁用'}}</span></div>
+                <div class="form-hint">启用后将自动静音视频原声，播放背景音乐和TTS语音。</div>
+              </el-form-item>
+              <el-form-item label="背景音乐音量">
+                <div class="volume-control">
+                  <el-icon><Mute></Mute></el-icon>
+                  <el-slider v-model="cfg.bgMusicVolume" :min="0" :max="100" :step="1" class="volume-slider"></el-slider>
+                  <span class="volume-value">{{cfg.bgMusicVolume}}%</span>
+                </div>
+              </el-form-item>
+              <el-form-item>
+                <div style="display:flex;gap:16px;flex-wrap:wrap">
+                  <el-switch v-model="cfg.bgMusicLoop" active-text="循环播放"></el-switch>
+                  <el-switch v-model="cfg.bgMusicShuffle" active-text="随机播放"></el-switch>
+                  <el-switch v-model="cfg.transitionEnabled" active-text="过场动画"></el-switch>
+                </div>
+              </el-form-item>
+            </el-form>
+          </el-card>
+
+          <!-- 上传背景音乐 -->
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><UploadFilled></UploadFilled></el-icon><span>上传背景音乐</span></div></template>
+            <el-upload :action="bgmUploadUrl" :auto-upload="false" :on-change="onBgmFileChange" :on-remove="onBgmFileRemove" :file-list="bgmUploadFiles" accept=".mp3,.wav,.ogg,.aac,.flac,.m4a" drag multiple class="upload-area">
+              <div class="upload-content">
+                <el-icon :size="48" class="upload-icon"><UploadFilled></UploadFilled></el-icon>
+                <div class="upload-text">拖拽音频文件到此处或点击上传</div>
+                <div class="upload-hint">支持：MP3, WAV, OGG, AAC, FLAC, M4A</div>
+              </div>
+            </el-upload>
+            <div class="upload-actions">
+              <el-button type="primary" :icon="UploadFilled" @click="doBgmUpload" :loading="bgmUploading" :disabled="!bgmUploadFiles.length">上传 {{bgmUploadFiles.length}} 个文件</el-button>
+            </div>
+          </el-card>
+
+          <!-- 背景音乐列表 -->
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><Headset></Headset></el-icon><span>背景音乐列表</span><el-tag effect="light" size="small" class="live-tag">{{bgMusicItems.length}} 首</el-tag></div></template>
+            <el-table :data="bgMusicItems" empty-text="暂无背景音乐" style="width:100%">
+              <el-table-column label="标题" min-width="200">
+                <template #default="{row}"><span class="file-name">{{row.title}}</span></template>
+              </el-table-column>
+              <el-table-column label="大小" width="120" align="right">
+                <template #default="{row}"><span class="file-size">{{fmtSize(row.fileSize)}}</span></template>
+              </el-table-column>
+              <el-table-column label="操作" width="100" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Delete" size="small" text type="danger" @click="deleteBgMusic(row)"></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- TTS 文字转语音 -->
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><ChatDotRound></ChatDotRound></el-icon><span>文字转语音 (Edge TTS)</span></div></template>
+            <el-form label-position="top">
+              <el-form-item label="语音内容">
+                <el-input v-model="ttsForm.text" type="textarea" :rows="4" placeholder="请输入要转换为语音的文字内容（最多5000字）" maxlength="5000" show-word-limit></el-input>
+              </el-form-item>
+              <el-form-item label="发音人">
+                <el-select v-model="ttsForm.voice" placeholder="选择发音人" style="width:100%" filterable>
+                  <el-option v-for="v in ttsVoices" :key="v.id" :label="v.name" :value="v.id">
+                    <span style="float:left;font-weight:500">{{v.name}}</span>
+                    <span style="float:right;color:#909399;font-size:12px">{{v.id}}</span>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="标题（可选）">
+                <el-input v-model="ttsForm.title" placeholder="给这段语音起个名字，留空自动取前50字" clearable></el-input>
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" :icon="ChatDotRound" @click="generateTts" :loading="ttsGenerating" :disabled="!ttsForm.text.trim()">生成语音</el-button>
+              </el-form-item>
+            </el-form>
+          </el-card>
+
+          <!-- TTS 列表 -->
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><Microphone></Microphone></el-icon><span>语音合成列表</span><el-tag effect="light" size="small" class="live-tag">{{ttsItems.length}} 条</el-tag></div></template>
+            <el-table :data="ttsItems" empty-text="暂无语音合成" style="width:100%">
+              <el-table-column label="标题" min-width="150" show-overflow-tooltip>
+                <template #default="{row}"><span class="file-name">{{row.title}}</span></template>
+              </el-table-column>
+              <el-table-column label="发音人" width="180" show-overflow-tooltip>
+                <template #default="{row}"><span style="font-size:12px;color:#909399">{{row.voice}}</span></template>
+              </el-table-column>
+              <el-table-column label="时长" width="80" align="center">
+                <template #default="{row}"><span class="file-size">~{{row.duration}}s</span></template>
+              </el-table-column>
+              <el-table-column label="操作" width="100" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Delete" size="small" text type="danger" @click="deleteTts(row)"></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- 保存背景音乐设置 -->
+          <div class="save-bar" style="margin-top:24px">
+            <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">保存设置</el-button>
+          </div>
         </div>
 
         <!-- ====== 媒体库视图 ====== -->
@@ -673,12 +792,14 @@ const app = createApp({
     const currentView = ref('playlist');
     const pageTitle = computed(() => ({
       playlist: '播放列表管理',
-      media: '媒体库'
+      media: '媒体库',
+      bgmusic: '背景音乐与语音合成'
     }[currentView.value] || '播放列表管理'));
 
     const refreshView = () => {
       if (currentView.value === 'playlist') fetchPlaylistAndSettings();
       else if (currentView.value === 'media') loadMediaList();
+      else if (currentView.value === 'bgmusic') { loadBgMusicList(); loadTtsList(); }
     };
 
     // ========== 播放列表 ==========
@@ -930,7 +1051,9 @@ const app = createApp({
       playbackMode: 'loop', volume: 50, imageDuration: 10,
       interstitialEnabled: false, interstitialStart: null, interstitialEnd: null,
       offScreenMessage: '', deviceName: 'ScreenPulse Player',
-      orientation: 'landscape', idleTimeout: 0
+      orientation: 'landscape', idleTimeout: 0,
+      bgMusicEnabled: false, bgMusicVolume: 50, bgMusicLoop: true, bgMusicShuffle: false,
+      transitionEnabled: true
     });
 
     const saveSettings = async () => {
@@ -942,6 +1065,81 @@ const app = createApp({
       settingsSaving.value = false;
     };
 
+    // ========== 背景音乐 + TTS ==========
+    const bgmLoading = ref(false);
+    const bgmUploading = ref(false);
+    const bgmUploadFiles = ref([]);
+    const bgmUploadUrl = API + '/api/bgmusic/upload';
+    const bgMusicItems = ref([]);
+    const ttsItems = ref([]);
+    const ttsGenerating = ref(false);
+    const ttsForm = reactive({ text: '', voice: 'zh-CN-XiaoxiaoNeural', title: '' });
+    const ttsVoices = ref([]);
+
+    const onBgmFileChange = (file, files) => { bgmUploadFiles.value = files; };
+    const onBgmFileRemove = (file, files) => { bgmUploadFiles.value = files; };
+
+    const doBgmUpload = async () => {
+      if (!bgmUploadFiles.value.length) return;
+      bgmUploading.value = true;
+      let ok = 0, fail = 0;
+      for (const f of bgmUploadFiles.value) {
+        try {
+          const fd = new FormData(); fd.append('file', f.raw);
+          const token = getAuthToken(); const headers = {};
+          if (token) headers['Authorization'] = 'Bearer ' + token;
+          const r = await fetch(API + '/api/bgmusic/upload', { method: 'POST', body: fd, headers });
+          if (r.ok) ok++; else fail++;
+        } catch (e) { fail++; }
+      }
+      bgmUploading.value = false;
+      if (fail === 0) { ElementPlus.ElMessage.success(ok + ' 首音乐上传成功'); bgmUploadFiles.value = []; }
+      else ElementPlus.ElMessage.warning(ok + ' 首上传成功，' + fail + ' 首上传失败');
+      loadBgMusicList();
+    };
+
+    const loadBgMusicList = async () => {
+      try { const r = await apiGet('/api/bgmusic'); bgMusicItems.value = r?.items || []; } catch (e) { console.error(e); }
+    };
+
+    const deleteBgMusic = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + row.title + '" 吗？', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/bgmusic/' + row.id); ElementPlus.ElMessage.success('已删除'); loadBgMusicList(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
+    const loadTtsList = async () => {
+      try { const r = await apiGet('/api/tts'); ttsItems.value = r?.items || []; } catch (e) { console.error(e); }
+    };
+
+    const loadTtsVoices = async () => {
+      try { const r = await apiGet('/api/tts/voices'); ttsVoices.value = r?.voices || []; } catch (e) { console.error(e); }
+    };
+
+    const generateTts = async () => {
+      if (!ttsForm.text.trim()) { ElementPlus.ElMessage.warning('请输入文字内容'); return; }
+      ttsGenerating.value = true;
+      try {
+        await apiPost('/api/tts/generate', { text: ttsForm.text, voice: ttsForm.voice, title: ttsForm.title || undefined });
+        ElementPlus.ElMessage.success('语音生成成功');
+        ttsForm.text = ''; ttsForm.title = '';
+        loadTtsList();
+      } catch (e) { ElementPlus.ElMessage.error(e.message || '语音生成失败'); }
+      ttsGenerating.value = false;
+    };
+
+    const deleteTts = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + row.title + '" 吗？', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/tts/' + row.id); ElementPlus.ElMessage.success('已删除'); loadTtsList(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
     // Watch currentView to auto-load data when switching tabs
     watch(currentView, async (newView) => {
       if (newView === 'media') {
@@ -951,6 +1149,7 @@ const app = createApp({
           await doScanAndRefresh();
         }
       } else if (newView === 'playlist') fetchPlaylistAndSettings();
+      else if (newView === 'bgmusic') { loadBgMusicList(); loadTtsList(); if (ttsVoices.value.length === 0) loadTtsVoices(); }
     }, { immediate: true });
 
     // 初始化
@@ -1000,7 +1199,15 @@ const app = createApp({
       Bell: ElementPlusIconsVue.Bell,
       Connection: ElementPlusIconsVue.Connection,
       Expand: ElementPlusIconsVue.Expand,
-      Fold: ElementPlusIconsVue.Fold
+      Fold: ElementPlusIconsVue.Fold,
+      Headset: ElementPlusIconsVue.Headset,
+      ChatDotRound: ElementPlusIconsVue.ChatDotRound,
+      Microphone: ElementPlusIconsVue.Microphone,
+      bgmLoading, bgmUploading, bgmUploadFiles, bgmUploadUrl,
+      onBgmFileChange, onBgmFileRemove, doBgmUpload,
+      bgMusicItems, loadBgMusicList, deleteBgMusic,
+      ttsItems, ttsGenerating, ttsForm, ttsVoices,
+      loadTtsList, loadTtsVoices, generateTts, deleteTts
     };
   }
 });

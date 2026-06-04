@@ -4,27 +4,31 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.screenpulse.player.data.dao.BackgroundMusicDao
 import com.screenpulse.player.data.dao.MediaItemDao
 import com.screenpulse.player.data.dao.PlaylistConfigDao
+import com.screenpulse.player.data.dao.TtsAudioDao
+import com.screenpulse.player.data.entity.BackgroundMusic
 import com.screenpulse.player.data.entity.MediaItem
 import com.screenpulse.player.data.entity.PlaylistConfig
+import com.screenpulse.player.data.entity.TtsAudioEntity
 
-/**
- * Room database for the ScreenPulse digital signage player.
- * Holds the media playlist and global playback configuration.
- */
 @Database(
     entities = [
         MediaItem::class,
-        PlaylistConfig::class
+        PlaylistConfig::class,
+        TtsAudioEntity::class,
+        BackgroundMusic::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun mediaItemDao(): MediaItemDao
     abstract fun playlistConfigDao(): PlaylistConfigDao
+    abstract fun ttsAudioDao(): TtsAudioDao
+    abstract fun backgroundMusicDao(): BackgroundMusicDao
 
     companion object {
         @Volatile
