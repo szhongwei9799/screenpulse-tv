@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScreenPulse TV Player - AndroidManifest.xml -->
+<!-- 声明 Android TV 应用所需的权限、组件和配置 -->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ============ 应用权限 ============ -->
+    <!-- 网络访问权限 - 用于流媒体播放和Web服务器 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 网络状态权限 - 用于检测网络连接 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Wi-Fi 状态权限 - 用于获取设备IP -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- 前台服务权限 - 用于保持播放服务 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- 前台服务媒体类型 - Android 14+ -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- 开机自启动权限 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 唤醒锁权限 - 保持播放不中断 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- 存储读取权限 - 用于读取本地媒体文件 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- 精确闹钟权限 - 用于定时调度 -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- ============ Android TV 功能声明 ============ -->
+    <!-- 声明为 TV 应用，必须在 Leanback 启动器中显示 -->
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="true" />
+    <!-- 不需要触摸屏 -->
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <!-- ============ 应用声明 ============ -->
+    <application
+        android:name=".ScreenPulseApp"
+        android:allowBackup="true"
+        android:banner="@drawable/app_banner"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ScreenPulseTV"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="34">
+
+        <!-- ============ 主 Activity (Leanback 启动器) ============ -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape"
+            android:stateNotNeeded="true">
+
+            <!-- Leanback 启动器图标 -->
+            <property
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+
+            <!-- 搜索功能 -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+
+            <!-- 深度链接支持 - 处理URL方案 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="screenpulse" />
+            </intent-filter>
+
+            <!-- 支持打开媒体文件 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
+            <!-- TV 搜索 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+        </activity>
+
+        <!-- ============ 前台服务 ============ -->
+        <service
+            android:name=".player.PlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- ============ 开机自启动接收器 ============ -->
+        <receiver
+            android:name=".schedule.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <!-- 某些厂商的开机广播 -->
+                <action android:name="com.huawei.android.action.HOTPLUG" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ============ WorkManager 初始化 ============ -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+    </application>
+
+</manifest>

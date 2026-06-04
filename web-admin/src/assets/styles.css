@@ -1,0 +1,279 @@
+/* ScreenPulse Admin - Global Dark Theme Styles */
+
+/* Dark mode root variables */
+html {
+  --el-bg-color: #0D1117;
+  --el-bg-color-overlay: #161B22;
+  --el-text-color-primary: #E0E0E0;
+  --el-text-color-regular: #B0BEC5;
+  --el-text-color-secondary: #78909C;
+  --el-border-color: #21262D;
+  --el-border-color-light: #30363D;
+  --el-fill-color: #161B22;
+  --el-fill-color-light: #1C2128;
+  --el-fill-color-lighter: #21262D;
+  --el-fill-color-blank: #0D1117;
+  --el-color-primary: #448AFF;
+  --el-color-primary-light-3: #6F9FFF;
+  --el-color-primary-light-5: #82B1FF;
+  --el-color-primary-light-7: #B0CFFF;
+  --el-color-primary-light-8: #CCE0FF;
+  --el-color-primary-light-9: #E3EDFF;
+  --el-color-primary-dark-2: #1A237E;
+  --el-color-success: #4CAF50;
+  --el-color-warning: #FF9800;
+  --el-color-danger: #F44336;
+  --el-color-info: #90A4AE;
+  --el-mask-color: rgba(0, 0, 0, 0.7);
+  --el-card-bg-color: #161B22;
+  --el-menu-bg-color: #161B22;
+  --el-menu-hover-bg-color: rgba(68, 138, 255, 0.08);
+  --el-menu-item-font-size: 14px;
+  --el-dialog-bg-color: #161B22;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0D1117;
+  color: #E0E0E0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100%;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0D1117;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363D;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484F58;
+}
+
+/* Element Plus component overrides for dark theme */
+
+/* Cards */
+.el-card {
+  --el-card-bg-color: #161B22;
+  --el-card-border-color: #21262D;
+  border-radius: 12px !important;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.el-card:hover {
+  border-color: #30363D;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+.el-button--primary {
+  --el-button-bg-color: #1A237E;
+  --el-button-border-color: #1A237E;
+  --el-button-hover-bg-color: #283593;
+  --el-button-hover-border-color: #283593;
+  --el-button-active-bg-color: #0D1B6E;
+}
+
+/* Tables */
+.el-table {
+  --el-table-bg-color: #161B22;
+  --el-table-tr-bg-color: #161B22;
+  --el-table-header-bg-color: #0D1117;
+  --el-table-header-text-color: #B0BEC5;
+  --el-table-text-color: #E0E0E0;
+  --el-table-border-color: #21262D;
+  --el-table-row-hover-bg-color: rgba(68, 138, 255, 0.06);
+  --el-table-current-row-bg-color: rgba(68, 138, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dialogs */
+.el-dialog {
+  --el-dialog-bg-color: #161B22;
+  --el-dialog-title-font-size: 18px;
+  border-radius: 16px;
+  border: 1px solid #21262D;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid #21262D;
+  padding: 16px 24px;
+}
+
+.el-dialog__body {
+  padding: 24px;
+}
+
+.el-dialog__footer {
+  border-top: 1px solid #21262D;
+  padding: 12px 24px;
+}
+
+/* Form inputs */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  background-color: #0D1117 !important;
+  box-shadow: 0 0 0 1px #21262D inset !important;
+  border-radius: 8px !important;
+}
+
+.el-input__wrapper:hover,
+.el-textarea__inner:hover,
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px #30363D inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px #448AFF inset !important;
+}
+
+/* Tags */
+.el-tag {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Switches */
+.el-switch {
+  --el-switch-on-color: #448AFF;
+}
+
+/* Messages */
+.el-message {
+  border-radius: 12px !important;
+}
+
+/* Loading */
+.el-loading-mask {
+  background-color: rgba(13, 17, 23, 0.8) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* Drawer */
+.el-drawer {
+  background: #161B22 !important;
+}
+
+/* Tooltip */
+.el-popper.is-dark {
+  background: #1C2128;
+  border: 1px solid #30363D;
+}
+
+/* Upload */
+.el-upload-dragger {
+  background: #0D1117 !important;
+  border: 2px dashed #30363D !important;
+  border-radius: 12px !important;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.el-upload-dragger:hover {
+  border-color: #448AFF !important;
+  background: rgba(68, 138, 255, 0.04) !important;
+}
+
+.el-upload-dragger.is-dragover {
+  border-color: #448AFF !important;
+  background: rgba(68, 138, 255, 0.08) !important;
+}
+
+/* Slider */
+.el-slider__runway {
+  background-color: #21262D;
+}
+
+/* Pagination */
+.el-pagination {
+  --el-pagination-bg-color: #161B22;
+  --el-pagination-text-color: #B0BEC5;
+  --el-pagination-button-bg-color: #0D1117;
+  --el-pagination-hover-color: #448AFF;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Utility classes */
+.glass-card {
+  background: rgba(22, 27, 34, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid #21262D;
+  border-radius: 12px;
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, #1A237E, #448AFF);
+}
+
+.text-accent {
+  color: #448AFF;
+}
+
+.text-muted {
+  color: #78909C;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .el-main {
+    padding: 16px !important;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .el-main {
+    padding: 12px !important;
+  }
+}

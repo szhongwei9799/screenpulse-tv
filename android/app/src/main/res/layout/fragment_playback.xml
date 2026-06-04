@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScreenPulse TV Player - 播放页布局 -->
+<!-- 全屏播放容器，用于放置 PlayerView、ImageView 和 WebView -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/playback_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- 播放视图由 PlaybackEngine 动态添加：
+         - PlayerView (视频/IPTV/流媒体)
+         - ImageView (图片)
+         - WebView (网页)
+    -->
+
+    <!-- 播放状态指示器（可选，调试时显示） -->
+    <TextView
+        android:id="@+id/playback_status_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_gradient"
+        android:padding="8dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+</FrameLayout>

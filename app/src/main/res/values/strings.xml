@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScreenPulse Player - 字符串资源（中文） -->
+<resources>
+    <string name="app_name">ScreenPulse</string>
+    <string name="scan_qr">扫描二维码进行管理</string>
+    <string name="management_url">管理地址</string>
+    <string name="no_playlist">未配置播放列表</string>
+    <string name="settings">设置</string>
+    <string name="loading">加载中…</string>
+    <string name="playback_notification_channel">播放服务</string>
+    <string name="playback_notification_title">ScreenPulse 播放器</string>
+    <string name="playback_notification_text">播放列表正在播放</string>
+    <string name="device_info">设备 IP：%1$s</string>
+    <string name="qr_instructions">在浏览器中打开以下网址以管理此显示屏</string>
+</resources>

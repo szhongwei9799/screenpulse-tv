@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ScreenPulse 管理后台</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23409EFF'></rect><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>S</text></svg>">
+<link rel="stylesheet" href="css/index.css">
+<script src="js/vue.global.prod.js"></script>
+<script src="js/element-plus.js"></script>
+<script src="js/element-plus-icons.js"></script>
+<style>
+/* ===== GLOBAL LIGHT THEME ===== */
+:root{--ep-color-primary:#409EFF;--ep-color-primary-light-3:#79bbff;--ep-color-primary-light-5:#a0cfff;--ep-color-primary-dark-2:#337ecc;--ep-bg-color:#f5f7fa;--ep-bg-color-overlay:#ffffff;--ep-bg-color-page:#f5f7fa;--ep-text-color-primary:#303133;--ep-text-color-regular:#606266;--ep-text-color-secondary:#909399;--ep-text-color-placeholder:#a8abb2;--ep-border-color:#e4e7ed;--ep-border-color-light:#e4e7ed;--ep-border-color-lighter:#ebeef5;--ep-border-color-extra-light:#f2f6fc;--ep-fill-color:#f0f2f5;--ep-fill-color-light:#f5f7fa;--ep-fill-color-lighter:#fafafa;--ep-fill-color-blank:#ffffff;--ep-fill-color-dark:#f5f7fa;--ep-mask-color:rgba(0,0,0,.5);--ep-color-success:#67c23a;--ep-color-warning:#e6a23c;--ep-color-danger:#f56c6c;--ep-color-info:#909399;--el-color-primary:#409EFF;--el-color-primary-light-3:#79bbff;--el-color-primary-light-5:#a0cfff;--el-color-primary-dark-2:#337ecc;--el-bg-color:#f5f7fa;--el-bg-color-overlay:#ffffff;--el-text-color-primary:#303133;--el-text-color-regular:#606266;--el-text-color-secondary:#909399;--el-border-color:#e4e7ed;--el-border-color-light:#e4e7ed;--el-fill-color:#f0f2f5;--el-fill-color-light:#f5f7fa;--el-fill-color-lighter:#fafafa;--el-fill-color-blank:#ffffff}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f7fa;color:#303133;-webkit-font-smoothing:antialiased}
+#app{height:100%}
+[v-cloak]{display:none!important}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#f5f7fa}
+::-webkit-scrollbar-thumb{background:#c0c4cc;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#909399}
+
+/* ===== ELEMENT PLUS LIGHT OVERRIDES ===== */
+.el-card{--el-card-bg-color:#ffffff;--el-card-border-color:#e4e7ed;border-radius:12px!important;transition:box-shadow .3s,border-color .3s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.el-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.el-button--primary{--el-button-bg-color:#409EFF;--el-button-border-color:#409EFF;--el-button-hover-bg-color:#66b1ff;--el-button-hover-border-color:#66b1ff}
+.el-table{--el-table-bg-color:#ffffff;--el-table-tr-bg-color:#ffffff;--el-table-header-bg-color:#fafafa;--el-table-header-text-color:#606266;--el-table-text-color:#303133;--el-table-border-color:#ebeef5;--el-table-row-hover-bg-color:rgba(64,158,255,.04);border-radius:12px;overflow:hidden}
+.el-table th.el-table__cell{font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.el-dialog{--el-dialog-bg-color:#ffffff;border-radius:16px;border:1px solid #e4e7ed;box-shadow:0 8px 40px rgba(0,0,0,.12)}
+.el-dialog__header{border-bottom:1px solid #ebeef5;padding:16px 24px}
+.el-dialog__body{padding:24px}
+.el-dialog__footer{border-top:1px solid #ebeef5;padding:12px 24px}
+.el-input__wrapper,.el-textarea__inner{background-color:#ffffff!important;box-shadow:0 0 0 1px #dcdfe6 inset!important;border-radius:8px!important}
+.el-input__wrapper:hover{box-shadow:0 0 0 1px #c0c4cc inset!important}
+.el-input__wrapper.is-focus{box-shadow:0 0 0 1px #409EFF inset!important}
+.el-switch{--el-switch-on-color:#409EFF}
+.el-tag{border-radius:6px;font-weight:500}
+.el-select-dropdown{background:#ffffff!important;border:1px solid #e4e7ed!important;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.el-select-dropdown__item{color:#303133!important}
+.el-select-dropdown__item.is-hovering{background:rgba(64,158,255,.06)!important}
+.el-select-dropdown__item.is-selected{color:#409EFF!important;font-weight:600}
+.el-message-box{--el-messagebox-bg-color:#ffffff;border:1px solid #e4e7ed;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.12)}
+.el-loading-mask{background-color:rgba(255,255,255,.85)!important;backdrop-filter:blur(4px)}
+.el-upload-dragger{background:#fafafa!important;border:2px dashed #dcdfe6!important;border-radius:12px!important;transition:border-color .3s,background .3s}
+.el-upload-dragger:hover{border-color:#409EFF!important;background:rgba(64,158,255,.02)!important}
+.el-upload-dragger.is-dragover{border-color:#409EFF!important;background:rgba(64,158,255,.06)!important}
+.el-slider__runway{background-color:#e4e7ed}
+.el-radio-button__inner{background:#ffffff!important;border-color:#dcdfe6!important;color:#606266!important}
+.el-radio-button__original-radio:checked+.el-radio-button__inner{background:#409EFF!important;border-color:#409EFF!important;color:#fff!important;box-shadow:-1px 0 0 0 #dcdfe6!important}
+.el-radio-button:first-child .el-radio-button__inner{border-left-color:#dcdfe6!important}
+.el-radio-button__inner:hover{color:#409EFF!important}
+.el-form-item__label{color:#303133!important;font-weight:500}
+.el-overlay{background:rgba(0,0,0,.5)!important}
+.el-popper.is-light{border-color:#ebeef5!important}
+.el-popper.is-light .el-popper__arrow::before{border-color:#ebeef5!important;background:#ffffff!important}
+.el-collapse{--el-collapse-border-color:#ebeef5;--el-collapse-header-bg-color:#fafafa;--el-collapse-content-bg-color:#ffffff;border-radius:12px!important;border:1px solid #ebeef5!important;overflow:hidden}
+.el-collapse-item__header{font-weight:600;color:#303133;border-bottom:1px solid #ebeef5}
+.el-collapse-item__wrap{border-bottom:1px solid #ebeef5}
+.el-collapse-item:last-child .el-collapse-item__wrap{border-bottom:none}
+.el-checkbox{margin-right:16px}
+
+/* ===== LOGIN SCREEN ===== */
+.login-screen{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);overflow:hidden}
+.login-card{width:400px;background:#ffffff;border-radius:16px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.login-logo{width:56px;height:56px;background:linear-gradient(135deg,#409EFF,#66b1ff);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px;color:#fff;margin:0 auto 24px}
+.login-title{text-align:center;font-size:22px;font-weight:700;color:#303133;margin-bottom:8px}
+.login-subtitle{text-align:center;font-size:14px;color:#909399;margin-bottom:32px}
+.login-error{color:#f56c6c;font-size:13px;text-align:center;margin-top:12px;min-height:20px}
+
+/* ===== APP LAYOUT ===== */
+.app-container{height:100vh;background:#f5f7fa;color:#303133;overflow:hidden;display:flex}
+.app-aside{width:220px;min-width:64px;background:#ffffff;border-right:1px solid #e4e7ed;display:flex;flex-direction:column;transition:width .3s ease;overflow:hidden;flex-shrink:0}
+.app-aside.collapsed{width:64px}
+.logo-area{height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #ebeef5;gap:10px;flex-shrink:0}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#409EFF,#66b1ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
+.logo-text{font-size:16px;font-weight:700;white-space:nowrap;color:#303133;overflow:hidden}
+.app-menu{flex:1;padding-top:8px;border-right:none!important}
+.app-menu .el-menu-item{margin:2px 8px;border-radius:8px;height:44px;line-height:44px;color:#606266}
+.app-menu .el-menu-item:hover{background:rgba(64,158,255,.06)!important;color:#409EFF}
+.app-menu .el-menu-item.is-active{background:rgba(64,158,255,.1)!important;color:#409EFF!important;font-weight:600}
+.aside-footer{padding:12px;border-top:1px solid #ebeef5;display:flex;justify-content:center;flex-shrink:0}
+.app-main-container{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.app-header{background:#ffffff;border-bottom:1px solid #e4e7ed;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.page-title{font-size:18px;font-weight:600;color:#303133}
+.header-right{display:flex;align-items:center;gap:12px}
+.status-tag{border:none}
+.app-main{background:#f5f7fa;padding:24px;overflow-y:auto;overflow-x:hidden;flex:1}
+
+/* ===== MEDIA TYPE BADGE ===== */
+.mtb{display:inline-flex;align-items:center;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.mtb-video{color:#409EFF;background:rgba(64,158,255,.1)}
+.mtb-image{color:#67c23a;background:rgba(103,194,58,.1)}
+.mtb-ppt{color:#e6a23c;background:rgba(230,162,60,.1)}
+.mtb-iptv{color:#9b59b6;background:rgba(155,89,182,.1)}
+.mtb-stream{color:#f56c6c;background:rgba(245,108,108,.1)}
+.mtb-web{color:#00bcd4;background:rgba(0,188,212,.1)}
+
+/* ===== PLAYLIST ===== */
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.toolbar-left,.toolbar-right{display:flex;gap:10px;flex-wrap:wrap}
+.drag-handle{display:flex;align-items:center;gap:6px;cursor:grab;color:#909399;padding:4px 6px;border-radius:4px;transition:all .2s;user-select:none}
+.drag-handle:hover{color:#409EFF;background:rgba(64,158,255,.08)}
+.drag-handle:active{cursor:grabbing}
+.drag-handle.dragging{opacity:.4}
+.drag-over{border-top:2px solid #409EFF}
+.title-cell{display:flex;align-items:center;gap:12px}
+.item-thumb{width:36px;height:36px;background:#f0f2f5;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#409EFF;flex-shrink:0}
+.item-title{font-weight:500;color:#303133}
+.url-text{font-size:13px;color:#909399;font-family:'JetBrains Mono','Fira Code',monospace}
+.action-buttons{display:flex;justify-content:center;gap:4px}
+.action-buttons .el-button{color:#909399!important;border-radius:6px;width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.action-buttons .el-button:hover{color:#409EFF!important;background:rgba(64,158,255,.08)!important}
+.action-buttons .el-button--danger:hover{color:#f56c6c!important;background:rgba(245,108,108,.08)!important}
+.action-buttons .el-button--primary:hover{color:#409EFF!important;background:rgba(64,158,255,.08)!important}
+.action-buttons .el-button--success:hover{color:#67c23a!important;background:rgba(103,194,58,.08)!important}
+.duration-field{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+
+/* ===== UPLOAD ===== */
+.upload-area{width:100%}
+.upload-area .el-upload-dragger{padding:40px}
+.upload-content{display:flex;flex-direction:column;align-items:center;gap:12px}
+.upload-icon{color:#c0c4cc;font-size:48px}
+.upload-text{font-size:16px;color:#606266;font-weight:500}
+.upload-hint{font-size:12px;color:#909399}
+.upload-actions{display:flex;gap:12px;margin-top:16px}
+.file-cell{display:flex;align-items:center;gap:12px}
+.file-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-icon-wrap.video{background:rgba(64,158,255,.1);color:#409EFF}
+.file-icon-wrap.image{background:rgba(103,194,58,.1);color:#67c23a}
+.file-icon-wrap.document{background:rgba(230,162,60,.1);color:#e6a23c}
+.file-name{font-weight:500;color:#303133;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-path{font-size:12px;color:#909399;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:13px;color:#606266;font-family:'JetBrains Mono',monospace}
+.file-date{font-size:13px;color:#909399}
+
+/* ===== SETTINGS SECTION (inside playlist view) ===== */
+.settings-section{margin-top:24px}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}
+.form-hint{font-size:12px;color:#909399;margin-top:6px}
+.toggle-row{display:flex;align-items:center;gap:12px}
+.toggle-label{font-size:13px;color:#606266}
+.volume-control{display:flex;align-items:center;gap:12px;width:100%}
+.volume-control .el-icon{color:#909399}
+.volume-slider{flex:1}
+.volume-value{min-width:48px;text-align:right;font-size:14px;font-weight:600;color:#409EFF}
+.save-bar{margin-top:24px;display:flex;justify-content:center;gap:12px}
+.save-button{min-width:200px;height:44px;font-size:15px;border-radius:10px}
+
+/* ===== DEVICE INFO ===== */
+.device-info{display:flex;flex-direction:column;gap:0}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #ebeef5}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:13px;color:#909399}
+.info-value{font-size:13px;color:#303133;font-weight:500}
+.info-value.mono{font-family:'JetBrains Mono','Fira Code',monospace}
+.card-hdr{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:#303133}
+.card-hdr .el-icon{color:#409EFF}
+.live-tag{margin-left:auto}
+
+/* ===== CHANGE PASSWORD DIALOG ===== */
+.pwd-field{margin-bottom:16px}
+
+/* ===== SCHEDULE & GROUP STYLES ===== */
+.schedule-type-tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.schedule-type-tag.scheduled-playback{color:#409EFF;background:rgba(64,158,255,.1)}
+.schedule-type-tag.interstitial{color:#e6a23c;background:rgba(230,162,60,.1)}
+.group-color-dot{width:14px;height:14px;border-radius:50%;display:inline-block;flex-shrink:0;vertical-align:middle}
+.volume-inline{display:flex;align-items:center;gap:6px}
+.volume-inline .el-slider{width:80px}
+
+/* ===== BACKGROUND MUSIC ===== */
+.bgm-player{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f0f2f5;border-radius:10px;margin-bottom:16px}
+.bgm-player .el-icon{font-size:24px;color:#409EFF}
+.bgm-player-info{flex:1}
+.bgm-player-title{font-weight:600;color:#303133;font-size:14px}
+.bgm-player-status{font-size:12px;color:#909399;margin-top:2px}
+.music-row{display:flex;align-items:center;gap:10px}
+.music-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(64,158,255,.1);color:#409EFF;flex-shrink:0}
+.music-name{font-weight:500;color:#303133}
+.music-path{font-size:12px;color:#909399;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-enter-active{animation:fadeIn .25s ease}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+.settings-grid{grid-template-columns:1fr}
+.app-aside{width:64px}
+.app-aside .logo-text,.app-aside .menu-text{display:none}
+.app-main{padding:16px}
+.toolbar{flex-direction:column;align-items:stretch}
+.login-card{width:90%;padding:28px}
+.volume-inline .el-slider{width:60px}
+}
+@media(max-width:480px){
+.app-main{padding:12px}
+}
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+
+  <!-- ====== 登录界面 ====== -->
+  <div v-if="!isLoggedIn" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo">S</div>
+      <div class="login-title">ScreenPulse 管理后台</div>
+      <div class="login-subtitle">请输入管理密码以继续</div>
+      <el-input v-model="loginPassword" type="password" placeholder="管理密码" show-password size="large" @keyup.enter="doLogin" :prefix-icon="Lock" ></el-input>
+      <el-button type="primary" size="large" style="width:100%;margin-top:20px;height:48px;font-size:15px;border-radius:10px" :loading="loginLoading" @click="doLogin">登 录</el-button>
+      <div class="login-error">{{loginError}}</div>
+    </div>
+  </div>
+
+  <!-- ====== 主应用 ====== -->
+  <div v-else class="app-container">
+    <!-- 侧边栏 -->
+    <div class="app-aside" :class="{collapsed: isCollapsed}">
+      <div class="logo-area">
+        <div class="logo-icon">S</div>
+        <span v-show="!isCollapsed" class="logo-text">ScreenPulse</span>
+      </div>
+      <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#606266" active-text-color="#409EFF">
+        <el-menu-item index="playlist" @click="currentView='playlist'">
+          <el-icon><List></List></el-icon>
+          <template #title>播放列表</template>
+        </el-menu-item>
+        <el-menu-item index="media" @click="currentView='media'">
+          <el-icon><FolderOpened></FolderOpened></el-icon>
+          <template #title>媒体库</template>
+        </el-menu-item>
+        <el-menu-item index="schedules" @click="currentView='schedules'">
+          <el-icon><Timer></Timer></el-icon>
+          <template #title>定时任务</template>
+        </el-menu-item>
+        <el-menu-item index="bgmusic" @click="currentView='bgmusic'">
+          <el-icon><Headset></Headset></el-icon>
+          <template #title>背景音乐</template>
+        </el-menu-item>
+      </el-menu>
+      <div class="aside-footer">
+        <el-button :icon="isCollapsed?'Expand':'Fold'" circle size="small" text @click="isCollapsed=!isCollapsed" ></el-button>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="app-main-container">
+      <div class="app-header">
+        <h2 class="page-title">{{pageTitle}}</h2>
+        <div class="header-right">
+          <!-- 播放控制 -->
+          <el-button type="success" :icon="VideoPlay" circle size="small" @click="playbackControl('play')" title="播放"></el-button>
+          <el-button :icon="VideoPause" circle size="small" @click="playbackControl('pause')" title="暂停"></el-button>
+          <el-button type="danger" :icon="CircleClose" circle size="small" @click="playbackControl('stop')" title="停止"></el-button>
+          <div class="volume-inline">
+            <el-icon :size="16" style="color:#909399"><Mute></Mute></el-icon>
+            <el-slider v-model="playbackState.volume" :min="0" :max="100" :step="1" size="small" @change="setVolume"></el-slider>
+            <span style="font-size:12px;color:#606266;min-width:30px">{{playbackState.volume}}</span>
+          </div>
+          <el-tag type="success" effect="light" size="small" class="status-tag">
+            <el-icon style="margin-right:4px"><CircleCheck></CircleCheck></el-icon> 已连接
+          </el-tag>
+          <el-button :icon="Refresh" circle size="small" @click="refreshView" ></el-button>
+          <el-button :icon="SwitchButton" circle size="small" @click="doLogout" title="退出登录"></el-button>
+        </div>
+      </div>
+
+      <div class="app-main">
+
+        <!-- ====== 播放列表视图（含设置） ====== -->
+        <div v-if="currentView==='playlist'" v-loading="plLoading">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button type="primary" :icon="Plus" @click="openAddItem">添加项目</el-button>
+              <el-button :icon="Refresh" @click="fetchPlaylistAndSettings">刷新</el-button>
+            </div>
+            <div class="toolbar-right" v-if="selectedIds.length>0">
+              <el-button :icon="CircleCheck" type="success" plain @click="bulkToggle(true)">启用 ({{selectedIds.length}})</el-button>
+              <el-button :icon="CircleClose" type="warning" plain @click="bulkToggle(false)">禁用 ({{selectedIds.length}})</el-button>
+              <el-button :icon="Delete" type="danger" plain @click="batchDelete">删除 ({{selectedIds.length}})</el-button>
+            </div>
+          </div>
+
+          <el-card>
+            <el-table :data="playlist" @selection-change="onSelectionChange" empty-text="播放列表为空" :row-key="function(row){return 'pl_' + row.id}" style="width:100%">
+              <el-table-column type="selection" width="50" ></el-table-column>
+              <el-table-column label="#" width="60">
+                <template #default="{$index}">
+                  <div class="drag-handle" :draggable="true" @dragstart="dragStart($event,$index)" @dragover.prevent @drop="dropItem($event,$index)">
+                    <el-icon :size="16"><Rank></Rank></el-icon><span>{{$index+1}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="标题" min-width="220" show-overflow-tooltip>
+                <template #default="{row}">
+                  <div class="title-cell">
+                    <div class="item-thumb"><el-icon :size="18"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon></div>
+                    <span class="item-title">{{row.title||'未命名'}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="100" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="URL / 来源" min-width="250" show-overflow-tooltip>
+                <template #default="{row}"><span class="url-text">{{row.url||'--'}}</span></template>
+              </el-table-column>
+              <el-table-column label="时长" width="110" align="center">
+                <template #default="{row}"><el-tag size="small" :type="row.duration==='auto'?'':'info'" effect="plain" round>{{row.duration==='auto'?'自动':row.duration+'s'}}</el-tag></template>
+              </el-table-column>
+              <el-table-column label="已启用" width="90" align="center">
+                <template #default="{row}"><el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" ></el-switch></template>
+              </el-table-column>
+              <el-table-column label="操作" width="150" align="center" fixed="right">
+                <template #default="{row,$index}">
+                  <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text @click="openEditItem(row)" ></el-button>
+                    <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0" ></el-button>
+                    <el-button :icon="Bottom" size="small" text type="primary" @click="moveItem(row,$index,1)" :disabled="$index>=playlist.length-1"></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteItem(row)" ></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- 设置区域（合并到播放列表视图下方） -->
+          <div class="settings-section">
+            <el-collapse v-model="settingsExpanded">
+              <el-collapse-item name="settings" title="">
+                <template #title>
+                  <div class="card-hdr" style="margin-right:auto">
+                    <el-icon><Setting></Setting></el-icon>
+                    <span>设置</span>
+                  </div>
+                </template>
+                <div class="settings-grid">
+                  <!-- 播放设置 -->
+                  <el-card>
+                    <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>播放设置</span></div></template>
+                    <el-form label-position="top">
+                      <el-form-item label="播放顺序">
+                        <el-radio-group v-model="cfg.orderMode">
+                          <el-radio-button value="SEQUENTIAL">顺序</el-radio-button>
+                          <el-radio-button value="RANDOM">随机</el-radio-button>
+                        </el-radio-group>
+                        <div class="form-hint">{{cfg.orderMode==='SEQUENTIAL'?'按照播放列表顺序播放':'随机打乱顺序播放'}}</div>
+                      </el-form-item>
+                      <el-form-item label="重复模式">
+                        <el-radio-group v-model="cfg.repeatMode">
+                          <el-radio-button value="ONCE">播放一次</el-radio-button>
+                          <el-radio-button value="LOOP">循环播放</el-radio-button>
+                          <el-radio-button value="N_TIMES">按次数播放</el-radio-button>
+                        </el-radio-group>
+                        <el-input-number v-if="cfg.repeatMode==='N_TIMES'" v-model="cfg.repeatCount" :min="1" :max="999" :step="1" style="margin-top:8px" placeholder="播放次数"></el-input-number>
+                        <div class="form-hint">{{cfg.repeatMode==='ONCE'?'播放一次后停止':cfg.repeatMode==='LOOP'?'循环重复播放列表':'播放指定次数后停止'}}</div>
+                      </el-form-item>
+                      <el-form-item label="音量">
+                        <div class="volume-control">
+                          <el-icon><Mute></Mute></el-icon>
+                          <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" ></el-slider>
+                          <el-icon><Bell></Bell></el-icon>
+                          <span class="volume-value">{{cfg.volume}}%</span>
+                        </div>
+                      </el-form-item>
+                      <el-form-item label="图片显示时长（秒）">
+                        <el-input-number v-model="cfg.imageDuration" :min="1" :max="3600" :step="1" ></el-input-number>
+                        <div class="form-hint">没有自定义时长的图片的默认显示时间。</div>
+                      </el-form-item>
+                    </el-form>
+                  </el-card>
+
+                  <!-- 插播设置 -->
+                  <el-card>
+                    <template #header><div class="card-hdr"><el-icon><Clock></Clock></el-icon><span>插播设置</span></div></template>
+                    <el-form label-position="top">
+                      <el-form-item label="启用插播模式">
+                        <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" ></el-switch><span class="toggle-label">{{cfg.interstitialEnabled?'已启用':'已禁用'}}</span></div>
+                        <div class="form-hint">仅在指定时段显示内容。</div>
+                      </el-form-item>
+                      <el-form-item v-if="cfg.interstitialEnabled" label="开始时间">
+                        <el-time-picker v-model="cfg.interstitialStart" placeholder="开始时间" format="HH:mm" style="width:100%" ></el-time-picker>
+                      </el-form-item>
+                      <el-form-item v-if="cfg.interstitialEnabled" label="结束时间">
+                        <el-time-picker v-model="cfg.interstitialEnd" placeholder="结束时间" format="HH:mm" style="width:100%" ></el-time-picker>
+                      </el-form-item>
+                      <el-form-item v-if="cfg.interstitialEnabled" label="关屏提示">
+                        <el-input v-model="cfg.offScreenMessage" placeholder="非活跃时段显示的消息" clearable ></el-input>
+                      </el-form-item>
+                    </el-form>
+                  </el-card>
+
+                  <!-- 设备设置 -->
+                  <el-card>
+                    <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>设备设置</span></div></template>
+                    <el-form label-position="top">
+                      <el-form-item label="设备名称"><el-input v-model="cfg.deviceName" placeholder="请输入设备名称" clearable ></el-input></el-form-item>
+                      <el-form-item label="屏幕方向">
+                        <el-radio-group v-model="cfg.orientation">
+                          <el-radio-button value="landscape">横屏</el-radio-button>
+                          <el-radio-button value="portrait">竖屏</el-radio-button>
+                        </el-radio-group>
+                      </el-form-item>
+                      <el-form-item label="空闲超时（分钟，0 = 从不）">
+                        <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" ></el-input-number>
+                      </el-form-item>
+                    </el-form>
+                  </el-card>
+
+                  <!-- 网络信息 -->
+                  <el-card>
+                    <template #header><div class="card-hdr"><el-icon><Connection></Connection></el-icon><span>网络信息</span></div></template>
+                    <div class="device-info">
+                      <div class="info-row"><span class="info-label">IP 地址</span><span class="info-value mono">{{netInfo.ip||'--'}}</span></div>
+                      <div class="info-row"><span class="info-label">网关</span><span class="info-value mono">{{netInfo.gateway||'--'}}</span></div>
+                      <div class="info-row"><span class="info-label">DNS</span><span class="info-value mono">{{netInfo.dns||'--'}}</span></div>
+                      <div class="info-row"><span class="info-label">网络名称</span><span class="info-value mono">{{netInfo.ssid||'--'}}</span></div>
+                      <div class="info-row"><span class="info-label">信号强度</span><span class="info-value">{{netInfo.signal||'--'}}</span></div>
+                      <div class="info-row"><span class="info-label">MAC 地址</span><span class="info-value mono">{{netInfo.mac||'--'}}</span></div>
+                    </div>
+                  </el-card>
+                </div>
+                <div class="save-bar">
+                  <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">保存设置</el-button>
+                  <el-button size="large" :icon="Lock" @click="openChangePassword">修改密码</el-button>
+                </div>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
+
+          <!-- 添加/编辑对话框 -->
+          <el-dialog v-model="plDialog" :title="plEditing?'编辑播放项':'添加播放项'" width="520px" @close="resetItemForm" destroy-on-close>
+            <el-form :model="itemForm" label-position="top">
+              <el-form-item label="标题" required><el-input v-model="itemForm.title" placeholder="请输入标题" clearable ></el-input></el-form-item>
+              <el-form-item label="URL / 来源" required><el-input v-model="itemForm.url" placeholder="文件路径、URL 或流地址" clearable ></el-input></el-form-item>
+              <el-form-item label="媒体类型">
+                <el-select v-model="itemForm.type" placeholder="选择类型" style="width:100%">
+                  <el-option label="视频" value="VIDEO" ></el-option>
+                  <el-option label="图片" value="IMAGE" ></el-option>
+                  <el-option label="PPT / 演示文稿" value="PPT" ></el-option>
+                  <el-option label="IPTV 流" value="IPTV" ></el-option>
+                  <el-option label="网络流" value="STREAM" ></el-option>
+                  <el-option label="网页" value="WEB" ></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="持续时间">
+                <div class="duration-field">
+                  <el-switch v-model="itemForm.autoDuration" active-text="自动（视频时长）" inactive-text="自定义（秒）" inline-prompt @change="onDurationToggle" ></el-switch>
+                  <el-input-number v-if="!itemForm.autoDuration" v-model="itemForm.duration" :min="1" :max="3600" style="width:160px" ></el-input-number>
+                </div>
+              </el-form-item>
+              <el-form-item label="已启用"><el-switch v-model="itemForm.enabled" ></el-switch></el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="plDialog=false">取消</el-button>
+              <el-button type="primary" :loading="plSaving" @click="saveItem">{{plEditing?'更新':'添加'}}</el-button>
+            </template>
+          </el-dialog>
+
+          <!-- 修改密码对话框 -->
+          <el-dialog v-model="pwdDialog" title="修改管理密码" width="420px" @close="resetPwdForm" destroy-on-close>
+            <el-form label-position="top">
+              <el-form-item label="原密码" required>
+                <el-input v-model="pwdForm.oldPassword" type="password" placeholder="请输入原密码" show-password clearable ></el-input>
+              </el-form-item>
+              <el-form-item label="新密码" required>
+                <el-input v-model="pwdForm.newPassword" type="password" placeholder="至少4位" show-password clearable ></el-input>
+              </el-form-item>
+              <el-form-item label="确认新密码" required>
+                <el-input v-model="pwdForm.confirmPassword" type="password" placeholder="再次输入新密码" show-password clearable ></el-input>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="pwdDialog=false">取消</el-button>
+              <el-button type="primary" :loading="pwdSaving" @click="doChangePassword">确认修改</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- ====== 背景音乐视图 ====== -->
+        <div v-if="currentView==='bgmusic'" v-loading="bgmLoading">
+          <!-- Enable/Disable card -->
+          <el-card style="margin-bottom:20px">
+            <template #header><div class="card-hdr"><el-icon><Headset></Headset></el-icon><span>背景音乐设置</span></div></template>
+            <el-form label-position="top">
+              <el-form-item label="启用背景音乐">
+                <div class="toggle-row">
+                  <el-switch v-model="cfg.bgMusicEnabled" @change="saveSettings"></el-switch>
+                  <span class="toggle-label">{{cfg.bgMusicEnabled?'已启用':'已禁用'}}</span>
+                </div>
+                <div class="form-hint">启用后将静音视频原声，播放背景音乐</div>
+              </el-form-item>
+              <template v-if="cfg.bgMusicEnabled">
+                <el-form-item label="音乐音量">
+                  <div class="volume-control">
+                    <el-icon><Mute></Mute></el-icon>
+                    <el-slider v-model="cfg.bgMusicVolume" :min="0" :max="100" :step="1" class="volume-slider" @change="saveSettings"></el-slider>
+                    <el-icon><Bell></Bell></el-icon>
+                    <span class="volume-value">{{cfg.bgMusicVolume}}%</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="循环播放">
+                  <div class="toggle-row">
+                    <el-switch v-model="cfg.bgMusicLoop" @change="saveSettings"></el-switch>
+                    <span class="toggle-label">{{cfg.bgMusicLoop?'单曲循环':'播放一次后播放下一首'}}</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="随机播放">
+                  <div class="toggle-row">
+                    <el-switch v-model="cfg.bgMusicShuffle" @change="saveSettings"></el-switch>
+                    <span class="toggle-label">{{cfg.bgMusicShuffle?'随机顺序':'按列表顺序'}}</span>
+                  </div>
+                </el-form-item>
+              </template>
+            </el-form>
+          </el-card>
+
+          <!-- Upload card -->
+          <el-card style="margin-bottom:20px">
+            <template #header><div class="card-hdr"><el-icon><UploadFilled></UploadFilled></el-icon><span>上传音乐</span></div></template>
+            <el-upload :action="bgmUploadUrl" :auto-upload="false" :on-change="onBgmFileChange" :on-remove="onBgmFileRemove" :file-list="bgmUploadFiles" accept=".mp3,.wav,.ogg,.flac,.aac,.m4a" drag multiple class="upload-area">
+              <div class="upload-content">
+                <el-icon :size="48" class="upload-icon"><UploadFilled></UploadFilled></el-icon>
+                <div class="upload-text">拖拽音乐文件到此处或点击上传</div>
+                <div class="upload-hint">支持：MP3, WAV, OGG, FLAC, AAC, M4A</div>
+              </div>
+            </el-upload>
+            <div class="upload-actions">
+              <el-button type="primary" :icon="UploadFilled" @click="doBgmUpload" :loading="bgmUploading" :disabled="!bgmUploadFiles.length">上传 {{bgmUploadFiles.length}} 个文件</el-button>
+              <el-button :icon="Delete" type="danger" plain @click="clearAllBgmMusic" :disabled="!bgMusicList.length">清空全部</el-button>
+            </div>
+          </el-card>
+
+          <!-- Music list -->
+          <el-card>
+            <template #header><div class="card-hdr"><el-icon><Headset></Headset></el-icon><span>音乐列表</span><el-tag effect="light" size="small" class="live-tag">{{bgMusicList.length}} 首</el-tag></div></template>
+            <el-table :data="bgMusicList" empty-text="暂无背景音乐" style="width:100%">
+              <el-table-column label="#" width="60">
+                <template #default="{$index}">
+                  <div class="drag-handle" :draggable="true" @dragstart="bgmDragStart($event,$index)" @dragover.prevent @drop="bgmDrop($event,$index)">
+                    <el-icon :size="16"><Rank></Rank></el-icon><span>{{$index+1}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="音乐" min-width="300">
+                <template #default="{row}">
+                  <div class="music-row">
+                    <div class="music-icon"><el-icon :size="18"><Headset></Headset></el-icon></div>
+                    <div style="flex:1;min-width:0"><div class="music-name">{{row.title}}</div><div class="music-path">{{row.filePath}}</div></div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="大小" width="120" align="right">
+                <template #default="{row}"><span class="file-size">{{fmtSize(row.fileSize)}}</span></template>
+              </el-table-column>
+              <el-table-column label="操作" width="100" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteBgm(row)"></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </div>
+
+        <!-- ====== 媒体库视图 ====== -->
+        <div v-if="currentView==='media'" v-loading="mediaLoading">
+          <!-- 分组管理卡片 -->
+          <el-card>
+            <template #header>
+              <div class="card-hdr">
+                <el-icon><FolderOpened></FolderOpened></el-icon>
+                <span>媒体分组</span>
+                <el-tag effect="light" size="small" class="live-tag">{{groups.length}} 个分组</el-tag>
+                <el-button type="primary" size="small" :icon="Plus" style="margin-left:12px" @click="openNewGroup">新建分组</el-button>
+              </div>
+            </template>
+            <el-table :data="groups" empty-text="暂无分组" style="width:100%" v-if="groups.length>0">
+              <el-table-column label="名称" min-width="150">
+                <template #default="{row}">
+                  <span style="cursor:pointer;color:#409EFF;font-weight:500" @click="openGroupDetail(row)">{{row.name}}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="颜色" width="80" align="center">
+                <template #default="{row}">
+                  <span class="group-color-dot" :style="{backgroundColor:row.color||'#409EFF'}"></span>
+                </template>
+              </el-table-column>
+              <el-table-column label="描述" min-width="200" show-overflow-tooltip>
+                <template #default="{row}">{{row.description||'--'}}</template>
+              </el-table-column>
+              <el-table-column label="文件数" width="80" align="center">
+                <template #default="{row}">{{row.itemCount||0}}</template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text type="primary" @click="openEditGroup(row)" title="编辑"></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteGroup(row)" title="删除"></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div v-else style="color:#909399;text-align:center;padding:20px;font-size:14px">暂无分组，点击"新建分组"创建</div>
+          </el-card>
+
+          <!-- 上传媒体文件卡片 -->
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><UploadFilled></UploadFilled></el-icon><span>上传媒体文件</span></div></template>
+            <el-upload :action="uploadUrl" :auto-upload="false" :on-change="onFileChange" :on-remove="onFileRemove" :file-list="uploadFiles" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx" drag multiple class="upload-area">
+              <div class="upload-content">
+                <el-icon :size="48" class="upload-icon"><UploadFilled></UploadFilled></el-icon>
+                <div class="upload-text">拖拽文件到此处或点击上传</div>
+                <div class="upload-hint">支持：视频（MP4, MKV, AVI）、图片（JPG, PNG, GIF）、演示文稿（PPT, PPTX）</div>
+              </div>
+            </el-upload>
+            <div class="upload-actions">
+              <el-button type="primary" :icon="UploadFilled" @click="doUpload" :loading="uploading" :disabled="!uploadFiles.length">上传 {{uploadFiles.length}} 个文件</el-button>
+              <el-button :icon="Refresh" @click="doScanAndRefresh">扫描本地存储</el-button>
+            </div>
+          </el-card>
+
+          <!-- 媒体文件卡片 -->
+          <el-card style="margin-top:20px">
+            <template #header><div class="card-hdr"><el-icon><FolderOpened></FolderOpened></el-icon><span>媒体文件</span><el-tag effect="light" size="small" class="live-tag">{{mediaFiles.length}} 个文件</el-tag></div></template>
+            <el-table :data="mediaFiles" empty-text="未找到媒体文件" style="width:100%">
+              <el-table-column label="文件" min-width="260">
+                <template #default="{row}">
+                  <div class="file-cell">
+                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
+                      <el-icon :size="20"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
+                    </div>
+                    <div><div class="file-name">{{row.name||row.title||'未命名'}}</div><div class="file-path" v-if="row.path">{{row.path}}</div></div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="分组" min-width="150">
+                <template #default="{row}">
+                  <template v-if="getMediaGroupTags(row).length>0">
+                    <el-tag v-for="g in getMediaGroupTags(row)" :key="g.id" size="small" :color="g.color" effect="dark" style="margin:2px;border:none;font-size:11px">{{g.name}}</el-tag>
+                  </template>
+                  <span v-else style="color:#c0c4cc;font-size:12px">未分组</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="90" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="大小" width="100" align="right">
+                <template #default="{row}"><span class="file-size">{{fmtSize(row.size)}}</span></template>
+              </el-table-column>
+              <el-table-column label="日期" width="140" align="center">
+                <template #default="{row}"><span class="file-date">{{row.modifiedAt||row.date||'--'}}</span></template>
+              </el-table-column>
+              <el-table-column label="操作" width="160" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Collection" size="small" text type="success" @click="openMediaGroupAssign(row)" title="分组"></el-button>
+                    <el-button :icon="Edit" size="small" text type="primary" @click="openRenameFile(row)" title="重命名"></el-button>
+                    <el-button :icon="CopyDocument" size="small" text type="primary" @click="copyPath(row)" title="复制路径"></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteFile(row)" title="删除"></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- 重命名对话框 -->
+          <el-dialog v-model="renameDialog" title="重命名文件" width="420px" @close="resetRenameForm" destroy-on-close>
+            <el-form label-position="top">
+              <el-form-item label="新文件名" required>
+                <el-input v-model="renameForm.title" placeholder="请输入新文件名（不含扩展名）" clearable ></el-input>
+              </el-form-item>
+              <el-form-item>
+                <div style="font-size:12px;color:#909399">原文件：{{renameForm.originalName}}</div>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="renameDialog=false">取消</el-button>
+              <el-button type="primary" :loading="renameSaving" @click="doRename">确认重命名</el-button>
+            </template>
+          </el-dialog>
+
+          <!-- 新建/编辑分组对话框 -->
+          <el-dialog v-model="groupDialog" :title="groupEditing?'编辑分组':'新建分组'" width="480px" @close="resetGroupForm" destroy-on-close>
+            <el-form :model="groupForm" label-position="top">
+              <el-form-item label="分组名称" required>
+                <el-input v-model="groupForm.name" placeholder="请输入分组名称" clearable ></el-input>
+              </el-form-item>
+              <el-form-item label="描述">
+                <el-input v-model="groupForm.description" type="textarea" :rows="3" placeholder="分组描述（可选）" clearable ></el-input>
+              </el-form-item>
+              <el-form-item label="颜色">
+                <el-color-picker v-model="groupForm.color" show-alpha></el-color-picker>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="groupDialog=false">取消</el-button>
+              <el-button type="primary" :loading="groupSaving" @click="saveGroup">{{groupEditing?'更新':'创建'}}</el-button>
+            </template>
+          </el-dialog>
+
+          <!-- 媒体分组分配对话框 -->
+          <el-dialog v-model="mediaGroupDialog" :title="'设置分组 - ' + mediaGroupName" width="480px" destroy-on-close>
+            <div style="margin-bottom:12px;color:#606266;font-size:14px">选择要归属的分组：</div>
+            <el-checkbox-group v-model="mediaGroupChecked" v-if="groups.length>0">
+              <div v-for="g in groups" :key="g.id" style="margin-bottom:10px">
+                <el-checkbox :value="g.id">
+                  <span class="group-color-dot" :style="{backgroundColor:g.color||'#409EFF'}" style="margin-right:8px"></span>
+                  {{g.name}}
+                </el-checkbox>
+              </div>
+            </el-checkbox-group>
+            <div v-else style="color:#909399;text-align:center;padding:20px">暂无分组，请先创建分组</div>
+            <template #footer>
+              <el-button @click="mediaGroupDialog=false">取消</el-button>
+              <el-button type="primary" @click="saveMediaGroupAssign">保存</el-button>
+            </template>
+          </el-dialog>
+
+          <!-- 分组详情对话框 -->
+          <el-dialog v-model="groupDetailDialog" :title="'分组详情 - ' + (groupDetailData.name||'')" width="640px" destroy-on-close>
+            <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+              <span class="group-color-dot" :style="{backgroundColor:groupDetailData.color||'#409EFF'}" style="width:18px;height:18px"></span>
+              <span style="font-weight:600;color:#303133">{{groupDetailData.name}}</span>
+              <el-tag size="small" effect="light">{{groupDetailItems.length}} 个文件</el-tag>
+              <span v-if="groupDetailData.description" style="font-size:13px;color:#909399;margin-left:8px">{{groupDetailData.description}}</span>
+            </div>
+            <el-table :data="groupDetailItems" empty-text="分组中没有文件" style="width:100%" max-height="400">
+              <el-table-column label="文件名" min-width="250">
+                <template #default="{row}">
+                  <div class="file-cell">
+                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
+                      <el-icon :size="16"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
+                    </div>
+                    <span class="file-name">{{row.name||row.title||'未命名'}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="80" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="操作" width="80" align="center">
+                <template #default="{row}">
+                  <el-button :icon="Delete" size="small" text type="danger" @click="removeFromGroup(row)" title="从分组移除"></el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div style="margin-top:12px">
+              <el-button size="small" :icon="Plus" @click="addToGroupFromDetail">添加文件到分组</el-button>
+            </div>
+          </el-dialog>
+
+          <!-- 添加文件到分组对话框 -->
+          <el-dialog v-model="addMediaToGroupDialog" title="添加文件到分组" width="640px" destroy-on-close>
+            <el-table :data="mediaFilesNotInGroup" empty-text="没有可添加的文件" style="width:100%" max-height="400" @selection-change="onAddMediaToGroupSelection">
+              <el-table-column type="selection" width="50"></el-table-column>
+              <el-table-column label="文件名" min-width="300">
+                <template #default="{row}">
+                  <div class="file-cell">
+                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
+                      <el-icon :size="16"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
+                    </div>
+                    <span class="file-name">{{row.name||row.title||'未命名'}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="80" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+            </el-table>
+            <template #footer>
+              <el-button @click="addMediaToGroupDialog=false">取消</el-button>
+              <el-button type="primary" @click="confirmAddMediaToGroup">添加选中文件</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- ====== 定时任务视图 ====== -->
+        <div v-if="currentView==='schedules'" v-loading="scheduleLoading">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button type="primary" :icon="Plus" @click="openNewSchedule">新建定时任务</el-button>
+              <el-button :icon="Refresh" @click="fetchSchedules">刷新</el-button>
+            </div>
+          </div>
+
+          <el-card>
+            <el-table :data="schedules" empty-text="暂无定时任务" style="width:100%">
+              <el-table-column label="名称" min-width="150" show-overflow-tooltip>
+                <template #default="{row}">{{row.name||'未命名'}}</template>
+              </el-table-column>
+              <el-table-column label="类型" width="120" align="center">
+                <template #default="{row}">
+                  <span :class="'schedule-type-tag '+(row.taskType==='SCHEDULED_PLAYBACK'?'scheduled-playback':'interstitial')">{{row.taskType==='SCHEDULED_PLAYBACK'?'定时播放':'插播'}}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="80" align="center">
+                <template #default="{row}">
+                  <el-switch v-model="row.enabled" @change="toggleSchedule(row)" size="small"></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column label="排期" min-width="180" show-overflow-tooltip>
+                <template #default="{row}"><span style="font-size:13px;color:#606266">{{formatScheduleDesc(row)}}</span></template>
+              </el-table-column>
+              <el-table-column label="播放分组" min-width="140" show-overflow-tooltip>
+                <template #default="{row}">
+                  <span style="font-size:13px;color:#606266">{{getScheduleGroupNames(row)}}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="优先级" width="80" align="center">
+                <template #default="{row}"><el-tag size="small" effect="plain" round>{{row.priority||0}}</el-tag></template>
+              </el-table-column>
+              <el-table-column label="操作" width="140" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text type="primary" @click="openEditSchedule(row)" title="编辑"></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteSchedule(row)" title="删除"></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+
+          <!-- 新建/编辑定时任务对话框 -->
+          <el-dialog v-model="scheduleDialog" :title="scheduleEditing?'编辑定时任务':'新建定时任务'" width="580px" @close="resetScheduleForm" destroy-on-close>
+            <el-form :model="scheduleForm" label-position="top">
+              <el-form-item label="名称" required>
+                <el-input v-model="scheduleForm.name" placeholder="请输入任务名称" clearable ></el-input>
+              </el-form-item>
+              <el-form-item label="类型">
+                <el-select v-model="scheduleForm.taskType" style="width:100%">
+                  <el-option label="定时播放" value="SCHEDULED_PLAYBACK"></el-option>
+                  <el-option label="插播" value="INTERSTITIAL"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="启用">
+                <el-switch v-model="scheduleForm.enabled"></el-switch>
+              </el-form-item>
+              <el-form-item label="排期模式">
+                <el-select v-model="scheduleForm.scheduleMode" style="width:100%">
+                  <el-option label="始终" value="ALWAYS"></el-option>
+                  <el-option label="每日时段" value="DAILY_PERIOD"></el-option>
+                  <el-option label="每周时段" value="WEEKLY_PERIOD"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item v-if="scheduleForm.scheduleMode==='DAILY_PERIOD'" label="时间范围">
+                <div style="display:flex;gap:12px;align-items:center">
+                  <el-time-picker v-model="scheduleForm.startTime" placeholder="开始时间" format="HH:mm" style="width:160px"></el-time-picker>
+                  <span style="color:#909399">至</span>
+                  <el-time-picker v-model="scheduleForm.endTime" placeholder="结束时间" format="HH:mm" style="width:160px"></el-time-picker>
+                </div>
+              </el-form-item>
+              <el-form-item v-if="scheduleForm.scheduleMode==='WEEKLY_PERIOD'" label="星期">
+                <el-checkbox-group v-model="scheduleForm.daysOfWeekArr">
+                  <el-checkbox :value="0">周日</el-checkbox>
+                  <el-checkbox :value="1">周一</el-checkbox>
+                  <el-checkbox :value="2">周二</el-checkbox>
+                  <el-checkbox :value="3">周三</el-checkbox>
+                  <el-checkbox :value="4">周四</el-checkbox>
+                  <el-checkbox :value="5">周五</el-checkbox>
+                  <el-checkbox :value="6">周六</el-checkbox>
+                </el-checkbox-group>
+              </el-form-item>
+              <el-form-item v-if="scheduleForm.scheduleMode==='WEEKLY_PERIOD'" label="时间范围">
+                <div style="display:flex;gap:12px;align-items:center">
+                  <el-time-picker v-model="scheduleForm.startTime" placeholder="开始时间" format="HH:mm" style="width:160px"></el-time-picker>
+                  <span style="color:#909399">至</span>
+                  <el-time-picker v-model="scheduleForm.endTime" placeholder="结束时间" format="HH:mm" style="width:160px"></el-time-picker>
+                </div>
+              </el-form-item>
+              <el-form-item label="播放顺序">
+                <el-radio-group v-model="scheduleForm.orderMode">
+                  <el-radio-button value="SEQUENTIAL">顺序</el-radio-button>
+                  <el-radio-button value="RANDOM">随机</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="重复模式">
+                <el-radio-group v-model="scheduleForm.repeatMode">
+                  <el-radio-button value="ONCE">播放一次</el-radio-button>
+                  <el-radio-button value="LOOP">循环播放</el-radio-button>
+                  <el-radio-button value="N_TIMES">按次数播放</el-radio-button>
+                </el-radio-group>
+                <el-input-number v-if="scheduleForm.repeatMode==='N_TIMES'" v-model="scheduleForm.repeatCount" :min="1" :max="999" :step="1" style="margin-top:8px" placeholder="播放次数"></el-input-number>
+              </el-form-item>
+              <el-form-item label="播放分组">
+                <el-checkbox-group v-model="scheduleForm.groupIdsArr" v-if="groups.length>0">
+                  <div v-for="g in groups" :key="g.id" style="margin-bottom:6px">
+                    <el-checkbox :value="g.id">
+                      <span class="group-color-dot" :style="{backgroundColor:g.color||'#409EFF'}" style="margin-right:8px"></span>
+                      {{g.name}}
+                    </el-checkbox>
+                  </div>
+                </el-checkbox-group>
+                <div v-else style="color:#909399;font-size:13px">暂无分组，请先在媒体库中创建分组</div>
+              </el-form-item>
+              <el-form-item label="优先级">
+                <el-input-number v-model="scheduleForm.priority" :min="0" :max="100" :step="1"></el-input-number>
+                <div class="form-hint">数值越大优先级越高，默认为0</div>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="scheduleDialog=false">取消</el-button>
+              <el-button type="primary" :loading="scheduleSaving" @click="saveSchedule">{{scheduleEditing?'更新':'创建'}}</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+      </div><!-- /app-main -->
+    </div><!-- /app-main-container -->
+  </div><!-- /app-container -->
+</div><!-- /app -->
+
+<script>
+if (typeof Vue === 'undefined') {
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f56c6c;text-align:center">' +
+    '<h2>管理面板加载失败</h2>' +
+    '<p style="color:#606266;margin-top:8px">Vue.js 脚本未能加载，请刷新页面重试。</p>' +
+    '<p style="color:#909399;margin-top:16px;font-size:13px">调试端点: <a href="/api/debug/check" style="color:#409EFF">/api/debug/check</a></p>' +
+    '</div>';
+  throw new Error('Vue.js failed to load');
+}
+
+const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
+
+const API = window.location.origin;
+
+// ========== Auth helpers ==========
+function getAuthToken() {
+  return localStorage.getItem('sp_admin_token') || sessionStorage.getItem('sp_admin_token') || '';
+}
+
+function setAuthToken(token) {
+  localStorage.setItem('sp_admin_token', token);
+  sessionStorage.setItem('sp_admin_token', token);
+}
+
+function clearAuthToken() {
+  localStorage.removeItem('sp_admin_token');
+  sessionStorage.removeItem('sp_admin_token');
+}
+
+function authHeaders() {
+  const token = getAuthToken();
+  return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
+// ========== API wrappers (with auth) ==========
+async function apiGet(path) {
+  const r = await fetch(API + path, { headers: authHeaders() });
+  if (r.status === 401) { clearAuthToken(); window.location.reload(); }
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiPost(path, data) {
+  const r = await fetch(API + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(data)
+  });
+  if (r.status === 401) { clearAuthToken(); window.location.reload(); }
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  return r.json();
+}
+
+async function apiPut(path, data) {
+  const r = await fetch(API + path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(data)
+  });
+  if (r.status === 401) { clearAuthToken(); window.location.reload(); }
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiDelete(path) {
+  const r = await fetch(API + path, { method: 'DELETE', headers: authHeaders() });
+  if (r.status === 401) { clearAuthToken(); window.location.reload(); }
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiUpload(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const token = getAuthToken();
+  const headers = {};
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const r = await fetch(API + '/api/upload', { method: 'POST', body: fd, headers });
+  if (r.status === 401) { clearAuthToken(); window.location.reload(); }
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+const app = createApp({
+  setup() {
+    // ========== 登录 ==========
+    const isLoggedIn = ref(!!getAuthToken());
+    const loginPassword = ref('');
+    const loginLoading = ref(false);
+    const loginError = ref('');
+
+    const doLogin = async () => {
+      if (!loginPassword.value) { loginError.value = '请输入密码'; return; }
+      loginLoading.value = true;
+      loginError.value = '';
+      try {
+        const r = await fetch(API + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: loginPassword.value })
+        });
+        const data = await r.json();
+        if (r.ok && data.success) {
+          setAuthToken(data.token);
+          isLoggedIn.value = true;
+          fetchPlaylistAndSettings();
+          loadMediaList();
+          fetchGroups();
+          fetchSchedules();
+        } else {
+          loginError.value = data.error || '密码错误';
+        }
+      } catch (e) {
+        loginError.value = '连接失败，请重试';
+      }
+      loginLoading.value = false;
+    };
+
+    const doLogout = () => {
+      clearAuthToken();
+      isLoggedIn.value = false;
+      loginPassword.value = '';
+      loginError.value = '';
+    };
+
+    // ========== 修改密码 ==========
+    const pwdDialog = ref(false);
+    const pwdSaving = ref(false);
+    const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' });
+
+    const openChangePassword = () => {
+      pwdForm.oldPassword = '';
+      pwdForm.newPassword = '';
+      pwdForm.confirmPassword = '';
+      pwdDialog.value = true;
+    };
+
+    const resetPwdForm = () => {
+      pwdForm.oldPassword = '';
+      pwdForm.newPassword = '';
+      pwdForm.confirmPassword = '';
+    };
+
+    const doChangePassword = async () => {
+      if (!pwdForm.oldPassword) { ElementPlus.ElMessage.warning('请输入原密码'); return; }
+      if (!pwdForm.newPassword) { ElementPlus.ElMessage.warning('请输入新密码'); return; }
+      if (pwdForm.newPassword.length < 4) { ElementPlus.ElMessage.warning('新密码至少4位'); return; }
+      if (pwdForm.newPassword !== pwdForm.confirmPassword) { ElementPlus.ElMessage.warning('两次输入的新密码不一致'); return; }
+      pwdSaving.value = true;
+      try {
+        await apiPost('/api/auth/password', {
+          oldPassword: pwdForm.oldPassword,
+          newPassword: pwdForm.newPassword
+        });
+        ElementPlus.ElMessage.success('密码修改成功');
+        pwdDialog.value = false;
+      } catch (e) {
+        ElementPlus.ElMessage.error(e.message || '密码修改失败');
+      }
+      pwdSaving.value = false;
+    };
+
+    // ========== 布局 ==========
+    const isCollapsed = ref(false);
+    const currentView = ref('playlist');
+    const pageTitle = computed(() => ({
+      playlist: '播放列表管理',
+      media: '媒体库',
+      schedules: '定时任务管理',
+      bgmusic: '背景音乐'
+    }[currentView.value] || '播放列表管理'));
+
+    const refreshView = () => {
+      if (currentView.value === 'playlist') fetchPlaylistAndSettings();
+      else if (currentView.value === 'media') { loadMediaList(); fetchGroups(); }
+      else if (currentView.value === 'schedules') fetchSchedules();
+      else if (currentView.value === 'bgmusic') loadBgmList();
+    };
+
+    // ========== 播放列表 ==========
+    const plLoading = ref(false);
+    const plSaving = ref(false);
+    const plDialog = ref(false);
+    const plEditing = ref(false);
+    const editId = ref(null);
+    const selectedIds = ref([]);
+    const dragIdx = ref(null);
+    const playlist = ref([]);
+    const mediaFiles = ref([]);
+
+    const defaultItemForm = () => ({ title:'', url:'', type:'VIDEO', duration:'auto', enabled:true, autoDuration:true });
+    const itemForm = reactive(defaultItemForm());
+
+    const fetchPlaylistAndSettings = async () => {
+      plLoading.value = true;
+      try {
+        const [p, s, c] = await Promise.allSettled([apiGet('/api/playlist'), apiGet('/api/status'), apiGet('/api/config')]);
+        if (p.status === 'fulfilled') playlist.value = Array.isArray(p.value) ? p.value : (p.value?.items || []);
+        if (s.status === 'fulfilled' && s.value) {
+          const d = s.value;
+          netInfo.value = { ip: d.ip, gateway: d.gateway, dns: d.dns, ssid: d.ssid, signal: d.signal, mac: d.mac };
+          playbackState.volume = d.volume ?? playbackState.volume;
+        }
+        if (c.status === 'fulfilled' && c.value) {
+          Object.assign(cfg, {
+            orderMode: c.value.orderMode || cfg.orderMode,
+            repeatMode: c.value.repeatMode || cfg.repeatMode,
+            repeatCount: c.value.repeatCount || cfg.repeatCount,
+            volume: c.value.volume ?? c.value.volumeLevel ?? cfg.volume,
+            imageDuration: c.value.imageDuration || cfg.imageDuration,
+            interstitialEnabled: !!c.value.interstitialEnabled,
+            interstitialStart: c.value.interstitialStart || null,
+            interstitialEnd: c.value.interstitialEnd || null,
+            offScreenMessage: c.value.offScreenMessage || '',
+            deviceName: c.value.deviceName || cfg.deviceName,
+            orientation: c.value.orientation || cfg.orientation,
+            idleTimeout: c.value.idleTimeout ?? cfg.idleTimeout,
+            bgMusicEnabled: !!c.value.bgMusicEnabled,
+            bgMusicVolume: c.value.bgMusicVolume ?? 50,
+            bgMusicLoop: !!c.value.bgMusicLoop,
+            bgMusicShuffle: !!c.value.bgMusicShuffle
+          });
+        }
+      } catch (e) { ElementPlus.ElMessage.error('数据加载失败'); }
+      plLoading.value = false;
+    };
+
+    const onSelectionChange = (rows) => { selectedIds.value = rows.map(r => r.id); };
+
+    const dragStart = (e, idx) => {
+      dragIdx.value = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', idx);
+    };
+    const dropItem = (e, toIdx) => {
+      e.preventDefault();
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      if (isNaN(fromIdx) || fromIdx === toIdx) return;
+      const item = playlist.value.splice(fromIdx, 1)[0];
+      playlist.value.splice(toIdx, 0, item);
+      saveOrder();
+    };
+
+    const saveOrder = async () => {
+      try {
+        const items = playlist.value.map((item, idx) => ({ id: item.id, sortOrder: idx }));
+        await apiPost('/api/playlist/reorder', { items });
+        ElementPlus.ElMessage.success('排序已更新');
+      } catch (e) { ElementPlus.ElMessage.error('排序更新失败'); }
+    };
+
+    const moveItem = (row, idx, dir) => {
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= playlist.value.length) return;
+      const item = playlist.value.splice(idx, 1)[0];
+      playlist.value.splice(newIdx, 0, item);
+      saveOrder();
+    };
+
+    const openAddItem = () => {
+      plEditing.value = false; editId.value = null;
+      Object.assign(itemForm, defaultItemForm());
+      plDialog.value = true;
+    };
+
+    const openEditItem = (row) => {
+      plEditing.value = true; editId.value = row.id;
+      Object.assign(itemForm, { ...row, autoDuration: row.duration === 'auto' });
+      plDialog.value = true;
+    };
+
+    const onDurationToggle = (val) => { itemForm.duration = val ? 'auto' : 10; };
+
+    const resetItemForm = () => { Object.assign(itemForm, defaultItemForm()); };
+
+    const saveItem = async () => {
+      if (!itemForm.title) { ElementPlus.ElMessage.warning('请输入标题'); return; }
+      if (!itemForm.url) { ElementPlus.ElMessage.warning('请输入 URL'); return; }
+      plSaving.value = true;
+      try {
+        const payload = { ...itemForm };
+        if (payload.autoDuration) payload.duration = 'auto';
+        delete payload.autoDuration;
+        if (plEditing.value) {
+          await apiPut('/api/playlist/' + editId.value, payload);
+          ElementPlus.ElMessage.success('项目已更新');
+        } else {
+          await apiPost('/api/playlist', payload);
+          ElementPlus.ElMessage.success('项目已添加');
+        }
+        plDialog.value = false;
+        await fetchPlaylistAndSettings();
+      } catch (e) { ElementPlus.ElMessage.error('保存失败'); }
+      plSaving.value = false;
+    };
+
+    const toggleItem = async (row) => {
+      try { await apiPut('/api/playlist/' + row.id, { enabled: row.enabled }); }
+      catch (e) { row.enabled = !row.enabled; ElementPlus.ElMessage.error('更新失败'); }
+    };
+
+    const confirmDeleteItem = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + (row.title || '未命名') + '" 吗？', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/playlist/' + row.id); ElementPlus.ElMessage.success('已删除'); fetchPlaylistAndSettings(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
+    const bulkToggle = async (enabled) => {
+      try {
+        for (const row of playlist.value) {
+          if (selectedIds.value.includes(row.id)) {
+            row.enabled = enabled;
+            await apiPut('/api/playlist/' + row.id, { enabled });
+          }
+        }
+        ElementPlus.ElMessage.success('已更新 ' + selectedIds.value.length + ' 个项目');
+        selectedIds.value = [];
+      } catch (e) { ElementPlus.ElMessage.error('批量操作失败'); }
+    };
+
+    const batchDelete = () => {
+      ElementPlus.ElMessageBox.confirm('确定删除选中的 ' + selectedIds.value.length + ' 个项目吗？', '批量删除', {
+        confirmButtonText: '全部删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try {
+          for (const id of selectedIds.value) await apiDelete('/api/playlist/' + id);
+          ElementPlus.ElMessage.success('已删除');
+          fetchPlaylistAndSettings();
+        } catch (e) { ElementPlus.ElMessage.error('批量删除失败'); }
+      }).catch(() => {});
+    };
+
+    // ========== 媒体库 ==========
+    const mediaLoading = ref(false);
+    const uploading = ref(false);
+    const uploadFiles = ref([]);
+    const uploadUrl = API + '/api/upload';
+
+    const onFileChange = (file, files) => { uploadFiles.value = files; };
+    const onFileRemove = (file, files) => { uploadFiles.value = files; };
+
+    const doUpload = async () => {
+      if (!uploadFiles.value.length) return;
+      uploading.value = true;
+      let ok = 0, fail = 0;
+      for (const f of uploadFiles.value) {
+        try { await apiUpload(f.raw); ok++; } catch (e) { fail++; }
+      }
+      uploading.value = false;
+      if (fail === 0) { ElementPlus.ElMessage.success(ok + ' 个文件上传成功'); uploadFiles.value = []; }
+      else ElementPlus.ElMessage.warning(ok + ' 个上传成功，' + fail + ' 个上传失败');
+      loadMediaList();
+    };
+
+    const loadMediaList = async () => {
+      mediaLoading.value = true;
+      try {
+        const r = await apiGet('/api/media');
+        mediaFiles.value = r?.files || (Array.isArray(r) ? r : []);
+      } catch (e) { console.error(e); }
+      mediaLoading.value = false;
+    };
+
+    const doScanAndRefresh = async () => {
+      mediaLoading.value = true;
+      try {
+        const r = await apiGet('/api/scan');
+        ElementPlus.ElMessage.success((r?.filesFound || 0) > 0 ? '发现 ' + (r.filesFound || 0) + ' 个新文件' : '没有发现新文件');
+        mediaFiles.value = r?.files || (Array.isArray(r) ? r : []);
+      } catch (e) { console.error(e); }
+      mediaLoading.value = false;
+    };
+
+    const fmtSize = (b) => {
+      if (!b && b !== 0) return '--';
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB';
+      return (b / 1073741824).toFixed(2) + ' GB';
+    };
+
+    const copyPath = (row) => {
+      const p = row.path || row.name;
+      navigator.clipboard?.writeText(p).then(() => ElementPlus.ElMessage.success('路径已复制')).catch(() => ElementPlus.ElMessage.info(p));
+    };
+
+    const renameDialog = ref(false);
+    const renameSaving = ref(false);
+    const renameForm = reactive({ id: null, title: '', originalName: '' });
+
+    const openRenameFile = (row) => {
+      renameForm.id = row.id;
+      renameForm.title = row.title || row.name.substringBeforeLast('.') || '';
+      renameForm.originalName = row.name || row.title || '';
+      renameDialog.value = true;
+    };
+
+    const resetRenameForm = () => { renameForm.id = null; renameForm.title = ''; renameForm.originalName = ''; };
+
+    const doRename = async () => {
+      if (!renameForm.title) { ElementPlus.ElMessage.warning('请输入文件名'); return; }
+      renameSaving.value = true;
+      try {
+        await apiPut('/api/media/' + renameForm.id, { title: renameForm.title });
+        ElementPlus.ElMessage.success('重命名成功');
+        renameDialog.value = false;
+        loadMediaList();
+      } catch (e) { ElementPlus.ElMessage.error('重命名失败'); }
+      renameSaving.value = false;
+    };
+
+    const confirmDeleteFile = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + (row.name || row.title) + '" 吗？文件将从磁盘上永久删除。', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/media/' + row.id); ElementPlus.ElMessage.success('已删除'); loadMediaList(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
+    // ========== 设置（合并到播放列表视图） ==========
+    const settingsLoading = ref(false);
+    const settingsSaving = ref(false);
+    const settingsExpanded = ref([]);
+    const netInfo = ref({});
+    const cfg = reactive({
+      orderMode: 'SEQUENTIAL', repeatMode: 'LOOP', repeatCount: 0,
+      volume: 50, imageDuration: 10,
+      interstitialEnabled: false, interstitialStart: null, interstitialEnd: null,
+      offScreenMessage: '', deviceName: 'ScreenPulse Player',
+      orientation: 'landscape', idleTimeout: 0,
+      bgMusicEnabled: false, bgMusicVolume: 50, bgMusicLoop: true, bgMusicShuffle: false
+    });
+
+    const saveSettings = async () => {
+      settingsSaving.value = true;
+      try {
+        const payload = { ...cfg };
+        await apiPut('/api/config', payload);
+        ElementPlus.ElMessage.success('设置已保存');
+      } catch (e) { ElementPlus.ElMessage.error('设置保存失败'); }
+      settingsSaving.value = false;
+    };
+
+    // ========== 分组管理 ==========
+    const groups = ref([]);
+    const groupDialog = ref(false);
+    const groupEditing = ref(false);
+    const groupEditId = ref(null);
+    const groupSaving = ref(false);
+    const groupForm = reactive({ name: '', description: '', color: '#409EFF' });
+
+    const resetGroupForm = () => {
+      groupForm.name = '';
+      groupForm.description = '';
+      groupForm.color = '#409EFF';
+      groupEditing.value = false;
+      groupEditId.value = null;
+    };
+
+    const openNewGroup = () => {
+      resetGroupForm();
+      groupDialog.value = true;
+    };
+
+    const openEditGroup = (row) => {
+      groupEditing.value = true;
+      groupEditId.value = row.id;
+      groupForm.name = row.name || '';
+      groupForm.description = row.description || '';
+      groupForm.color = row.color || '#409EFF';
+      groupDialog.value = true;
+    };
+
+    const saveGroup = async () => {
+      if (!groupForm.name) { ElementPlus.ElMessage.warning('请输入分组名称'); return; }
+      groupSaving.value = true;
+      try {
+        if (groupEditing.value && groupEditId.value) {
+          await apiPut('/api/groups/' + groupEditId.value, { ...groupForm });
+          ElementPlus.ElMessage.success('分组已更新');
+        } else {
+          await apiPost('/api/groups', { ...groupForm });
+          ElementPlus.ElMessage.success('分组已创建');
+        }
+        groupDialog.value = false;
+        await fetchGroups();
+      } catch (e) { ElementPlus.ElMessage.error('分组保存失败'); }
+      groupSaving.value = false;
+    };
+
+    const confirmDeleteGroup = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除分组 "' + (row.name || '未命名') + '" 吗？分组内的文件不会被删除。', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/groups/' + row.id); ElementPlus.ElMessage.success('分组已删除'); fetchGroups(); }
+        catch (e) { ElementPlus.ElMessage.error('删除分组失败'); }
+      }).catch(() => {});
+    };
+
+    const fetchGroups = async () => {
+      try {
+        const r = await apiGet('/api/groups');
+        groups.value = Array.isArray(r) ? r : (r?.groups || []);
+      } catch (e) { console.error('Failed to fetch groups', e); }
+    };
+
+    // ========== 媒体分组分配 ==========
+    const mediaGroupDialog = ref(false);
+    const mediaGroupItemId = ref(null);
+    const mediaGroupName = ref('');
+    const mediaGroupChecked = ref([]);
+
+    const getMediaGroupTags = (row) => {
+      try {
+        let gids = row.groupIds;
+        if (typeof gids === 'string') gids = JSON.parse(gids);
+        if (!Array.isArray(gids)) return [];
+        return gids.map(id => {
+          const g = groups.value.find(g => g.id === id);
+          return g ? { id: g.id, name: g.name, color: g.color } : { id, name: '#' + id, color: '#909399' };
+        });
+      } catch (e) { return []; }
+    };
+
+    const openMediaGroupAssign = (row) => {
+      mediaGroupItemId.value = row.id;
+      mediaGroupName.value = row.name || row.title || '未命名';
+      const currentGids = [];
+      try {
+        let gids = row.groupIds;
+        if (typeof gids === 'string') gids = JSON.parse(gids);
+        if (Array.isArray(gids)) currentGids.push(...gids.map(Number));
+      } catch (e) {}
+      mediaGroupChecked.value = currentGids;
+      mediaGroupDialog.value = true;
+    };
+
+    const saveMediaGroupAssign = async () => {
+      try {
+        const oldGids = (() => {
+          const row = mediaFiles.value.find(f => f.id === mediaGroupItemId.value);
+          try {
+            let gids = row?.groupIds;
+            if (typeof gids === 'string') gids = JSON.parse(gids);
+            if (Array.isArray(gids)) return gids.map(Number);
+          } catch (e) {}
+          return [];
+        })();
+        const newGids = mediaGroupChecked.value.map(Number);
+        const toAdd = newGids.filter(id => !oldGids.includes(id));
+        const toRemove = oldGids.filter(id => !newGids.includes(id));
+        for (const gid of toAdd) {
+          await apiPost('/api/groups/' + gid + '/items', { mediaId: mediaGroupItemId.value });
+        }
+        for (const gid of toRemove) {
+          await apiDelete('/api/groups/' + gid + '/items/' + mediaGroupItemId.value);
+        }
+        ElementPlus.ElMessage.success('分组已更新');
+        mediaGroupDialog.value = false;
+        loadMediaList();
+        fetchGroups();
+      } catch (e) { ElementPlus.ElMessage.error('分组更新失败'); }
+    };
+
+    // ========== 分组详情 ==========
+    const groupDetailDialog = ref(false);
+    const groupDetailData = reactive({ id: null, name: '', description: '', color: '#409EFF' });
+    const groupDetailItems = ref([]);
+    const addMediaToGroupDialog = ref(false);
+    const addMediaToGroupSelected = ref([]);
+
+    const openGroupDetail = async (group) => {
+      groupDetailData.id = group.id;
+      groupDetailData.name = group.name;
+      groupDetailData.description = group.description;
+      groupDetailData.color = group.color;
+      try {
+        const r = await apiGet('/api/groups/' + group.id + '/items');
+        groupDetailItems.value = Array.isArray(r) ? r : (r?.items || r?.files || []);
+      } catch (e) { groupDetailItems.value = []; }
+      groupDetailDialog.value = true;
+    };
+
+    const removeFromGroup = async (row) => {
+      try {
+        await apiDelete('/api/groups/' + groupDetailData.id + '/items/' + row.id);
+        ElementPlus.ElMessage.success('已从分组移除');
+        const idx = groupDetailItems.value.findIndex(i => i.id === row.id);
+        if (idx >= 0) groupDetailItems.value.splice(idx, 1);
+        fetchGroups();
+        loadMediaList();
+      } catch (e) { ElementPlus.ElMessage.error('移除失败'); }
+    };
+
+    const mediaFilesNotInGroup = computed(() => {
+      const inGroup = new Set(groupDetailItems.value.map(i => i.id));
+      return mediaFiles.value.filter(f => !inGroup.has(f.id));
+    });
+
+    const onAddMediaToGroupSelection = (rows) => { addMediaToGroupSelected.value = rows; };
+
+    const addToGroupFromDetail = () => {
+      addMediaToGroupSelected.value = [];
+      addMediaToGroupDialog.value = true;
+    };
+
+    const confirmAddMediaToGroup = async () => {
+      if (!addMediaToGroupSelected.value.length) { ElementPlus.ElMessage.warning('请选择要添加的文件'); return; }
+      try {
+        for (const item of addMediaToGroupSelected.value) {
+          await apiPost('/api/groups/' + groupDetailData.id + '/items', { mediaId: item.id });
+        }
+        ElementPlus.ElMessage.success('已添加 ' + addMediaToGroupSelected.value.length + ' 个文件');
+        addMediaToGroupDialog.value = false;
+        await openGroupDetail(groupDetailData);
+        fetchGroups();
+        loadMediaList();
+      } catch (e) { ElementPlus.ElMessage.error('添加失败'); }
+    };
+
+    // ========== 定时任务 ==========
+    const schedules = ref([]);
+    const scheduleLoading = ref(false);
+    const scheduleSaving = ref(false);
+    const scheduleDialog = ref(false);
+    const scheduleEditing = ref(false);
+    const scheduleEditId = ref(null);
+
+    const defaultScheduleForm = () => ({
+      name: '', taskType: 'SCHEDULED_PLAYBACK', enabled: true,
+      scheduleMode: 'ALWAYS', startTime: '', endTime: '', daysOfWeek: '', daysOfWeekArr: [],
+      orderMode: 'SEQUENTIAL', repeatMode: 'LOOP', repeatCount: 0,
+      groupIds: [], groupIdsArr: [], priority: 0
+    });
+    const scheduleForm = reactive(defaultScheduleForm());
+
+    const fetchSchedules = async () => {
+      scheduleLoading.value = true;
+      try {
+        const r = await apiGet('/api/schedules');
+        schedules.value = Array.isArray(r) ? r : (r?.schedules || r?.items || []);
+      } catch (e) { console.error('Failed to fetch schedules', e); }
+      scheduleLoading.value = false;
+    };
+
+    const resetScheduleForm = () => {
+      Object.assign(scheduleForm, defaultScheduleForm());
+      scheduleEditing.value = false;
+      scheduleEditId.value = null;
+    };
+
+    const openNewSchedule = () => {
+      resetScheduleForm();
+      scheduleDialog.value = true;
+    };
+
+    const openEditSchedule = (row) => {
+      scheduleEditing.value = true;
+      scheduleEditId.value = row.id;
+      Object.assign(scheduleForm, {
+        name: row.name || '',
+        taskType: row.taskType || 'SCHEDULED_PLAYBACK',
+        enabled: row.enabled !== false,
+        scheduleMode: row.scheduleMode || 'ALWAYS',
+        startTime: row.startTime || '',
+        endTime: row.endTime || '',
+        daysOfWeek: row.daysOfWeek || '',
+        daysOfWeekArr: [],
+        orderMode: row.orderMode || 'SEQUENTIAL',
+        repeatMode: row.repeatMode || 'LOOP',
+        repeatCount: row.repeatCount || 0,
+        groupIds: [],
+        groupIdsArr: [],
+        priority: row.priority || 0
+      });
+      try {
+        if (typeof row.daysOfWeek === 'string' && row.daysOfWeek) {
+          scheduleForm.daysOfWeekArr = row.daysOfWeek.split(',').map(Number);
+        }
+        let gids = row.groupIds;
+        if (typeof gids === 'string') gids = JSON.parse(gids);
+        if (Array.isArray(gids)) scheduleForm.groupIdsArr = gids.map(Number);
+      } catch (e) {}
+      scheduleDialog.value = true;
+    };
+
+    const saveSchedule = async () => {
+      if (!scheduleForm.name) { ElementPlus.ElMessage.warning('请输入任务名称'); return; }
+      scheduleSaving.value = true;
+      try {
+        const payload = {
+          name: scheduleForm.name,
+          taskType: scheduleForm.taskType,
+          enabled: scheduleForm.enabled,
+          scheduleMode: scheduleForm.scheduleMode,
+          startTime: scheduleForm.startTime || null,
+          endTime: scheduleForm.endTime || null,
+          daysOfWeek: scheduleForm.daysOfWeekArr.length > 0 ? scheduleForm.daysOfWeekArr.join(',') : '',
+          orderMode: scheduleForm.orderMode,
+          repeatMode: scheduleForm.repeatMode,
+          repeatCount: scheduleForm.repeatCount || 0,
+          groupIds: JSON.stringify(scheduleForm.groupIdsArr),
+          priority: scheduleForm.priority || 0
+        };
+        if (scheduleEditing.value && scheduleEditId.value) {
+          await apiPut('/api/schedules/' + scheduleEditId.value, payload);
+          ElementPlus.ElMessage.success('任务已更新');
+        } else {
+          await apiPost('/api/schedules', payload);
+          ElementPlus.ElMessage.success('任务已创建');
+        }
+        scheduleDialog.value = false;
+        await fetchSchedules();
+      } catch (e) { ElementPlus.ElMessage.error('任务保存失败'); }
+      scheduleSaving.value = false;
+    };
+
+    const toggleSchedule = async (row) => {
+      try { await apiPut('/api/schedules/' + row.id + '/toggle', { enabled: row.enabled }); }
+      catch (e) { row.enabled = !row.enabled; ElementPlus.ElMessage.error('更新失败'); }
+    };
+
+    const confirmDeleteSchedule = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除定时任务 "' + (row.name || '未命名') + '" 吗？', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/schedules/' + row.id); ElementPlus.ElMessage.success('任务已删除'); fetchSchedules(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
+    const formatScheduleDesc = (task) => {
+      if (task.scheduleMode === 'ALWAYS') return '始终播放';
+      if (task.scheduleMode === 'DAILY_PERIOD') return '每天 ' + (task.startTime || '--') + ' - ' + (task.endTime || '--');
+      if (task.scheduleMode === 'WEEKLY_PERIOD') {
+        const dayNames = ['日','一','二','三','四','五','六'];
+        const days = (task.daysOfWeek || '').split(',').map(d => {
+          const n = parseInt(d);
+          return '周' + (dayNames[n] || d);
+        }).join('、');
+        return days + ' ' + (task.startTime || '--') + ' - ' + (task.endTime || '--');
+      }
+      return task.scheduleMode;
+    };
+
+    const getScheduleGroupNames = (task) => {
+      try {
+        let ids = task.groupIds;
+        if (typeof ids === 'string') ids = JSON.parse(ids);
+        if (!Array.isArray(ids)) return '--';
+        return ids.map(id => {
+          const g = groups.value.find(g => g.id === id || g.id === Number(id));
+          return g ? g.name : '#' + id;
+        }).join(', ') || '--';
+      } catch (e) { return '--'; }
+    };
+
+    // ========== 播放控制 ==========
+    const playbackState = reactive({ playing: false, volume: 50 });
+
+    const playbackControl = async (action) => {
+      try {
+        await apiPost('/api/playback/control', { action: action });
+        if (action === 'play') { playbackState.playing = true; ElementPlus.ElMessage.success('开始播放'); }
+        else if (action === 'pause') { playbackState.playing = false; ElementPlus.ElMessage.info('已暂停'); }
+        else if (action === 'stop') { playbackState.playing = false; ElementPlus.ElMessage.info('已停止'); }
+      } catch (e) { ElementPlus.ElMessage.error('播放控制失败'); }
+    };
+
+    const setVolume = async (vol) => {
+      try {
+        await apiPut('/api/playback/volume', { volume: vol });
+      } catch (e) { ElementPlus.ElMessage.error('音量设置失败'); }
+    };
+
+    // ========== 背景音乐 ==========
+    const bgmLoading = ref(false);
+    const bgmUploading = ref(false);
+    const bgmUploadFiles = ref([]);
+    const bgmUploadUrl = API + '/api/bgmusic/upload';
+    const bgMusicList = ref([]);
+    const bgmDragIdx = ref(null);
+
+    const onBgmFileChange = (file, files) => { bgmUploadFiles.value = files; };
+    const onBgmFileRemove = (file, files) => { bgmUploadFiles.value = files; };
+
+    const doBgmUpload = async () => {
+      if (!bgmUploadFiles.value.length) return;
+      bgmUploading.value = true;
+      let ok = 0, fail = 0;
+      for (const f of bgmUploadFiles.value) {
+        try {
+          const fd = new FormData();
+          fd.append('file', f.raw);
+          const token = getAuthToken();
+          const headers = {};
+          if (token) headers['Authorization'] = 'Bearer ' + token;
+          const r = await fetch(API + '/api/bgmusic/upload', { method: 'POST', body: fd, headers });
+          if (r.ok) ok++; else fail++;
+        } catch (e) { fail++; }
+      }
+      bgmUploading.value = false;
+      if (fail === 0) { ElementPlus.ElMessage.success(ok + ' 个音乐上传成功'); bgmUploadFiles.value = []; }
+      else ElementPlus.ElMessage.warning(ok + ' 个上传成功，' + fail + ' 个上传失败');
+      loadBgmList();
+    };
+
+    const loadBgmList = async () => {
+      bgmLoading.value = true;
+      try {
+        const r = await apiGet('/api/bgmusic');
+        bgMusicList.value = r?.music || [];
+      } catch (e) { console.error(e); }
+      bgmLoading.value = false;
+    };
+
+    const confirmDeleteBgm = (row) => {
+      ElementPlus.ElMessageBox.confirm('确定删除 "' + row.title + '" 吗？', '确认删除', {
+        confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try { await apiDelete('/api/bgmusic/' + row.id); ElementPlus.ElMessage.success('已删除'); loadBgmList(); }
+        catch (e) { ElementPlus.ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+
+    const clearAllBgmMusic = () => {
+      ElementPlus.ElMessageBox.confirm('确定清空全部背景音乐吗？', '确认清空', {
+        confirmButtonText: '全部清空', cancelButtonText: '取消', type: 'warning'
+      }).then(async () => {
+        try {
+          for (const m of bgMusicList.value) await apiDelete('/api/bgmusic/' + m.id);
+          ElementPlus.ElMessage.success('已清空');
+          bgMusicList.value = [];
+        } catch (e) { ElementPlus.ElMessage.error('清空失败'); }
+      }).catch(() => {});
+    };
+
+    const bgmDragStart = (e, idx) => {
+      bgmDragIdx.value = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', idx);
+    };
+
+    const bgmDrop = (e, toIdx) => {
+      e.preventDefault();
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      if (isNaN(fromIdx) || fromIdx === toIdx) return;
+      const item = bgMusicList.value.splice(fromIdx, 1)[0];
+      bgMusicList.value.splice(toIdx, 0, item);
+      const items = bgMusicList.value.map((m, i) => ({ id: m.id, sortOrder: i }));
+      apiPost('/api/bgmusic/reorder', { items }).catch(() => {});
+    };
+
+    // ========== 视图切换 watcher ==========
+    watch(currentView, async (newView) => {
+      if (newView === 'media') {
+        await loadMediaList();
+        if (mediaFiles.value.length === 0) await doScanAndRefresh();
+        fetchGroups();
+      } else if (newView === 'playlist') {
+        fetchPlaylistAndSettings();
+      } else if (newView === 'schedules') {
+        fetchSchedules();
+      } else if (newView === 'bgmusic') {
+        loadBgmList();
+      }
+    }, { immediate: true });
+
+    // ========== 初始化 ==========
+    onMounted(() => {
+      if (isLoggedIn.value) {
+        fetchPlaylistAndSettings();
+        loadMediaList();
+        fetchGroups();
+        fetchSchedules();
+        loadBgmList();
+      }
+    });
+
+    return {
+      isLoggedIn, loginPassword, loginLoading, loginError, doLogin, doLogout,
+      pwdDialog, pwdSaving, pwdForm, openChangePassword, resetPwdForm, doChangePassword,
+      isCollapsed, currentView, pageTitle, refreshView,
+      plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds, playlist, mediaFiles,
+      dragStart, dropItem, fetchPlaylistAndSettings, onSelectionChange, moveItem,
+      openAddItem, openEditItem, onDurationToggle, resetItemForm, saveItem,
+      toggleItem, confirmDeleteItem, bulkToggle, batchDelete,
+      mediaLoading, uploading, uploadFiles, uploadUrl,
+      onFileChange, onFileRemove, doUpload, loadMediaList, doScanAndRefresh,
+      fmtSize, copyPath, confirmDeleteFile,
+      renameDialog, renameSaving, renameForm, openRenameFile, resetRenameForm, doRename,
+      settingsLoading, settingsSaving, settingsExpanded, netInfo, cfg, saveSettings,
+      // Groups
+      groups, groupDialog, groupEditing, groupEditId, groupSaving, groupForm,
+      resetGroupForm, openNewGroup, openEditGroup, saveGroup, confirmDeleteGroup, fetchGroups,
+      // Group detail
+      groupDetailDialog, groupDetailData, groupDetailItems,
+      openGroupDetail, removeFromGroup, addToGroupFromDetail,
+      addMediaToGroupDialog, mediaFilesNotInGroup, onAddMediaToGroupSelection, confirmAddMediaToGroup,
+      // Media group assignment
+      mediaGroupDialog, mediaGroupItemId, mediaGroupName, mediaGroupChecked,
+      getMediaGroupTags, openMediaGroupAssign, saveMediaGroupAssign,
+      // Schedules
+      schedules, scheduleLoading, scheduleSaving, scheduleDialog, scheduleEditing, scheduleEditId, scheduleForm,
+      fetchSchedules, resetScheduleForm, openNewSchedule, openEditSchedule, saveSchedule,
+      toggleSchedule, confirmDeleteSchedule, formatScheduleDesc, getScheduleGroupNames,
+      // Playback controls
+      playbackState, playbackControl, setVolume,
+      // Background music
+      bgmLoading, bgmUploading, bgmUploadFiles, bgmUploadUrl, bgMusicList,
+      onBgmFileChange, onBgmFileRemove, doBgmUpload, loadBgmList,
+      confirmDeleteBgm, clearAllBgmMusic, bgmDragStart, bgmDrop,
+      // Icons
+      Lock: ElementPlusIconsVue.Lock,
+      SwitchButton: ElementPlusIconsVue.SwitchButton,
+      Refresh: ElementPlusIconsVue.Refresh,
+      Plus: ElementPlusIconsVue.Plus,
+      Delete: ElementPlusIconsVue.Delete,
+      Edit: ElementPlusIconsVue.Edit,
+      Top: ElementPlusIconsVue.Top,
+      Bottom: ElementPlusIconsVue.Bottom,
+      CircleCheck: ElementPlusIconsVue.CircleCheck,
+      CircleClose: ElementPlusIconsVue.CircleClose,
+      Check: ElementPlusIconsVue.Check,
+      List: ElementPlusIconsVue.List,
+      FolderOpened: ElementPlusIconsVue.FolderOpened,
+      UploadFilled: ElementPlusIconsVue.UploadFilled,
+      CopyDocument: ElementPlusIconsVue.CopyDocument,
+      Rank: ElementPlusIconsVue.Rank,
+      Setting: ElementPlusIconsVue.Setting,
+      VideoPlay: ElementPlusIconsVue.VideoPlay,
+      VideoPause: ElementPlusIconsVue.VideoPause,
+      Picture: ElementPlusIconsVue.Picture,
+      Document: ElementPlusIconsVue.Document,
+      Monitor: ElementPlusIconsVue.Monitor,
+      Clock: ElementPlusIconsVue.Clock,
+      Mute: ElementPlusIconsVue.Mute,
+      Bell: ElementPlusIconsVue.Bell,
+      Connection: ElementPlusIconsVue.Connection,
+      Expand: ElementPlusIconsVue.Expand,
+      Fold: ElementPlusIconsVue.Fold,
+      Timer: ElementPlusIconsVue.Timer,
+      Collection: ElementPlusIconsVue.Collection,
+      Calendar: ElementPlusIconsVue.Calendar,
+      Headset: ElementPlusIconsVue.Headset
+    };
+  }
+});
+
+// 注册 Element Plus（带错误处理）
+try {
+  if (typeof ElementPlus === 'undefined') {
+    throw new Error('ElementPlus is not defined. Check that element-plus.js is the correct IIFE browser build.');
+  }
+  app.use(ElementPlus);
+  console.log('Element Plus 注册成功');
+} catch (err) {
+  console.error('Failed to register Element Plus:', err);
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f56c6c;text-align:center">' +
+    '<h2>Element Plus 注册失败</h2>' +
+    '<pre style="color:#606266;text-align:left;max-width:600px;margin:16px auto;font-size:13px">' + err.message + '</pre>' +
+    '<p style="color:#909399;font-size:13px">element-plus.js 必须是 IIFE 浏览器版本</p>' +
+    '</div>';
+  throw err;
+}
+
+// 注册所有图标（带错误处理）
+try {
+  if (typeof ElementPlusIconsVue === 'undefined') {
+    console.warn('ElementPlusIconsVue is not defined, skipping icon registration');
+  } else {
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+      app.component(key, component);
+    }
+    console.log('已注册 ' + Object.keys(ElementPlusIconsVue).length + ' 个图标');
+  }
+} catch (err) {
+  console.warn('Some icons failed to register:', err);
+}
+
+// 挂载应用（带错误处理）
+try {
+  app.mount('#app');
+  console.log('ScreenPulse 管理面板挂载成功');
+} catch (err) {
+  console.error('Failed to mount Vue app:', err);
+  document.getElementById('app').removeAttribute('v-cloak');
+  document.getElementById('app').innerHTML =
+    '<div style="padding:40px;color:#f56c6c;text-align:center">' +
+    '<h2>应用挂载失败</h2>' +
+    '<pre style="color:#606266;text-align:left;max-width:600px;margin:16px auto;font-size:13px">' + err.message + '\n' + (err.stack || '') + '</pre>' +
+    '</div>';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Built application files
+*.apk
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file
+local.properties
+
+# Android Studio
+*.iml
+.idea/
+.navigation/
+captures/
+
+# Keystore files (except debug keystore for CI)
+*.jks
+*.keystore
+!app/debug.keystore
+
+# Log Files
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
