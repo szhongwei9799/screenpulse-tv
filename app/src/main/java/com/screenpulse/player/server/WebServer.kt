@@ -201,6 +201,22 @@ class WebServer(
             session.method == Method.POST && session.uri == "/api/upload" -> apiRouter.uploadFile(session)
             session.method == Method.GET && session.uri == "/api/scan" -> apiRouter.triggerScan(session)
             session.method == Method.GET && session.uri == "/api/playback-stats" -> apiRouter.getPlaybackStats(session)
+            // Media Group APIs
+            session.method == Method.GET && session.uri == "/api/groups" -> apiRouter.getGroups(session)
+            session.method == Method.POST && session.uri == "/api/groups" -> apiRouter.createGroup(session)
+            session.method == Method.PUT && session.uri.matches(Regex("^/api/groups/\\d+$")) -> {
+                val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}""")
+                apiRouter.updateGroup(session, id)
+            }
+            session.method == Method.DELETE && session.uri.matches(Regex("^/api/groups/\\d+$")) -> {
+                val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}""")
+                apiRouter.deleteGroup(session, id)
+            }
+            session.method == Method.POST && session.uri.matches(Regex("^/api/media/\\d+/groups$")) -> {
+                val id = session.uri.removePrefix("/api/media/").removeSuffix("/groups").toLongOrNull() ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}""")
+                apiRouter.setMediaGroups(session, id)
+            }
+            session.method == Method.POST && session.uri == "/api/media/online" -> apiRouter.addOnlineMedia(session)
             // Background Music APIs
             session.method == Method.GET && session.uri == "/api/bgmusic" -> apiRouter.getBgMusicList(session)
             session.method == Method.POST && session.uri == "/api/bgmusic/upload" -> apiRouter.uploadBgMusic(session)

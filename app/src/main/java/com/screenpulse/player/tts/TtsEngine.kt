@@ -30,9 +30,13 @@ class TtsEngine(private val context: Context) {
         private const val WSS_HOST = "speech.platform.bing.com"
         private const val WSS_PATH = "/consumer/speech/synthesize/readaloud/edge/v1"
         private const val TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"
-        private const val SEC_MS_GEC_VERSION = "1-131.0.2903.51"
+        // Updated to match edge-tts v7.2.8 (Chromium 143)
+        private const val CHROMIUM_FULL_VERSION = "143.0.3650.75"
+        private const val CHROMIUM_MAJOR_VERSION = "143"
+        private const val SEC_MS_GEC_VERSION = "1-$CHROMIUM_FULL_VERSION"
         private const val TTS_DIR = "screenpulse_tts"
         private const val WIN_EPOCH = 11644473600L
+        private const val S_TO_NS = 1e9
 
         data class EdgeVoice(val id: String, val name: String)
 
@@ -71,14 +75,14 @@ class TtsEngine(private val context: Context) {
 
         /**
          * Exact replica of edge-tts DRM.generate_sec_ms_gec().
-         * Python: ticks = unix_ts + WIN_EPOCH; ticks -= ticks % 300; ticks *= 1e7;
-         *         SHA256(f"{ticks:.0f}{TOKEN}").upper()
+         * Python: ticks = unix_ts + WIN_EPOCH; ticks -= ticks % 300; ticks *= S_TO_NS / 100;
+         *         f"{ticks:.0f}{TOKEN}" -> SHA256().upper()
          */
         fun generateSecMsGec(clockSkewSeconds: Double = 0.0): String {
             var ticks = (System.currentTimeMillis() / 1000.0) + clockSkewSeconds
             ticks += WIN_EPOCH.toDouble()
             ticks -= ticks % 300.0
-            ticks *= 1e7
+            ticks *= S_TO_NS / 100.0
             val strToHash = "${Math.floor(ticks).toLong()}$TRUSTED_CLIENT_TOKEN"
             Log.d(TAG, "GEC input: $strToHash")
             val md = MessageDigest.getInstance("SHA-256")
@@ -114,9 +118,7 @@ class TtsEngine(private val context: Context) {
                 val muid = generateMuid()
                 val wsKey = generateWebSocketKey()
 
-                val chromiumMajor = SEC_MS_GEC_VERSION.substringAfter("1-").split(".")[0]
-
-                // Build exact URL path with all query params (in the same order as edge-tts)
+                // Build exact URL path matching edge-tts v7.2.8
                 val fullPath = "$WSS_PATH" +
                     "?TrustedClientToken=$TRUSTED_CLIENT_TOKEN" +
                     "&ConnectionId=$connectionId" +
@@ -128,20 +130,21 @@ class TtsEngine(private val context: Context) {
                 Log.d(TAG, "Path: $fullPath")
                 Log.d(TAG, "WS-Key: $wsKey")
                 Log.d(TAG, "MUID: $muid")
+                Log.d(TAG, "Chromium: $CHROMIUM_FULL_VERSION")
 
-                // Build the HTTP upgrade request with EXACT headers
+                // Build the HTTP upgrade request matching edge-tts v7.2.8 headers exactly
                 val httpRequest = "GET $fullPath HTTP/1.1\r\n" +
                     "Host: $WSS_HOST\r\n" +
                     "Connection: Upgrade\r\n" +
                     "Pragma: no-cache\r\n" +
                     "Cache-Control: no-cache\r\n" +
-                    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromiumMajor.0.0.0 Safari/537.36 Edg/$chromiumMajor.0.0.0\r\n" +
+                    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$CHROMIUM_MAJOR_VERSION.0.0.0 Safari/537.36 Edg/$CHROMIUM_MAJOR_VERSION.0.0.0\r\n" +
                     "Origin: chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold\r\n" +
-                    "Sec-WebSocket-Key: $wsKey\r\n" +
-                    "Sec-WebSocket-Version: 13\r\n" +
-                    "Accept-Encoding: gzip, deflate, br\r\n" +
+                    "Accept-Encoding: gzip, deflate, br, zstd\r\n" +
                     "Accept-Language: en-US,en;q=0.9\r\n" +
                     "Cookie: muid=$muid;\r\n" +
+                    "Sec-WebSocket-Key: $wsKey\r\n" +
+                    "Sec-WebSocket-Version: 13\r\n" +
                     "\r\n"
 
                 Log.d(TAG, "Request headers:\n$httpRequest")
@@ -177,12 +180,11 @@ class TtsEngine(private val context: Context) {
                     Log.e(TAG, "Full response:\n$statusLine\n$headers")
                     socket.close()
 
-                    // If 403, try clock skew correction
+                    // If 403, return to allow retry in generateSpeech()
                     if (statusLine != null && statusLine.contains("403")) {
                         continuation.resume(TtsResult(
                             success = false,
-                            error = "HTTP 403 Forbidden",
-                            // We'll handle retry in generateSpeech()
+                            error = "HTTP 403 Forbidden"
                         ))
                     } else {
                         continuation.resume(TtsResult(
@@ -198,11 +200,8 @@ class TtsEngine(private val context: Context) {
 
                 // Skip remaining HTTP headers
                 var headerLine: String?
-                var serverDate: String? = null
                 while (responseReader.readLine().also { headerLine = it } != null && headerLine!!.isNotEmpty()) {
-                    if (headerLine!!.startsWith("Date:", ignoreCase = true)) {
-                        serverDate = headerLine!!.substring(5).trim()
-                    }
+                    // consume headers
                 }
 
                 // Send config message
@@ -219,8 +218,6 @@ class TtsEngine(private val context: Context) {
                 var synthesisSuccess = false
                 var errorMsg: String? = null
 
-                // Simple frame reader (handles text frames for now)
-                // For binary frames we need a byte-level reader
                 val byteInput = BufferedInputStream(inputStream)
                 var readCount = 0
                 val maxReads = 600 // 60 seconds timeout at 100ms per read
@@ -232,7 +229,6 @@ class TtsEngine(private val context: Context) {
                         break
                     }
 
-                    // Check if there's data available
                     if (byteInput.available() > 0) {
                         val opcode = byteInput.read() and 0xFF
                         val payloadLenByte = byteInput.read() and 0xFF
@@ -297,14 +293,13 @@ class TtsEngine(private val context: Context) {
                                 }
                                 8 -> { // Close frame
                                     Log.d(TAG, "Server sent close frame")
-                                    synthesisSuccess = true // treat as done
+                                    synthesisSuccess = true
                                 }
                                 9 -> { // Ping - send pong
                                     sendPongFrame(outputStream, payload)
                                 }
                             }
                         } else if (frameOpcode == 8) {
-                            // Close frame with no payload
                             synthesisSuccess = true
                         }
                         readCount = 0
@@ -366,9 +361,9 @@ class TtsEngine(private val context: Context) {
 
         // If 403, retry with clock skew correction
         if (result.error?.contains("403") == true) {
-            Log.w(TAG, "Got 403, will retry in generateSpeech after getting server time...")
+            Log.w(TAG, "Got 403, will retry after clock skew correction...")
 
-            // Try to get server time via HTTP GET first
+            // Try to get server time via HTTP HEAD first
             var serverTime: Long? = null
             try {
                 val serverSocket = (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket(WSS_HOST, 443)
@@ -423,15 +418,12 @@ class TtsEngine(private val context: Context) {
         val firstByte = 0x81.toByte() // FIN + opcode 1 (text)
         var secondByte: Byte
 
-        val headerLen = if (msgBytes.size <= 125) {
+        if (msgBytes.size <= 125) {
             secondByte = (msgBytes.size or 0x80).toByte() // MASK bit set
-            2
         } else if (msgBytes.size <= 65535) {
             secondByte = (126 or 0x80).toByte()
-            4
         } else {
             secondByte = (127 or 0x80).toByte()
-            10
         }
 
         val frame = java.io.ByteArrayOutputStream()
@@ -480,7 +472,7 @@ class TtsEngine(private val context: Context) {
             for (i in payload.indices) {
                 masked[i] = (payload[i].toInt() xor maskKey[i % 4].toInt()).toByte()
             }
-            outputStream.write(byteArrayOf(0x88.toByte(), 0x82.toByte())) // FIN + close, masked, len=2
+            outputStream.write(byteArrayOf(0x88.toByte(), 0x82.toByte()))
             outputStream.write(maskKey)
             outputStream.write(masked)
             outputStream.flush()

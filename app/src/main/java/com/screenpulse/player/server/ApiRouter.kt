@@ -8,6 +8,8 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.screenpulse.player.data.AppDatabase
 import com.screenpulse.player.data.entity.BackgroundMusic
+import com.screenpulse.player.data.entity.MediaGroup
+import com.screenpulse.player.data.entity.MediaGroupItem
 import com.screenpulse.player.data.entity.MediaItem
 import com.screenpulse.player.data.entity.MediaType
 import com.screenpulse.player.data.entity.PlaylistConfig
@@ -48,6 +50,7 @@ class ApiRouter(
     private val configDao = database.playlistConfigDao()
     private val ttsAudioDao = database.ttsAudioDao()
     private val bgMusicDao = database.backgroundMusicDao()
+    private val mediaGroupDao = database.mediaGroupDao()
     private val ttsEngine = TtsEngine(context)
 
     // Password stored in a hidden file in the app's internal storage
@@ -777,6 +780,142 @@ class ApiRouter(
             addProperty("error", message)
         }
         return NanoHTTPD.newFixedLengthResponse(status, "application/json", gson.toJson(error))
+    }
+
+    // =====================================================================
+    //  Media Group APIs
+    // =====================================================================
+
+    fun getGroups(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val groups = mediaGroupDao.getAllGroupsOnce()
+                val arr = com.google.gson.JsonArray()
+                for (g in groups) {
+                    val obj = gson.toJsonTree(g).asJsonObject
+                    val count = mediaGroupDao.getItemCountInGroup(g.id)
+                    obj.addProperty("itemCount", count)
+                    arr.add(obj)
+                }
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("groups", arr)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get groups", e)
+                jsonResponseError("获取分组列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun createGroup(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val name = body.get("name")?.asString ?: return@runBlocking jsonResponseError("分组名称不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                val color = body.get("color")?.asString ?: "#409EFF"
+                val count = mediaGroupDao.getGroupCount()
+                val group = MediaGroup(name = name, color = color, sortOrder = count)
+                val id = mediaGroupDao.insert(group)
+                group.id = id
+                Log.d(TAG, "Created group: $name (id=$id)")
+                jsonResponse(gson.toJsonTree(group))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create group", e)
+                jsonResponseError("创建分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun updateGroup(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val group = mediaGroupDao.getGroupById(id) ?: return@runBlocking jsonResponseError("分组不存在", NanoHTTPD.Response.Status.NOT_FOUND)
+                val body = parseBody(session)
+                val updated = group.copy(
+                    name = body.get("name")?.asString ?: group.name,
+                    color = body.get("color")?.asString ?: group.color
+                )
+                mediaGroupDao.update(updated)
+                jsonResponse(gson.toJsonTree(updated))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update group", e)
+                jsonResponseError("更新分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun deleteGroup(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                mediaGroupDao.removeAllItemsFromGroup(id)
+                mediaGroupDao.deleteGroupById(id)
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete group", e)
+                jsonResponseError("删除分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun setMediaGroups(session: NanoHTTPD.IHTTPSession, mediaId: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val groupIds = body.getAsJsonArray("groupIds")?.map { it.asLong } ?: emptyList()
+                // Remove existing assignments
+                mediaGroupDao.removeMediaFromAllGroups(mediaId)
+                // Add new assignments
+                for ((idx, gid) in groupIds.withIndex()) {
+                    mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = gid, mediaId = mediaId, sortOrder = idx))
+                }
+                val groups = mediaGroupDao.getGroupsContainingMedia(mediaId)
+                val arr = com.google.gson.JsonArray()
+                for (g in groups) arr.add(gson.toJsonTree(g))
+                jsonResponse(JsonObject().apply { addProperty("success", true); add("groups", arr) })
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to set media groups", e)
+                jsonResponseError("设置分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun addOnlineMedia(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val url = body.get("url")?.asString ?: return@runBlocking jsonResponseError("URL不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                val title = body.get("title")?.asString ?: url.substringAfterLast("/").substringBefore("?").take(100)
+                val typeName = body.get("type")?.asString ?: "STREAM"
+                val groupIds = body.getAsJsonArray("groupIds")?.map { it.asLong } ?: emptyList()
+
+                val mediaItem = MediaItem(
+                    title = title,
+                    url = url,
+                    type = try { MediaType.valueOf(typeName) } catch (_: Exception) { MediaType.STREAM },
+                    durationSeconds = 0,
+                    sortOrder = mediaItemDao.getTotalCount()
+                )
+                val id = mediaItemDao.insert(mediaItem)
+                mediaItem.id = id
+
+                // Add to groups
+                for ((idx, gid) in groupIds.withIndex()) {
+                    mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = gid, mediaId = id, sortOrder = idx))
+                }
+
+                Log.d(TAG, "Added online media: $title (id=$id)")
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("mediaItem", gson.toJsonTree(mediaItem))
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to add online media", e)
+                jsonResponseError("添加在线资源失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
     }
 
     // =====================================================================
