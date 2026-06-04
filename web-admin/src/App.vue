@@ -19,11 +19,6 @@
         text-color="#B0BEC5"
         active-text-color="#448AFF"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><Monitor /></el-icon>
-          <template #title>Dashboard</template>
-        </el-menu-item>
-
         <el-menu-item index="/playlist">
           <el-icon><List /></el-icon>
           <template #title>Playlist</template>
@@ -80,7 +75,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Monitor, List, FolderOpened, Setting, Fold, Expand, Refresh, CircleCheck } from '@element-plus/icons-vue'
+import { List, FolderOpened, Setting, Fold, Expand, Refresh, CircleCheck } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -89,13 +84,12 @@ const isCollapsed = ref(false)
 const currentRoute = computed(() => route.path)
 
 const pageTitles = {
-  '/dashboard': 'Dashboard',
   '/playlist': 'Playlist Management',
   '/media': 'Media Library',
   '/settings': 'Device Settings'
 }
 
-const pageTitle = computed(() => pageTitles[route.path] || 'Dashboard')
+const pageTitle = computed(() => pageTitles[route.path] || 'Playlist')
 
 const refreshPage = () => {
   router.go(0)
