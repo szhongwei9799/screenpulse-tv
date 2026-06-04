@@ -6,22 +6,26 @@ import androidx.room.TypeConverters
 import com.screenpulse.tv.db.entities.MediaEntity
 import com.screenpulse.tv.db.entities.PlaylistEntity
 import com.screenpulse.tv.db.entities.ScheduleEntity
+import com.screenpulse.tv.tts.TtsAudioDao
+import com.screenpulse.tv.tts.TtsAudioEntity
 
 /**
  * ScreenPulse TV Room 数据库
  *
- * 版本 1，包含以下表：
+ * 版本 2，包含以下表：
  * - playlist: 播放列表
  * - media: 媒体库
  * - schedule: 定时任务
+ * - tts_audio: TTS生成的音频文件
  */
 @Database(
     entities = [
         PlaylistEntity::class,
         MediaEntity::class,
-        ScheduleEntity::class
+        ScheduleEntity::class,
+        TtsAudioEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -35,6 +39,9 @@ abstract class AppDatabase : RoomDatabase() {
 
     /** 定时任务 DAO */
     abstract fun scheduleDao(): ScheduleDao
+
+    /** TTS音频 DAO */
+    abstract fun ttsAudioDao(): TtsAudioDao
 
     companion object {
         @Volatile
