@@ -190,7 +190,7 @@ class TtsEngine(private val context: Context) {
                             error = "WebSocket upgrade failed: $statusLine"
                         ))
                     }
-                    return@withContext
+                    return@suspendCoroutine
                 }
 
                 // Success - WebSocket connected
@@ -241,7 +241,9 @@ class TtsEngine(private val context: Context) {
 
                         var payloadLen = payloadLenByte.toLong()
                         if (payloadLenByte == 126) {
-                            payloadLen = ((byteInput.read() and 0xFF) shl 8) or (byteInput.read() and 0xFF)
+                            val b1 = (byteInput.read() and 0xFF).toLong()
+                            val b2 = (byteInput.read() and 0xFF).toLong()
+                            payloadLen = (b1 shl 8) or b2
                         } else if (payloadLenByte == 127) {
                             payloadLen = 0L
                             for (i in 7 downTo 0) {
@@ -465,7 +467,7 @@ class TtsEngine(private val context: Context) {
     }
 
     private fun sendPongFrame(outputStream: java.io.OutputStream, payload: ByteArray) {
-        outputStream.write(byteArrayOf(0x8A, payload.size.toByte()))
+        outputStream.write(byteArrayOf(0x8A.toByte(), payload.size.toByte()))
         outputStream.write(payload)
         outputStream.flush()
     }
@@ -473,12 +475,12 @@ class TtsEngine(private val context: Context) {
     private fun sendCloseFrame(outputStream: java.io.OutputStream) {
         try {
             val maskKey = ByteArray(4) { (Math.random() * 256).toInt().toByte() }
-            val payload = byteArrayOf(0x03, 0xE8) // close code 1000
+            val payload = byteArrayOf(0x03.toByte(), 0xE8.toByte()) // close code 1000
             val masked = ByteArray(2)
             for (i in payload.indices) {
                 masked[i] = (payload[i].toInt() xor maskKey[i % 4].toInt()).toByte()
             }
-            outputStream.write(byteArrayOf(0x88, 0x82)) // FIN + close, masked, len=2
+            outputStream.write(byteArrayOf(0x88.toByte(), 0x82.toByte())) // FIN + close, masked, len=2
             outputStream.write(maskKey)
             outputStream.write(masked)
             outputStream.flush()
