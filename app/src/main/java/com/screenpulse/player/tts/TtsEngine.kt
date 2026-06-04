@@ -29,7 +29,7 @@ class TtsEngine(private val context: Context) {
 
         private const val WSS_HOST = "speech.platform.bing.com"
         private const val WSS_PATH = "/consumer/speech/synthesize/readaloud/edge/v1"
-        private const val TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D4"
+        private const val TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"
         private const val SEC_MS_GEC_VERSION = "1-131.0.2903.51"
         private const val TTS_DIR = "screenpulse_tts"
         private const val WIN_EPOCH = 11644473600L
