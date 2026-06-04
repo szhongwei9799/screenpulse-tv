@@ -287,7 +287,7 @@ class PresentationRenderer {
         val scaled = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(scaled)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
-        canvas.drawBitmap(original, 0f, 0f, width.toFloat(), height.toFloat(), paint)
+        canvas.drawBitmap(original, null, RectF(0f, 0f, width.toFloat(), height.toFloat()), paint)
         return scaled
     }
 
