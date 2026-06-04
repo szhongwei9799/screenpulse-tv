@@ -198,7 +198,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
     <div class="app-aside" :class="{collapsed: isCollapsed}">
       <div class="logo-area">
         <div class="logo-icon">S</div>
-        <span v-show="!isCollapsed" class="logo-text">ScreenPulse</span>
+        <div v-show="!isCollapsed" style="display:flex;flex-direction:column;overflow:hidden">
+          <span class="logo-text">ScreenPulse</span>
+          <span style="font-size:11px;color:#909399;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">v{{appVersion}}</span>
+        </div>
       </div>
       <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#606266" active-text-color="#409EFF">
         <el-menu-item index="playlist" @click="currentView='playlist'">
@@ -224,11 +227,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
       <div class="app-header">
         <h2 class="page-title">{{pageTitle}}</h2>
         <div class="header-right">
-          <el-tag type="success" effect="light" size="small" class="status-tag">
-            <el-icon style="margin-right:4px"><CircleCheck></CircleCheck></el-icon> 已连接
-          </el-tag>
-          <el-button :icon="Refresh" circle size="small" @click="refreshView" ></el-button>
-          <el-button :icon="SwitchButton" circle size="small" @click="doLogout" title="退出登录"></el-button>
+          <el-dropdown trigger="click" @command="onUserCommand">
+            <el-button :icon="UserFilled" circle size="small"></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item :icon="EditPen" command="changePwd">修改密码</el-dropdown-item>
+                <el-dropdown-item :icon="SwitchButton" command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
 
@@ -349,39 +356,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                     </el-form>
                   </el-card>
 
-                  <!-- 设备设置 -->
-                  <el-card>
-                    <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>设备设置</span></div></template>
-                    <el-form label-position="top">
-                      <el-form-item label="设备名称"><el-input v-model="cfg.deviceName" placeholder="请输入设备名称" clearable ></el-input></el-form-item>
-                      <el-form-item label="屏幕方向">
-                        <el-radio-group v-model="cfg.orientation">
-                          <el-radio-button value="landscape">横屏</el-radio-button>
-                          <el-radio-button value="portrait">竖屏</el-radio-button>
-                        </el-radio-group>
-                      </el-form-item>
-                      <el-form-item label="空闲超时（分钟，0 = 从不）">
-                        <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" ></el-input-number>
-                      </el-form-item>
-                    </el-form>
-                  </el-card>
 
-                  <!-- 网络信息 -->
-                  <el-card>
-                    <template #header><div class="card-hdr"><el-icon><Connection></Connection></el-icon><span>网络信息</span></div></template>
-                    <div class="device-info">
-                      <div class="info-row"><span class="info-label">IP 地址</span><span class="info-value mono">{{netInfo.ip||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">网关</span><span class="info-value mono">{{netInfo.gateway||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">DNS</span><span class="info-value mono">{{netInfo.dns||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">网络名称</span><span class="info-value mono">{{netInfo.ssid||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">信号强度</span><span class="info-value">{{netInfo.signal||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">MAC 地址</span><span class="info-value mono">{{netInfo.mac||'--'}}</span></div>
-                    </div>
-                  </el-card>
                 </div>
                 <div class="save-bar">
                   <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">保存设置</el-button>
-                  <el-button size="large" :icon="Lock" @click="openChangePassword">修改密码</el-button>
                 </div>
               </el-collapse-item>
             </el-collapse>
@@ -788,8 +766,14 @@ const app = createApp({
     };
 
     // ========== 布局 ==========
+    const appVersion = ref('1.0.6');
     const isCollapsed = ref(false);
     const currentView = ref('playlist');
+
+    const onUserCommand = (cmd) => {
+      if (cmd === 'logout') doLogout();
+      else if (cmd === 'changePwd') openChangePassword();
+    };
     const pageTitle = computed(() => ({
       playlist: '播放列表管理',
       media: '媒体库',
@@ -1163,7 +1147,7 @@ const app = createApp({
     return {
       isLoggedIn, loginPassword, loginLoading, loginError, doLogin, doLogout,
       pwdDialog, pwdSaving, pwdForm, openChangePassword, resetPwdForm, doChangePassword,
-      isCollapsed, currentView, pageTitle, refreshView,
+      appVersion, isCollapsed, currentView, pageTitle, refreshView, onUserCommand,
       plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds, playlist, mediaFiles,
       dragStart, dropItem, fetchPlaylistAndSettings, onSelectionChange, moveItem,
       openAddItem, openEditItem, onDurationToggle, resetItemForm, saveItem,
@@ -1175,6 +1159,8 @@ const app = createApp({
       settingsLoading, settingsSaving, settingsExpanded, netInfo, cfg, saveSettings,
       Lock: ElementPlusIconsVue.Lock,
       SwitchButton: ElementPlusIconsVue.SwitchButton,
+      UserFilled: ElementPlusIconsVue.UserFilled,
+      EditPen: ElementPlusIconsVue.EditPen,
       Refresh: ElementPlusIconsVue.Refresh,
       Plus: ElementPlusIconsVue.Plus,
       Delete: ElementPlusIconsVue.Delete,
