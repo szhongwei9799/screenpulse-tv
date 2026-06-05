@@ -384,6 +384,30 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                     </el-form>
                   </el-card>
 
+                  <!-- 过场动画 -->
+                  <el-card>
+                    <template #header><div class="card-hdr"><el-icon><Setting></Setting></el-icon><span>过场动画</span></div></template>
+                    <el-form label-position="top">
+                      <el-form-item label="启用过场动画">
+                        <div class="toggle-row"><el-switch v-model="cfg.transitionEnabled" ></el-switch><span class="toggle-label">{{cfg.transitionEnabled?'已启用':'已禁用'}}</span></div>
+                        <div class="form-hint">在切换媒体项时播放过渡动画效果。</div>
+                      </el-form-item>
+                      <el-form-item v-if="cfg.transitionEnabled" label="动画类型">
+                        <el-select v-model="cfg.transitionType" placeholder="选择动画类型" style="width:100%">
+                          <el-option label="淡入淡出" value="fade"></el-option>
+                          <el-option label="滑动" value="slide"></el-option>
+                          <el-option label="缩放" value="zoom"></el-option>
+                          <el-option label="旋转" value="rotate"></el-option>
+                          <el-option label="无" value="none"></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item v-if="cfg.transitionEnabled" label="动画时长（毫秒）">
+                        <el-input-number v-model="cfg.transitionDuration" :min="100" :max="5000" :step="100"></el-input-number>
+                        <div class="form-hint">过渡动画的持续时间。</div>
+                      </el-form-item>
+                    </el-form>
+                  </el-card>
+
                   <!-- 设备设置 -->
                   <el-card>
                     <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>设备设置</span></div></template>
@@ -627,8 +651,26 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
           <!-- 媒体文件卡片 -->
           <el-card style="margin-top:20px">
-            <template #header><div class="card-hdr"><el-icon><FolderOpened></FolderOpened></el-icon><span>媒体文件</span><el-tag effect="light" size="small" class="live-tag">{{mediaFiles.length}} 个文件</el-tag></div></template>
-            <el-table :data="mediaFiles" empty-text="未找到媒体文件" style="width:100%">
+            <template #header>
+              <div class="card-hdr">
+                <el-icon><FolderOpened></FolderOpened></el-icon>
+                <span>媒体文件</span>
+                <el-tag effect="light" size="small" style="margin-left:8px">{{mediaFiles.length}} 个文件</el-tag>
+                <div style="flex:1"></div>
+                <el-select v-model="mediaGroupFilter" placeholder="筛选分组" clearable size="small" style="width:150px;margin-right:8px">
+                  <el-option label="全部分组" :value="''"></el-option>
+                  <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span :style="{width:'12px',height:'12px',borderRadius:'50%',background:g.color||'#409EFF',display:'inline-block',flexShrink:0}"></span>
+                      <span>{{g.name}}</span>
+                    </div>
+                  </el-option>
+                </el-select>
+                <el-button :icon="Link" size="small" type="primary" @click="openOnlineResourceDialog">添加在线资源</el-button>
+                <el-button :icon="Refresh" size="small" @click="loadMediaList">刷新</el-button>
+              </div>
+            </template>
+            <el-table :data="filteredMediaFiles" empty-text="未找到媒体文件" style="width:100%">
               <el-table-column label="文件" min-width="260">
                 <template #default="{row}">
                   <div class="file-cell">
@@ -776,6 +818,42 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             <template #footer>
               <el-button @click="addMediaToGroupDialog=false">取消</el-button>
               <el-button type="primary" @click="confirmAddMediaToGroup">添加选中文件</el-button>
+            </template>
+          </el-dialog>
+
+          <!-- 添加在线资源对话框 -->
+          <el-dialog v-model="onlineResourceDialog" title="添加在线资源" width="520px" @close="resetOnlineResourceForm" destroy-on-close>
+            <el-form :model="onlineResourceForm" label-position="top">
+              <el-form-item label="资源类型" required>
+                <el-select v-model="onlineResourceForm.type" placeholder="选择类型" style="width:100%">
+                  <el-option label="RTSP 流" value="RTSP"></el-option>
+                  <el-option label="RTMP 流" value="RTMP"></el-option>
+                  <el-option label="HTTP 视频" value="HTTP"></el-option>
+                  <el-option label="M3U 播放列表" value="M3U"></el-option>
+                  <el-option label="HLS 流" value="HLS"></el-option>
+                  <el-option label="网页 URL" value="WEB"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="URL 地址" required>
+                <el-input v-model="onlineResourceForm.url" placeholder="请输入在线资源地址" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="标题" required>
+                <el-input v-model="onlineResourceForm.title" placeholder="请输入资源标题" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="分配分组">
+                <el-select v-model="onlineResourceForm.groupIds" placeholder="选择分组（可多选）" multiple style="width:100%">
+                  <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span :style="{width:'12px',height:'12px',borderRadius:'50%',background:g.color||'#409EFF',display:'inline-block',flexShrink:0}"></span>
+                      <span>{{g.name}}</span>
+                    </div>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="onlineResourceDialog=false">取消</el-button>
+              <el-button type="primary" :loading="onlineResourceSaving" @click="doAddOnlineResource">添加</el-button>
             </template>
           </el-dialog>
         </div>
@@ -1144,7 +1222,10 @@ const app = createApp({
             bgMusicEnabled: !!c.value.bgMusicEnabled,
             bgMusicVolume: c.value.bgMusicVolume ?? 50,
             bgMusicLoop: !!c.value.bgMusicLoop,
-            bgMusicShuffle: !!c.value.bgMusicShuffle
+            bgMusicShuffle: !!c.value.bgMusicShuffle,
+            transitionEnabled: !!c.value.transitionEnabled,
+            transitionType: c.value.transitionType || 'fade',
+            transitionDuration: c.value.transitionDuration || 500
           });
         }
       } catch (e) { ElementPlus.ElMessage.error('数据加载失败'); }
@@ -1191,28 +1272,32 @@ const app = createApp({
 
     const openEditItem = (row) => {
       plEditing.value = true; editId.value = row.id;
-      Object.assign(itemForm, { ...row, autoDuration: row.duration === 'auto' });
+      Object.assign(itemForm, { enabled: row.enabled, sourceType: row.sourceType || 'group', groupId: row.groupId || null });
       plDialog.value = true;
     };
-
-    const onDurationToggle = (val) => { itemForm.duration = val ? 'auto' : 10; };
 
     const resetItemForm = () => { Object.assign(itemForm, defaultItemForm()); };
 
     const saveItem = async () => {
-      if (!itemForm.title) { ElementPlus.ElMessage.warning('请输入标题'); return; }
-      if (!itemForm.url) { ElementPlus.ElMessage.warning('请输入 URL'); return; }
+      if (!itemForm.groupId) { ElementPlus.ElMessage.warning('请选择分组'); return; }
+      const grp = groups.value.find(g => g.id === itemForm.groupId);
+      if (!grp) { ElementPlus.ElMessage.warning('分组不存在'); return; }
       plSaving.value = true;
       try {
-        const payload = { ...itemForm };
-        if (payload.autoDuration) payload.duration = 'auto';
-        delete payload.autoDuration;
+        const payload = {
+          title: '分组: ' + grp.name,
+          url: 'group://' + grp.id,
+          type: 'VIDEO',
+          enabled: itemForm.enabled,
+          sourceType: 'group',
+          groupId: itemForm.groupId
+        };
         if (plEditing.value) {
           await apiPut('/api/playlist/' + editId.value, payload);
           ElementPlus.ElMessage.success('项目已更新');
         } else {
           await apiPost('/api/playlist', payload);
-          ElementPlus.ElMessage.success('项目已添加');
+          ElementPlus.ElMessage.success('分组已添加到播放列表');
         }
         plDialog.value = false;
         await fetchPlaylistAndSettings();
@@ -1261,6 +1346,7 @@ const app = createApp({
 
     // ========== 媒体库 ==========
     const mediaLoading = ref(false);
+    const mediaGroupFilter = ref('');
     const uploading = ref(false);
     const uploadFiles = ref([]);
     const uploadUrl = API + '/api/upload';
@@ -1298,6 +1384,46 @@ const app = createApp({
         mediaFiles.value = r?.files || (Array.isArray(r) ? r : []);
       } catch (e) { console.error(e); }
       mediaLoading.value = false;
+    };
+
+    const filteredMediaFiles = computed(() => {
+      if (!mediaGroupFilter.value) return mediaFiles.value;
+      return mediaFiles.value.filter(f => (f.groupIds || []).includes(mediaGroupFilter.value));
+    });
+
+    const onlineResourceDialog = ref(false);
+    const onlineResourceSaving = ref(false);
+    const onlineResourceForm = reactive({ url: '', title: '', type: 'HTTP', groupIds: [] });
+
+    const openOnlineResourceDialog = () => {
+      onlineResourceForm.url = '';
+      onlineResourceForm.title = '';
+      onlineResourceForm.type = 'HTTP';
+      onlineResourceForm.groupIds = [];
+      onlineResourceDialog.value = true;
+    };
+    const resetOnlineResourceForm = () => {
+      onlineResourceForm.url = '';
+      onlineResourceForm.title = '';
+      onlineResourceForm.type = 'HTTP';
+      onlineResourceForm.groupIds = [];
+    };
+    const doAddOnlineResource = async () => {
+      if (!onlineResourceForm.url) { ElementPlus.ElMessage.warning('请输入 URL 地址'); return; }
+      if (!onlineResourceForm.title) { ElementPlus.ElMessage.warning('请输入标题'); return; }
+      onlineResourceSaving.value = true;
+      try {
+        await apiPost('/api/media/online', {
+          url: onlineResourceForm.url,
+          title: onlineResourceForm.title,
+          type: onlineResourceForm.type,
+          groupIds: onlineResourceForm.groupIds
+        });
+        ElementPlus.ElMessage.success('在线资源已添加');
+        onlineResourceDialog.value = false;
+        loadMediaList();
+      } catch (e) { ElementPlus.ElMessage.error('添加失败: ' + (e.message || '')); }
+      onlineResourceSaving.value = false;
     };
 
     const fmtSize = (b) => {
@@ -1358,7 +1484,8 @@ const app = createApp({
       interstitialEnabled: false, interstitialStart: null, interstitialEnd: null,
       offScreenMessage: '', deviceName: 'ScreenPulse Player',
       orientation: 'landscape', idleTimeout: 0,
-      bgMusicEnabled: false, bgMusicVolume: 50, bgMusicLoop: true, bgMusicShuffle: false
+      bgMusicEnabled: false, bgMusicVolume: 50, bgMusicLoop: true, bgMusicShuffle: false,
+      transitionEnabled: false, transitionType: 'fade', transitionDuration: 500
     });
 
     const saveSettings = async () => {
@@ -1688,21 +1815,6 @@ const app = createApp({
     // ========== 播放控制 ==========
     const playbackState = reactive({ playing: false, volume: 50 });
 
-    const playbackControl = async (action) => {
-      try {
-        await apiPost('/api/playback/control', { action: action });
-        if (action === 'play') { playbackState.playing = true; ElementPlus.ElMessage.success('开始播放'); }
-        else if (action === 'pause') { playbackState.playing = false; ElementPlus.ElMessage.info('已暂停'); }
-        else if (action === 'stop') { playbackState.playing = false; ElementPlus.ElMessage.info('已停止'); }
-      } catch (e) { ElementPlus.ElMessage.error('播放控制失败'); }
-    };
-
-    const setVolume = async (vol) => {
-      try {
-        await apiPut('/api/playback/volume', { volume: vol });
-      } catch (e) { ElementPlus.ElMessage.error('音量设置失败'); }
-    };
-
     // ========== 背景音乐 ==========
     const bgmLoading = ref(false);
     const bgmUploading = ref(false);
@@ -1853,10 +1965,12 @@ const app = createApp({
       appVersion, isCollapsed, currentView, onUserCommand, pageTitle, refreshView,
       plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds, playlist, mediaFiles,
       dragStart, dropItem, fetchPlaylistAndSettings, onSelectionChange, moveItem,
-      openAddItem, openEditItem, onDurationToggle, resetItemForm, saveItem,
+      openAddItem, openEditItem, resetItemForm, saveItem,
       toggleItem, confirmDeleteItem, bulkToggle, batchDelete,
-      mediaLoading, uploading, uploadFiles, uploadUrl,
+      mediaLoading, mediaGroupFilter, filteredMediaFiles, uploading, uploadFiles, uploadUrl,
       onFileChange, onFileRemove, doUpload, loadMediaList, doScanAndRefresh,
+      onlineResourceDialog, onlineResourceSaving, onlineResourceForm,
+      openOnlineResourceDialog, resetOnlineResourceForm, doAddOnlineResource,
       fmtSize, copyPath, confirmDeleteFile,
       renameDialog, renameSaving, renameForm, openRenameFile, resetRenameForm, doRename,
       settingsLoading, settingsSaving, settingsExpanded, netInfo, cfg, saveSettings,
@@ -1875,7 +1989,7 @@ const app = createApp({
       fetchSchedules, resetScheduleForm, openNewSchedule, openEditSchedule, saveSchedule,
       toggleSchedule, confirmDeleteSchedule, formatScheduleDesc, getScheduleGroupNames,
       // Playback controls
-      playbackState, playbackControl, setVolume,
+      playbackState,
       // Background music
       bgmLoading, bgmUploading, bgMusicList, bgmFileInput,
       triggerBgmUpload, onBgmFileSelected, loadBgmList,
