@@ -1,12 +1,9 @@
-name: Build Release APK
+name: Build APK
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
@@ -19,11 +16,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -31,39 +25,33 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: gradle-
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build Release APK
-        run: ./gradlew :app:assembleRelease --no-daemon
-
-      - name: Read version from build.gradle
-        id: ver
-        run: |
-          VNAME=$(cat app/build.gradle | grep 'versionName' | head -1 | cut -d'"' -f2)
-          echo "ver=$VNAME" >> "$GITHUB_OUTPUT"
-          echo "Extracted version: $VNAME"
-
-      - name: Rename APK
-        run: |
-          cp app/build/outputs/apk/release/app-release.apk \
-             ScreenPulse-v${{ steps.ver.outputs.ver }}-release.apk
-
-      - name: Create Release and Upload APK
+        run: ./gradlew assembleRelease
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANDROID_SDK_ROOT: ${{ steps.setup-android.outputs.sdk-path }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScreenPulse-TV-${{ github.sha }}
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      - name: Get APK info
         run: |
-          TAG="v${{ steps.ver.outputs.ver }}"
-          APK_NAME="ScreenPulse-v${{ steps.ver.outputs.ver }}-release.apk"
-          
-          # Delete old release with same tag if exists
-          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-          
-          # Create new release
-          gh release create "$TAG" "$APK_NAME" \
-            --title "ScreenPulse $TAG" \
-            --notes "自动构建 | 提交: ${{ github.sha }}" \
-            --latest
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          APK_NAME=$(basename "$APK_PATH")
+          APK_SIZE=$(du -sh "$APK_PATH" | cut -f1)
+          echo "APK_NAME=$APK_NAME" >> $GITHUB_ENV
+          echo "APK_SIZE=$APK_SIZE" >> $GITHUB_ENV
+          echo "### Build Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **APK**: $APK_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size**: $APK_SIZE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
