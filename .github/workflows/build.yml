@@ -5,12 +5,16 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
+    name: Build & Release
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -25,7 +29,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/*.gradle.kts') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
@@ -34,24 +38,28 @@ jobs:
 
       - name: Build Release APK
         run: ./gradlew assembleRelease
-        env:
-          ANDROID_SDK_ROOT: ${{ steps.setup-android.outputs.sdk-path }}
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ScreenPulse-TV-${{ github.sha }}
-          path: app/build/outputs/apk/release/*.apk
-          retention-days: 30
-
-      - name: Get APK info
+      - name: Extract version from Gradle
+        id: version
         run: |
-          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          APK_NAME=$(basename "$APK_PATH")
-          APK_SIZE=$(du -sh "$APK_PATH" | cut -f1)
-          echo "APK_NAME=$APK_NAME" >> $GITHUB_ENV
-          echo "APK_SIZE=$APK_SIZE" >> $GITHUB_ENV
-          echo "### Build Success" >> $GITHUB_STEP_SUMMARY
-          echo "- **APK**: $APK_NAME" >> $GITHUB_STEP_SUMMARY
-          echo "- **Size**: $APK_SIZE" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          VERSION=$(grep -oP '(?<=versionName ")[^"]+' android/app/build.gradle.kts | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Prepare APK
+        run: |
+          cp android/app/build/outputs/apk/release/*.apk ScreenPulse-v${{ steps.version.outputs.version }}-release.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}-${{ github.run_number }}
+          name: ScreenPulse v${{ steps.version.outputs.version }} (#${{ github.run_number }})
+          body: |
+            ## ScreenPulse v${{ steps.version.outputs.version }}
+            **构建时间**: ${{ github.event.head_commit.timestamp }}
+            **提交**: ${{ github.sha }}
+            **触发**: ${{ github.event_name }}
+          files: ScreenPulse-v${{ steps.version.outputs.version }}-release.apk
+          draft: false
+          prerelease: false

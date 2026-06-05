@@ -12,6 +12,7 @@ import com.screenpulse.player.data.entity.MediaGroup
 import com.screenpulse.player.data.entity.MediaGroupItem
 import com.screenpulse.player.data.entity.MediaItem
 import com.screenpulse.player.data.entity.MediaType
+import com.screenpulse.player.BuildConfig
 import com.screenpulse.player.data.entity.PlaylistConfig
 import com.screenpulse.player.data.entity.PlaybackMode
 
@@ -194,7 +195,7 @@ class ApiRouter(
                 addProperty("volumeLevel", config.volumeLevel)
                 addProperty("volume", config.volumeLevel)
                 addProperty("androidVersion", android.os.Build.VERSION.RELEASE)
-                addProperty("appVersion", "1.0.0")
+                addProperty("appVersion", BuildConfig.VERSION_NAME)
                 if (macAddress != null) addProperty("mac", macAddress)
             }
 
@@ -409,7 +410,20 @@ class ApiRouter(
                     interstitialStartHour = body.get("interstitialStartHour")?.asInt ?: existingConfig.interstitialStartHour,
                     interstitialEndHour = body.get("interstitialEndHour")?.asInt ?: existingConfig.interstitialEndHour,
                     interstitialPlaylistName = body.get("interstitialPlaylistName")?.asString ?: existingConfig.interstitialPlaylistName,
-                    volumeLevel = body.get("volumeLevel")?.asInt ?: existingConfig.volumeLevel,
+                    volumeLevel = body.get("volumeLevel")?.asInt ?: body.get("volume")?.asInt ?: existingConfig.volumeLevel,
+                    repeatMode = body.get("repeatMode")?.asString ?: existingConfig.repeatMode,
+                    repeatCount = body.get("repeatCount")?.asInt ?: existingConfig.repeatCount,
+                    imageDuration = body.get("imageDuration")?.asInt ?: existingConfig.imageDuration,
+                    deviceName = body.get("deviceName")?.asString ?: existingConfig.deviceName,
+                    orientation = body.get("orientation")?.asString ?: existingConfig.orientation,
+                    idleTimeout = body.get("idleTimeout")?.asInt ?: existingConfig.idleTimeout,
+                    bgMusicEnabled = body.get("bgMusicEnabled")?.asBoolean ?: existingConfig.bgMusicEnabled,
+                    bgMusicVolume = body.get("bgMusicVolume")?.asInt ?: existingConfig.bgMusicVolume,
+                    bgMusicLoop = body.get("bgMusicLoop")?.asBoolean ?: existingConfig.bgMusicLoop,
+                    bgMusicShuffle = body.get("bgMusicShuffle")?.asBoolean ?: existingConfig.bgMusicShuffle,
+                    transitionEnabled = body.get("transitionEnabled")?.asBoolean ?: existingConfig.transitionEnabled,
+                    transitionType = body.get("transitionType")?.asString ?: existingConfig.transitionType,
+                    transitionDuration = body.get("transitionDuration")?.asInt ?: existingConfig.transitionDuration,
                     lastUpdated = System.currentTimeMillis()
                 )
 
@@ -1051,6 +1065,32 @@ class ApiRouter(
                 jsonResponse(JsonObject().apply { addProperty("success", true) })
             } catch (e: Exception) {
                 jsonResponseError("删除背景音乐失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun addOnlineBgMusic(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val url = body.get("url")?.asString ?: return@runBlocking jsonResponseError("URL不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                val title = body.get("title")?.asString ?: url.substringAfterLast("/").substringBefore("?").take(100)
+                val music = BackgroundMusic(
+                    title = title,
+                    filePath = url,
+                    fileSize = 0
+                )
+                val id = bgMusicDao.insert(music)
+                music.id = id
+                Log.d(TAG, "Added online BGM: $title (id=$id)")
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("item", gson.toJsonTree(music))
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to add online BGM", e)
+                jsonResponseError("添加在线音乐失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }

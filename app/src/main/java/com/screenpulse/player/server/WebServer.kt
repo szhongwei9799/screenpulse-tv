@@ -172,6 +172,12 @@ class WebServer(
     // =====================================================================
 
     private fun serveApi(session: IHTTPSession): Response {
+        // Auth check: allow login and status without token; require token for everything else
+        val isAuthEndpoint = session.uri == "/api/auth/login" || session.uri == "/api/status"
+        if (!isAuthEndpoint && !apiRouter.isAuthenticated(session)) {
+            return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
+                """{"error":"Unauthorized","message":"请先登录"}""")
+        }
         return when {
             session.method == Method.POST && session.uri == "/api/auth/login" -> apiRouter.login(session)
             session.method == Method.POST && session.uri == "/api/auth/password" -> apiRouter.changePassword(session)
@@ -220,6 +226,7 @@ class WebServer(
             // Background Music APIs
             session.method == Method.GET && session.uri == "/api/bgmusic" -> apiRouter.getBgMusicList(session)
             session.method == Method.POST && session.uri == "/api/bgmusic/upload" -> apiRouter.uploadBgMusic(session)
+            session.method == Method.POST && session.uri == "/api/bgmusic/online" -> apiRouter.addOnlineBgMusic(session)
             session.method == Method.DELETE && session.uri.matches(Regex("^/api/bgmusic/\\d+$")) -> {
                 val id = session.uri.substringAfterLast("/").toLongOrNull() ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", """{"error":"Invalid ID"}""")
                 apiRouter.deleteBgMusic(session, id)

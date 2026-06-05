@@ -32,7 +32,7 @@ class ScreenPulseApp : Application(), Configuration.Provider {
         const val CHANNEL_SCHEDULE = "screenpulse_schedule"
         const val TAG_SCHEDULE_WORK = "schedule_check"
         const val DEFAULT_GROUP_NAME = "未分类"
-        const val DEFAULT_GROUP_COLOR = "#909399"
+        const val DEFAULT_GROUP_COLOR = "#409EFF"
 
         @Volatile
         lateinit var instance: ScreenPulseApp

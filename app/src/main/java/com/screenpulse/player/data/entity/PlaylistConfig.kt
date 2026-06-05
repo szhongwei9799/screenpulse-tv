@@ -17,13 +17,24 @@ data class PlaylistConfig(
     val interstitialPlaylistName: String = "interstitial",
     val volumeLevel: Int = 80,
     val lastUpdated: Long = System.currentTimeMillis(),
+    // Repeat mode settings
+    val repeatMode: String = "LOOP",
+    val repeatCount: Int = 1,
+    // Image display duration in seconds
+    val imageDuration: Int = 10,
+    // Device settings
+    val deviceName: String = "",
+    val orientation: String = "landscape",
+    val idleTimeout: Int = 0,
     // Background music settings
     val bgMusicEnabled: Boolean = false,
     val bgMusicVolume: Int = 50,
     val bgMusicLoop: Boolean = true,
     val bgMusicShuffle: Boolean = false,
     // Transition animation settings
-    val transitionEnabled: Boolean = true
+    val transitionEnabled: Boolean = true,
+    val transitionType: String = "fade",
+    val transitionDuration: Int = 500
 )
 
 enum class PlaybackMode {

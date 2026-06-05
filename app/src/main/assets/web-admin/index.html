@@ -1144,7 +1144,7 @@ const app = createApp({
     };
 
     // ========== 布局 ==========
-    const appVersion = ref('1.1.0');
+    const appVersion = ref(''); // loaded from API status
     const isCollapsed = ref(false);
     const currentView = ref('playlist');
 
@@ -1194,6 +1194,7 @@ const app = createApp({
           const d = s.value;
           netInfo.value = { ip: d.ip, gateway: d.gateway, dns: d.dns, ssid: d.ssid, signal: d.signal, mac: d.mac };
           playbackState.volume = d.volume ?? playbackState.volume;
+          appVersion.value = d.appVersion || '';
         }
         if (c.status === 'fulfilled' && c.value) {
           Object.assign(cfg, {
@@ -1348,10 +1349,19 @@ const app = createApp({
       const input = document.querySelector('input[ref="mediaUploadInput"]') || document.querySelector('input[type="file"][accept*=".mp4"]');
       if (input) input.click();
     };
-    const onMediaUploadChange = (e) => {
+    const onMediaUploadChange = async (e) => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
-      uploadFiles.value = files.map(f => ({ name: f.name, size: f.size, raw: f }));
+      uploading.value = true;
+      let ok = 0, fail = 0;
+      for (const f of files) {
+        try { await apiUpload(f); ok++; } catch (err) { fail++; }
+      }
+      uploading.value = false;
+      if (fail === 0) ElementPlus.ElMessage.success(ok + ' 个文件上传成功');
+      else ElementPlus.ElMessage.warning(ok + ' 个上传成功，' + fail + ' 个上传失败');
+      e.target.value = '';
+      loadMediaList();
     };
 
     const doUpload = async () => {
