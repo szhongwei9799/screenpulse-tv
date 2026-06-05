@@ -319,12 +319,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                   <el-tag size="small" :type="row.duration==='auto'?'':'info'" effect="plain" round>{{row.duration==='auto'?'自动':row.duration+'s'}}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="已启用" width="90" align="center">
-                <template #default="{row}"><el-switch v-model="row.enabled" @change="toggleItem(row)" size="small"></el-switch></template>
-              </el-table-column>
-              <el-table-column label="操作" width="150" align="center" fixed="right">
+              <el-table-column label="操作" width="190" align="center" fixed="right">
                 <template #default="{row,$index}">
                   <div class="action-buttons">
+                    <el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" style="margin-right:2px"></el-switch>
                     <el-button :icon="Edit" size="small" text @click="openEditItem(row)"></el-button>
                     <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0"></el-button>
                     <el-button :icon="Bottom" size="small" text type="primary" @click="moveItem(row,$index,1)" :disabled="$index>=playlist.length-1"></el-button>
@@ -647,16 +645,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                   <span style="font-size:13px;color:#606266">{{row.contentLabel||row.content||'--'}}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="状态" width="100" align="center">
-                <template #default="{row}">
-                  <div class="schedule-status">
-                    <el-switch v-model="row.enabled" @change="toggleSchedule(row)" size="small"></el-switch>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="150" align="center">
+              <el-table-column label="操作" width="130" align="center">
                 <template #default="{row}">
                   <div class="action-buttons">
+                    <el-switch v-model="row.enabled" @change="toggleSchedule(row)" size="small" style="margin-right:2px"></el-switch>
                     <el-button :icon="Edit" size="small" text type="primary" @click="openEditSchedule(row)"></el-button>
                     <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteSchedule(row)"></el-button>
                   </div>
