@@ -220,7 +220,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
     <div class="app-aside" :class="{collapsed: isCollapsed}">
       <div class="logo-area">
         <div class="logo-icon">S</div>
-        <span v-show="!isCollapsed" class="logo-text">ScreenPulse</span>
+        <div v-show="!isCollapsed" style="display:flex;flex-direction:column;align-items:flex-start">
+          <span class="logo-text">ScreenPulse</span>
+          <span style="font-size:11px;color:#909399;line-height:1">v{{appVersion}}</span>
+        </div>
       </div>
       <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#606266" active-text-color="#409EFF">
         <el-menu-item index="playlist" @click="currentView='playlist'">
@@ -248,23 +251,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
     <!-- 主内容 -->
     <div class="app-main-container">
       <div class="app-header">
-        <div style="display:flex;align-items:center;gap:10px">
-          <h2 class="page-title">{{pageTitle}}</h2>
-          <el-tag size="small" effect="plain" type="info" round>v{{appVersion}}</el-tag>
-        </div>
+        <h2 class="page-title">{{pageTitle}}</h2>
         <div class="header-right">
-          <!-- 播放控制 -->
-          <el-button type="success" :icon="VideoPlay" circle size="small" @click="playbackControl('play')" title="播放"></el-button>
-          <el-button :icon="VideoPause" circle size="small" @click="playbackControl('pause')" title="暂停"></el-button>
-          <el-button type="danger" :icon="CircleClose" circle size="small" @click="playbackControl('stop')" title="停止"></el-button>
-          <div class="volume-inline">
-            <el-icon :size="16" style="color:#909399"><Mute></Mute></el-icon>
-            <el-slider v-model="playbackState.volume" :min="0" :max="100" :step="1" size="small" @change="setVolume"></el-slider>
-            <span style="font-size:12px;color:#606266;min-width:30px">{{playbackState.volume}}</span>
-          </div>
-          <el-tag type="success" effect="light" size="small" class="status-tag">
-            <el-icon style="margin-right:4px"><CircleCheck></CircleCheck></el-icon> 已连接
-          </el-tag>
           <el-button :icon="Refresh" circle size="small" @click="refreshView" ></el-button>
           <el-dropdown trigger="click" @command="onUserCommand">
             <el-button :icon="UserFilled" circle size="small"></el-button>
@@ -304,33 +292,26 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="标题" min-width="220" show-overflow-tooltip>
+              <el-table-column label="分组名称" min-width="280" show-overflow-tooltip>
                 <template #default="{row}">
                   <div class="title-cell">
-                    <div class="item-thumb"><el-icon :size="18"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon></div>
+                    <div class="item-thumb">
+                      <el-icon :size="18"><Folder></Folder></el-icon>
+                    </div>
                     <span class="item-title">{{row.title||'未命名'}}</span>
+                    <el-tag v-if="row.enabled" size="small" type="success" effect="plain" round>启用</el-tag>
+                    <el-tag v-else size="small" type="info" effect="plain" round>禁用</el-tag>
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="类型" width="100" align="center">
-                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
-              </el-table-column>
-              <el-table-column label="URL / 来源" min-width="250" show-overflow-tooltip>
-                <template #default="{row}"><span class="url-text">{{row.url||'--'}}</span></template>
-              </el-table-column>
-              <el-table-column label="时长" width="110" align="center">
-                <template #default="{row}"><el-tag size="small" :type="row.duration==='auto'?'':'info'" effect="plain" round>{{row.duration==='auto'?'自动':row.duration+'s'}}</el-tag></template>
-              </el-table-column>
-              <el-table-column label="已启用" width="90" align="center">
-                <template #default="{row}"><el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" ></el-switch></template>
-              </el-table-column>
-              <el-table-column label="操作" width="150" align="center" fixed="right">
+              <el-table-column label="操作" width="160" align="center" fixed="right">
                 <template #default="{row,$index}">
                   <div class="action-buttons">
-                    <el-button :icon="Edit" size="small" text @click="openEditItem(row)" ></el-button>
-                    <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0" ></el-button>
+                    <el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" style="margin-right:2px"></el-switch>
+                    <el-button :icon="Edit" size="small" text @click="openEditItem(row)"></el-button>
+                    <el-button :icon="Top" size="small" text type="primary" @click="moveItem(row,$index,-1)" :disabled="$index===0"></el-button>
                     <el-button :icon="Bottom" size="small" text type="primary" @click="moveItem(row,$index,1)" :disabled="$index>=playlist.length-1"></el-button>
-                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteItem(row)" ></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteItem(row)"></el-button>
                   </div>
                 </template>
               </el-table-column>
@@ -441,27 +422,20 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           </div>
 
           <!-- 添加/编辑对话框 -->
-          <el-dialog v-model="plDialog" :title="plEditing?'编辑播放项':'添加播放项'" width="520px" @close="resetItemForm" destroy-on-close>
+          <el-dialog v-model="plDialog" :title="plEditing?'编辑播放项':'添加播放项'" width="480px" @close="resetItemForm" destroy-on-close>
             <el-form :model="itemForm" label-position="top">
-              <el-form-item label="标题" required><el-input v-model="itemForm.title" placeholder="请输入标题" clearable ></el-input></el-form-item>
-              <el-form-item label="URL / 来源" required><el-input v-model="itemForm.url" placeholder="文件路径、URL 或流地址" clearable ></el-input></el-form-item>
-              <el-form-item label="媒体类型">
-                <el-select v-model="itemForm.type" placeholder="选择类型" style="width:100%">
-                  <el-option label="视频" value="VIDEO" ></el-option>
-                  <el-option label="图片" value="IMAGE" ></el-option>
-                  <el-option label="PPT / 演示文稿" value="PPT" ></el-option>
-                  <el-option label="IPTV 流" value="IPTV" ></el-option>
-                  <el-option label="网络流" value="STREAM" ></el-option>
-                  <el-option label="网页" value="WEB" ></el-option>
+              <el-form-item label="选择分组" required>
+                <el-select v-model="itemForm.groupId" placeholder="请选择分组" style="width:100%">
+                  <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span :style="{width:'12px',height:'12px',borderRadius:'50%',background:g.color||'#409EFF',display:'inline-block',flexShrink:0}"></span>
+                      <span>{{g.name}}</span>
+                    </div>
+                  </el-option>
                 </el-select>
+                <div class="form-hint">选择一个分组，播放时将自动播放该分组下所有媒体文件</div>
               </el-form-item>
-              <el-form-item label="持续时间">
-                <div class="duration-field">
-                  <el-switch v-model="itemForm.autoDuration" active-text="自动（视频时长）" inactive-text="自定义（秒）" inline-prompt @change="onDurationToggle" ></el-switch>
-                  <el-input-number v-if="!itemForm.autoDuration" v-model="itemForm.duration" :min="1" :max="3600" style="width:160px" ></el-input-number>
-                </div>
-              </el-form-item>
-              <el-form-item label="已启用"><el-switch v-model="itemForm.enabled" ></el-switch></el-form-item>
+              <el-form-item label="已启用"><el-switch v-model="itemForm.enabled"></el-switch></el-form-item>
             </el-form>
             <template #footer>
               <el-button @click="plDialog=false">取消</el-button>
@@ -1140,7 +1114,7 @@ const app = createApp({
     const playlist = ref([]);
     const mediaFiles = ref([]);
 
-    const defaultItemForm = () => ({ title:'', url:'', type:'VIDEO', duration:'auto', enabled:true, autoDuration:true });
+    const defaultItemForm = () => ({ enabled:true, sourceType:'group', groupId:null });
     const itemForm = reactive(defaultItemForm());
 
     const fetchPlaylistAndSettings = async () => {
@@ -1925,6 +1899,7 @@ const app = createApp({
       Check: ElementPlusIconsVue.Check,
       List: ElementPlusIconsVue.List,
       FolderOpened: ElementPlusIconsVue.FolderOpened,
+      Folder: ElementPlusIconsVue.Folder,
       UploadFilled: ElementPlusIconsVue.UploadFilled,
       CopyDocument: ElementPlusIconsVue.CopyDocument,
       Rank: ElementPlusIconsVue.Rank,
