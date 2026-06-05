@@ -43,7 +43,7 @@ jobs:
       - name: Get version name
         id: version
         run: |
-          VERSION=$(sed -n 's/.*versionName[[:space:]]*"$$$.*/\1/p' app/build.gradle | head -1)
+          VERSION=$(grep 'versionName' app/build.gradle | head -1 | awk -F'"' '{print $2}')
           echo "name=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Rename APK
