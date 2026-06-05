@@ -40,16 +40,14 @@ jobs:
       - name: Build Release APK
         run: ./gradlew :app:assembleRelease --no-daemon
 
-      - name: Get version name
+      - name: Get version and upload
         id: version
         run: |
-          VERSION=$(grep 'versionName' app/build.gradle | head -1 | awk -F'"' '{print $2}')
+          VERSION=$(./gradlew :app:printVersion --no-daemon -q 2>/dev/null || grep versionName app/build.gradle | head -1 | cut -d'"' -f2)
           echo "name=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Rename APK
-        run: |
+          echo "Detected version: $VERSION"
           mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/ScreenPulse-v${{ steps.version.outputs.name }}-release.apk
+             app/build/outputs/apk/release/ScreenPulse-v${VERSION}-release.apk
 
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
