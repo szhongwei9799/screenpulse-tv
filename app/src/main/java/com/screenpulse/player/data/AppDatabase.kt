@@ -25,7 +25,7 @@ import com.screenpulse.player.data.entity.TtsAudioEntity
         MediaGroup::class,
         MediaGroupItem::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

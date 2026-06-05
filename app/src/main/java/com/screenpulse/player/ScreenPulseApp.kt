@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import android.util.Log
 import androidx.work.Configuration
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -11,7 +12,13 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.screenpulse.player.data.AppDatabase
+import com.screenpulse.player.data.entity.MediaGroup
+import com.screenpulse.player.data.entity.MediaGroupItem
+import com.screenpulse.player.data.entity.MediaItem
 import com.screenpulse.player.schedule.ScheduleCheckWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -24,6 +31,8 @@ class ScreenPulseApp : Application(), Configuration.Provider {
         const val CHANNEL_PLAYBACK = "screenpulse_playback"
         const val CHANNEL_SCHEDULE = "screenpulse_schedule"
         const val TAG_SCHEDULE_WORK = "schedule_check"
+        const val DEFAULT_GROUP_NAME = "未分类"
+        const val DEFAULT_GROUP_COLOR = "#909399"
 
         @Volatile
         lateinit var instance: ScreenPulseApp
@@ -50,6 +59,49 @@ class ScreenPulseApp : Application(), Configuration.Provider {
         instance = this
         createNotificationChannels()
         schedulePeriodicWork()
+        initDefaultGroupAndPlaylist()
+    }
+
+    /**
+     * Creates the default "未分类" group and adds it as a default playlist entry
+     * if they don't already exist.
+     */
+    private fun initDefaultGroupAndPlaylist() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val groupDao = database.mediaGroupDao()
+                val mediaItemDao = database.mediaItemDao()
+
+                // Create default "未分类" group if it doesn't exist
+                val existingGroups = groupDao.getAllGroupsOnce()
+                var defaultGroup = existingGroups.find { it.name == DEFAULT_GROUP_NAME }
+                if (defaultGroup == null) {
+                    val groupId = groupDao.insert(
+                        MediaGroup(name = DEFAULT_GROUP_NAME, color = DEFAULT_GROUP_COLOR, sortOrder = 0)
+                    )
+                    defaultGroup = MediaGroup(id = groupId, name = DEFAULT_GROUP_NAME, color = DEFAULT_GROUP_COLOR, sortOrder = 0)
+                    Log.i("ScreenPulseApp", "Created default group: $DEFAULT_GROUP_NAME (id=$groupId)")
+                }
+
+                // Create default playlist entry for "未分类" group if no playlist entries exist
+                val playlistItems = mediaItemDao.getPlaylistGroupItemsOnce()
+                if (playlistItems.isEmpty() && defaultGroup != null) {
+                    val playlistEntry = MediaItem(
+                        title = "分组: $DEFAULT_GROUP_NAME",
+                        url = "group://${defaultGroup.id}",
+                        type = com.screenpulse.player.data.entity.MediaType.VIDEO,
+                        sourceType = "group",
+                        groupId = defaultGroup.id,
+                        enabled = true,
+                        sortOrder = 0
+                    )
+                    val entryId = mediaItemDao.insert(playlistEntry)
+                    Log.i("ScreenPulseApp", "Created default playlist entry for $DEFAULT_GROUP_NAME (id=$entryId)")
+                }
+            } catch (e: Exception) {
+                Log.e("ScreenPulseApp", "Failed to init default group/playlist", e)
+            }
+        }
     }
 
     private fun createNotificationChannels() {

@@ -206,9 +206,10 @@ class ApiRouter(
     //  GET /api/playlist
     // =====================================================================
 
+    // GET /api/playlist — Returns only group-type playlist entries
     fun getPlaylist(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         return runBlocking {
-            val items = mediaItemDao.getAllItemsOnce()
+            val items = mediaItemDao.getPlaylistGroupItemsOnce()
             val json = gson.toJson(items)
             NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json", json)
         }
@@ -228,6 +229,8 @@ class ApiRouter(
                 val durationSeconds = body.get("durationSeconds")?.asInt ?: 0
                 val enabled = body.get("enabled")?.asBoolean ?: true
                 val sortOrder = body.get("sortOrder")?.asInt ?: mediaItemDao.getTotalCount()
+                val sourceType = body.get("sourceType")?.asString ?: "group"
+                val groupId = body.get("groupId")?.asLong ?: 0
 
                 if (url.isBlank()) {
                     return@runBlocking jsonResponseError("URL is required", NanoHTTPD.Response.Status.BAD_REQUEST)
@@ -240,6 +243,8 @@ class ApiRouter(
                     durationSeconds = durationSeconds,
                     enabled = enabled,
                     sortOrder = sortOrder,
+                    sourceType = sourceType,
+                    groupId = groupId,
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis()
                 )
@@ -247,7 +252,7 @@ class ApiRouter(
                 val id = mediaItemDao.insert(mediaItem)
                 mediaItem.id = id
 
-                Log.d(TAG, "Added media item: $title (id=$id)")
+                Log.d(TAG, "Added playlist item: $title (id=$id, sourceType=$sourceType, groupId=$groupId)")
                 jsonResponse(gson.toJsonTree(mediaItem))
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to add playlist item", e)
@@ -278,6 +283,8 @@ class ApiRouter(
                     durationSeconds = body.get("durationSeconds")?.asInt ?: existing.durationSeconds,
                     enabled = body.get("enabled")?.asBoolean ?: existing.enabled,
                     sortOrder = body.get("sortOrder")?.asInt ?: existing.sortOrder,
+                    sourceType = body.get("sourceType")?.asString ?: existing.sourceType,
+                    groupId = body.get("groupId")?.asLong ?: existing.groupId,
                     updatedAt = System.currentTimeMillis()
                 )
 
@@ -304,13 +311,10 @@ class ApiRouter(
                 }
 
                 mediaItemDao.deleteById(id)
+                // NOTE: Do NOT delete physical files when removing from playlist.
+                // Media files are managed separately in the media library.
 
-                // Also delete the uploaded file if it's a local file
-                if (existing.url.startsWith(uploadDir.absolutePath)) {
-                    File(existing.url).delete()
-                }
-
-                Log.d(TAG, "Deleted media item: $id")
+                Log.d(TAG, "Deleted playlist item: $id")
                 val result = JsonObject().apply {
                     addProperty("success", true)
                     addProperty("deletedId", id)
@@ -479,19 +483,29 @@ class ApiRouter(
                     }
                 }
 
-                // Always auto-add to playlist database
+                // Add to media library (NOT playlist — files belong to groups)
                 val type = detectMediaType(finalFile.name)
-                // Use original filename (before any sanitization) as display title
                 val displayTitle = (originalName ?: nameToUse).substringBeforeLast(".").take(200)
                 val mediaItem = MediaItem(
                     title = displayTitle,
                     url = finalFile.absolutePath,
                     type = type,
                     durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
-                    sortOrder = mediaItemDao.getTotalCount()
+                    sortOrder = mediaItemDao.getTotalCount(),
+                    sourceType = "media"
                 )
                 val id = mediaItemDao.insert(mediaItem)
                 mediaItem.id = id
+
+                // Auto-assign to default "未分类" group
+                try {
+                    val defaultGroup = mediaGroupDao.getAllGroupsOnce().find { it.name == "未分类" }
+                    if (defaultGroup != null) {
+                        mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = defaultGroup.id, mediaId = id, sortOrder = 0))
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to auto-assign to 未分类 group", e)
+                }
 
                 // Clean up temp file
                 try { tempFile.delete() } catch (_: Exception) {}
@@ -543,9 +557,15 @@ class ApiRouter(
                                         url = file.absolutePath,
                                         type = type,
                                         durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
-                                        sortOrder = mediaItemDao.getTotalCount()
+                                        sortOrder = mediaItemDao.getTotalCount(),
+                                        sourceType = "media"
                                     )
-                                    mediaItemDao.insert(item)
+                                    val newId = mediaItemDao.insert(item)
+                                    // Auto-assign to 未分类 group
+                                    try {
+                                        val dg = mediaGroupDao.getAllGroupsOnce().find { it.name == "未分类" }
+                                        if (dg != null) mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = dg.id, mediaId = newId, sortOrder = 0))
+                                    } catch (_: Exception) {}
                                     foundCount++
                                 }
                             }
@@ -553,8 +573,8 @@ class ApiRouter(
                     }
                 }
 
-                // Fetch all media items from database and enrich with file system metadata
-                val allItems = mediaItemDao.getAllItemsOnce()
+                // Fetch all media library items and enrich with file system metadata
+                val allItems = mediaItemDao.getMediaLibraryItemsOnce()
                 val filesArray = com.google.gson.JsonArray()
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
                 for (item in allItems) {
@@ -597,7 +617,7 @@ class ApiRouter(
     fun getMediaList(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         return runBlocking {
             try {
-                val allItems = mediaItemDao.getAllItemsOnce()
+                val allItems = mediaItemDao.getMediaLibraryItemsOnce()
                 val filesArray = com.google.gson.JsonArray()
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
                 for (item in allItems) {
@@ -906,13 +926,22 @@ class ApiRouter(
                     url = url,
                     type = try { MediaType.valueOf(typeName) } catch (_: Exception) { MediaType.STREAM },
                     durationSeconds = 0,
-                    sortOrder = mediaItemDao.getTotalCount()
+                    sortOrder = mediaItemDao.getTotalCount(),
+                    sourceType = "media"
                 )
                 val id = mediaItemDao.insert(mediaItem)
                 mediaItem.id = id
 
-                // Add to groups
-                for ((idx, gid) in groupIds.withIndex()) {
+                // Add to specified groups; if none specified, auto-assign to "未分类"
+                val effectiveGroupIds = if (groupIds.isEmpty()) {
+                    try {
+                        val dg = mediaGroupDao.getAllGroupsOnce().find { it.name == "未分类" }
+                        if (dg != null) listOf(dg.id) else emptyList()
+                    } catch (_: Exception) { emptyList() }
+                } else {
+                    groupIds
+                }
+                for ((idx, gid) in effectiveGroupIds.withIndex()) {
                     mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = gid, mediaId = id, sortOrder = idx))
                 }
 

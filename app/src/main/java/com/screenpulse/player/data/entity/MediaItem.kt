@@ -15,6 +15,10 @@ data class MediaItem(
     val durationSeconds: Int = 0,
     val enabled: Boolean = true,
     val sortOrder: Int = 0,
+    /** "media" = media library file, "group" = playlist group reference */
+    val sourceType: String = "media",
+    /** When sourceType is "group", this holds the referenced group ID */
+    val groupId: Long = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

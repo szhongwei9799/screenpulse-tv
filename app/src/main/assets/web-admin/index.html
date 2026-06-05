@@ -290,36 +290,19 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="标题" min-width="220" show-overflow-tooltip>
+              <el-table-column label="分组名称" min-width="280" show-overflow-tooltip>
                 <template #default="{row}">
                   <div class="title-cell">
                     <div class="item-thumb">
-                      <el-icon :size="18">
-                        <VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay>
-                        <Picture v-else-if="row.type==='IMAGE'"></Picture>
-                        <Folder v-else-if="row.sourceType==='group'"></Folder>
-                        <Document v-else></Document>
-                      </el-icon>
+                      <el-icon :size="18"><Folder></Folder></el-icon>
                     </div>
                     <span class="item-title">{{row.title||'未命名'}}</span>
-                    <el-tag v-if="row.sourceType==='group'" size="small" type="warning" effect="plain" round>分组</el-tag>
+                    <el-tag v-if="row.enabled" size="small" type="success" effect="plain" round>启用</el-tag>
+                    <el-tag v-else size="small" type="info" effect="plain" round>禁用</el-tag>
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="类型" width="100" align="center">
-                <template #default="{row}">
-                  <span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.sourceType==='group'?'分组':row.type||'VIDEO'}}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="URL / 来源" min-width="250" show-overflow-tooltip>
-                <template #default="{row}"><span class="url-text">{{row.url||'--'}}</span></template>
-              </el-table-column>
-              <el-table-column label="时长" width="110" align="center">
-                <template #default="{row}">
-                  <el-tag size="small" :type="row.duration==='auto'?'':'info'" effect="plain" round>{{row.duration==='auto'?'自动':row.duration+'s'}}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="190" align="center" fixed="right">
+              <el-table-column label="操作" width="160" align="center" fixed="right">
                 <template #default="{row,$index}">
                   <div class="action-buttons">
                     <el-switch v-model="row.enabled" @change="toggleItem(row)" size="small" style="margin-right:2px"></el-switch>
@@ -334,16 +317,9 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           </el-card>
 
           <!-- 添加/编辑播放项对话框 -->
-          <el-dialog v-model="plDialog" :title="plEditing?'编辑播放项':'添加播放项'" width="560px" @close="resetItemForm" destroy-on-close>
+          <el-dialog v-model="plDialog" :title="plEditing?'编辑播放项':'添加播放项'" width="480px" @close="resetItemForm" destroy-on-close>
             <el-form :model="itemForm" label-position="top">
-              <el-form-item label="来源类型">
-                <el-radio-group v-model="itemForm.sourceType">
-                  <el-radio-button value="media">单个媒体</el-radio-button>
-                  <el-radio-button value="group">媒体分组</el-radio-button>
-                </el-radio-group>
-                <div class="form-hint">{{itemForm.sourceType==='group'?'选择一个分组，将自动包含该分组下所有媒体':'选择或输入单个媒体文件'}}</div>
-              </el-form-item>
-              <el-form-item v-if="itemForm.sourceType==='group'" label="选择分组" required>
+              <el-form-item label="选择分组" required>
                 <el-select v-model="itemForm.groupId" placeholder="请选择分组" style="width:100%">
                   <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id">
                     <div style="display:flex;align-items:center;gap:8px">
@@ -352,26 +328,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                     </div>
                   </el-option>
                 </el-select>
-              </el-form-item>
-              <template v-if="itemForm.sourceType==='media'">
-                <el-form-item label="标题" required><el-input v-model="itemForm.title" placeholder="请输入标题" clearable></el-input></el-form-item>
-                <el-form-item label="URL / 来源" required><el-input v-model="itemForm.url" placeholder="文件路径、URL 或流地址" clearable></el-input></el-form-item>
-                <el-form-item label="媒体类型">
-                  <el-select v-model="itemForm.type" placeholder="选择类型" style="width:100%">
-                    <el-option label="视频" value="VIDEO"></el-option>
-                    <el-option label="图片" value="IMAGE"></el-option>
-                    <el-option label="PPT / 演示文稿" value="PPT"></el-option>
-                    <el-option label="IPTV 流" value="IPTV"></el-option>
-                    <el-option label="网络流" value="STREAM"></el-option>
-                    <el-option label="网页" value="WEB"></el-option>
-                  </el-select>
-                </el-form-item>
-              </template>
-              <el-form-item label="持续时间">
-                <div class="duration-field">
-                  <el-switch v-model="itemForm.autoDuration" active-text="自动（视频时长）" inactive-text="自定义（秒）" inline-prompt @change="onDurationToggle"></el-switch>
-                  <el-input-number v-if="!itemForm.autoDuration" v-model="itemForm.duration" :min="1" :max="3600" style="width:160px"></el-input-number>
-                </div>
+                <div class="form-hint">选择一个分组，播放时将自动播放该分组下所有媒体文件</div>
               </el-form-item>
               <el-form-item label="已启用"><el-switch v-model="itemForm.enabled"></el-switch></el-form-item>
             </el-form>
@@ -1055,7 +1012,7 @@ const app = createApp({
     const playlist = ref([]);
     const mediaFiles = ref([]);
 
-    const defaultItemForm = () => ({ title:'', url:'', type:'VIDEO', duration:'auto', enabled:true, autoDuration:true, sourceType:'media', groupId:null });
+    const defaultItemForm = () => ({ enabled:true, sourceType:'group', groupId:null });
     const itemForm = reactive(defaultItemForm());
 
     const fetchPlaylistAndSettings = async () => {
@@ -1128,12 +1085,16 @@ const app = createApp({
     const openAddItem = () => {
       plEditing.value = false; editId.value = null;
       Object.assign(itemForm, defaultItemForm());
+      // Default to "未分类" group
+      const defaultGroup = groups.value.find(g => g.name === '未分类');
+      if (defaultGroup) itemForm.groupId = defaultGroup.id;
+      else if (groups.value.length > 0) itemForm.groupId = groups.value[0].id;
       plDialog.value = true;
     };
 
     const openEditItem = (row) => {
       plEditing.value = true; editId.value = row.id;
-      Object.assign(itemForm, { ...row, autoDuration: row.duration === 'auto', sourceType: row.sourceType || 'media' });
+      Object.assign(itemForm, { enabled: row.enabled, sourceType: row.sourceType || 'group', groupId: row.groupId });
       plDialog.value = true;
     };
 
@@ -1142,47 +1103,25 @@ const app = createApp({
     const resetItemForm = () => { Object.assign(itemForm, defaultItemForm()); };
 
     const saveItem = async () => {
-      if (itemForm.sourceType === 'group') {
-        if (!itemForm.groupId) { ElementPlus.ElMessage.warning('请选择分组'); return; }
-        const grp = groups.value.find(g => g.id === itemForm.groupId);
-        if (!grp) { ElementPlus.ElMessage.warning('分组不存在'); return; }
-        plSaving.value = true;
-        try {
-          const payload = {
-            title: '分组: ' + grp.name,
-            url: 'group://' + grp.id,
-            type: 'GROUP',
-            duration: itemForm.autoDuration ? 'auto' : itemForm.duration,
-            enabled: itemForm.enabled,
-            sourceType: 'group',
-            groupId: itemForm.groupId
-          };
-          if (plEditing.value) {
-            await apiPut('/api/playlist/' + editId.value, payload);
-            ElementPlus.ElMessage.success('项目已更新');
-          } else {
-            await apiPost('/api/playlist', payload);
-            ElementPlus.ElMessage.success('分组已添加到播放列表');
-          }
-          plDialog.value = false;
-          await fetchPlaylistAndSettings();
-        } catch (e) { ElementPlus.ElMessage.error('保存失败'); }
-        plSaving.value = false;
-        return;
-      }
-      if (!itemForm.title) { ElementPlus.ElMessage.warning('请输入标题'); return; }
-      if (!itemForm.url) { ElementPlus.ElMessage.warning('请输入 URL'); return; }
+      if (!itemForm.groupId) { ElementPlus.ElMessage.warning('请选择分组'); return; }
+      const grp = groups.value.find(g => g.id === itemForm.groupId);
+      if (!grp) { ElementPlus.ElMessage.warning('分组不存在'); return; }
       plSaving.value = true;
       try {
-        const payload = { ...itemForm, sourceType: undefined, groupId: undefined };
-        if (payload.autoDuration) payload.duration = 'auto';
-        delete payload.autoDuration;
+        const payload = {
+          title: '分组: ' + grp.name,
+          url: 'group://' + grp.id,
+          type: 'VIDEO',
+          enabled: itemForm.enabled,
+          sourceType: 'group',
+          groupId: itemForm.groupId
+        };
         if (plEditing.value) {
           await apiPut('/api/playlist/' + editId.value, payload);
           ElementPlus.ElMessage.success('项目已更新');
         } else {
           await apiPost('/api/playlist', payload);
-          ElementPlus.ElMessage.success('项目已添加');
+          ElementPlus.ElMessage.success('分组已添加到播放列表');
         }
         plDialog.value = false;
         await fetchPlaylistAndSettings();

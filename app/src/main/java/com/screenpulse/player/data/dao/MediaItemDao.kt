@@ -17,11 +17,26 @@ interface MediaItemDao {
     @Query("SELECT * FROM media_items ORDER BY sortOrder ASC, id ASC")
     suspend fun getAllItemsOnce(): List<MediaItem>
 
+    /** Only media library items (not playlist group references) */
+    @Query("SELECT * FROM media_items WHERE sourceType = 'media' ORDER BY sortOrder ASC, id ASC")
+    suspend fun getMediaLibraryItemsOnce(): List<MediaItem>
+
     @Query("SELECT * FROM media_items WHERE enabled = 1 ORDER BY sortOrder ASC, id ASC")
     fun getEnabledItems(): Flow<List<MediaItem>>
 
     @Query("SELECT * FROM media_items WHERE enabled = 1 ORDER BY sortOrder ASC, id ASC")
     suspend fun getEnabledItemsOnce(): List<MediaItem>
+
+    /** Playlist entries: enabled group-type items */
+    @Query("SELECT * FROM media_items WHERE sourceType = 'group' AND enabled = 1 ORDER BY sortOrder ASC, id ASC")
+    fun getPlaylistGroupItems(): Flow<List<MediaItem>>
+
+    /** Playlist entries: all group-type items (for admin list) */
+    @Query("SELECT * FROM media_items WHERE sourceType = 'group' ORDER BY sortOrder ASC, id ASC")
+    suspend fun getPlaylistGroupItemsOnce(): List<MediaItem>
+
+    @Query("SELECT * FROM media_items WHERE id IN (:ids) ORDER BY sortOrder ASC, id ASC")
+    suspend fun getItemsByIds(ids: List<Long>): List<MediaItem>
 
     @Query("SELECT * FROM media_items WHERE id = :id")
     suspend fun getItemById(id: Long): MediaItem?

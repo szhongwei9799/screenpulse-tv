@@ -270,18 +270,21 @@ class MainActivity : AppCompatActivity() {
     private fun observePlaylist() {
         val dao = (application as ScreenPulseApp).database.mediaItemDao()
         val configDao = (application as ScreenPulseApp).database.playlistConfigDao()
+        val groupDao = (application as ScreenPulseApp).database.mediaGroupDao()
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    dao.getEnabledItems().collect { items ->
-                        if (items.isEmpty()) {
+                    dao.getPlaylistGroupItems().collect { playlistEntries ->
+                        if (playlistEntries.isEmpty()) {
                             showQrSplash()
                             playlistManager?.stop()
                             playlistManager = null
                         } else {
                             hideQrSplash()
-                            updatePlaylistManager(items)
+                            // Expand group entries to their member media items
+                            val expandedItems = expandPlaylistGroups(playlistEntries, groupDao, dao)
+                            updatePlaylistManager(expandedItems)
                         }
                     }
                 }
@@ -293,6 +296,39 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * Expands playlist group entries into their constituent media items.
+     * Each group entry is expanded to the media items belonging to that group,
+     * preserving the group's sortOrder as the playlist position.
+     */
+    private suspend fun expandPlaylistGroups(
+        playlistEntries: List<com.screenpulse.player.data.entity.MediaItem>,
+        groupDao: com.screenpulse.player.data.dao.MediaGroupDao,
+        mediaItemDao: com.screenpulse.player.data.dao.MediaItemDao
+    ): List<com.screenpulse.player.data.entity.MediaItem> {
+        val expanded = mutableListOf<com.screenpulse.player.data.entity.MediaItem>()
+        for (entry in playlistEntries) {
+            if (entry.groupId > 0) {
+                try {
+                    val mediaIds = groupDao.getMediaIdsInGroup(entry.groupId)
+                    if (mediaIds.isNotEmpty()) {
+                        val groupItems = mediaItemDao.getItemsByIds(mediaIds)
+                        expanded.addAll(groupItems)
+                    } else {
+                        Log.w(TAG, "Group ${entry.groupId} has no media items, skipping")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to expand group ${entry.groupId}", e)
+                }
+            } else {
+                // Fallback: treat as direct media item (shouldn't happen normally)
+                expanded.add(entry)
+            }
+        }
+        Log.d(TAG, "Expanded playlist: ${playlistEntries.size} groups -> ${expanded.size} media items")
+        return expanded
     }
 
     private fun updatePlaylistManager(items: List<com.screenpulse.player.data.entity.MediaItem>) {
