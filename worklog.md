@@ -22,3 +22,27 @@ Stage Summary:
 - 4 files changed: 144 insertions, 164 deletions
 - TTS 完全移除，仪表盘已添加，Schedule API 已修复
 - 前端侧边栏：仪表盘 → 播放列表 → 媒体库 → 定时播放 → 背景音乐 → 设置
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix upload, default group protection, settings page, group mgmt sidebar, refresh dedup
+
+Work Log:
+- Read current index.html (1982 lines) and ApiRouter.kt to understand code state
+- Analyzed 4 user screenshots via VLM to understand specific issues
+- Fixed media upload: replaced broken el-upload (auto-upload=false) with native file input + triggerMediaUpload + onMediaFileSelected (auto-uploads on file select)
+- Protected default group: frontend disables delete button for id===1, backend rejects deleteGroup for id==1L with 403
+- Moved settings from collapse section in playlist view to independent view with sidebar menu entry
+- Settings view: system info card at top, then playback settings, interstitial settings, device settings, save button + change password at bottom
+- Added "分组管理" as independent sidebar menu item with dedicated view
+- Removed duplicate refresh buttons from playlist and schedules toolbars (only header-right refresh remains)
+- Moved group-related dialogs (groupDialog, groupDetailDialog, addMediaToGroupDialog) out of media view div for cross-view access
+- Updated pageTitle, refreshView, watcher for new views (groups, settings)
+- Updated return object with new references (mediaFileInput, triggerMediaUpload, onMediaFileSelected)
+- Committed, force-pushed to GitHub, build succeeded
+
+Stage Summary:
+- All 4 user issues fixed
+- Historical issues (refresh dedup, group mgmt sidebar, settings independent) also fixed
+- Build: Run 26999572478, success
+- Download: https://github.com/szhongwei9799/screenpulse-tv/actions/runs/26999572478
