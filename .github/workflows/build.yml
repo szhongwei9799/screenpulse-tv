@@ -39,8 +39,9 @@ jobs:
           keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build Release APK
-        working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        run: chmod +x gradlew && ./gradlew :app:assembleRelease --no-daemon
+        env:
+          ANDROID_SDK_ROOT: ${{ steps.setup-android.outputs.sdk-path }}
 
       - name: Extract version from Gradle
         id: version
