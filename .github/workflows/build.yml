@@ -37,7 +37,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew :app:assembleRelease --no-daemon
 
       - name: Extract version from Gradle
         id: version
