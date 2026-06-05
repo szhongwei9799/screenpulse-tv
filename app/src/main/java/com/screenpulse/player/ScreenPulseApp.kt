@@ -63,8 +63,8 @@ class ScreenPulseApp : Application(), Configuration.Provider {
     }
 
     /**
-     * Creates the default "未分类" group and adds it as a default playlist entry
-     * if they don't already exist.
+     * Creates the default "未分类" group if it doesn't exist.
+     * Playlist management is left to the user via the admin panel.
      */
     private fun initDefaultGroupAndPlaylist() {
         CoroutineScope(Dispatchers.IO).launch {
@@ -83,21 +83,8 @@ class ScreenPulseApp : Application(), Configuration.Provider {
                     Log.i("ScreenPulseApp", "Created default group: $DEFAULT_GROUP_NAME (id=$groupId)")
                 }
 
-                // Create default playlist entry for "未分类" group if no playlist entries exist
-                val playlistItems = mediaItemDao.getPlaylistGroupItemsOnce()
-                if (playlistItems.isEmpty() && defaultGroup != null) {
-                    val playlistEntry = MediaItem(
-                        title = "分组: $DEFAULT_GROUP_NAME",
-                        url = "group://${defaultGroup.id}",
-                        type = com.screenpulse.player.data.entity.MediaType.VIDEO,
-                        sourceType = "group",
-                        groupId = defaultGroup.id,
-                        enabled = true,
-                        sortOrder = 0
-                    )
-                    val entryId = mediaItemDao.insert(playlistEntry)
-                    Log.i("ScreenPulseApp", "Created default playlist entry for $DEFAULT_GROUP_NAME (id=$entryId)")
-                }
+                // Note: Do NOT auto-add default group to playlist.
+                // User will manage playlist items manually via the admin panel.
             } catch (e: Exception) {
                 Log.e("ScreenPulseApp", "Failed to init default group/playlist", e)
             }

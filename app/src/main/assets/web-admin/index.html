@@ -231,7 +231,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <template #title>播放列表</template>
         </el-menu-item>
         <el-menu-item index="media" @click="currentView='media'">
-          <el-icon><FolderOpened></FolderOpened></el-icon>
+          <el-icon><Folder></Folder></el-icon>
           <template #title>媒体库</template>
         </el-menu-item>
         <el-menu-item index="schedules" @click="currentView='schedules'">
@@ -273,7 +273,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <div class="toolbar">
             <div class="toolbar-left">
               <el-button type="primary" :icon="Plus" @click="openAddItem">添加项目</el-button>
-              <el-button :icon="Refresh" @click="fetchPlaylistAndSettings">刷新</el-button>
             </div>
             <div class="toolbar-right" v-if="selectedIds.length>0">
               <el-button :icon="CircleCheck" type="success" plain @click="bulkToggle(true)">启用 ({{selectedIds.length}})</el-button>
@@ -489,54 +488,49 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
         <!-- ====== 背景音乐视图 ====== -->
         <div v-if="currentView==='bgmusic'" v-loading="bgmLoading">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button type="primary" :icon="UploadFilled" @click="triggerBgmUpload">上传音乐</el-button>
+              <el-button :icon="Link" @click="openAddOnlineBgm">添加在线资源</el-button>
+            </div>
+            <div class="toolbar-right">
+              <el-switch v-model="cfg.bgMusicEnabled" @change="saveSettings" size="default" style="margin-right:8px" active-text="启用" inactive-text="禁用" inline-prompt></el-switch>
+              <el-popover placement="bottom-end" :width="320" trigger="click">
+                <template #reference>
+                  <el-button :icon="Setting" size="default" :type="cfg.bgMusicEnabled?'primary':''">设置</el-button>
+                </template>
+                <div style="padding:4px 0">
+                  <div style="margin-bottom:14px">
+                    <div style="font-size:12px;color:#909399;margin-bottom:6px">音乐音量</div>
+                    <div class="volume-control">
+                      <el-icon :size="14"><Mute></Mute></el-icon>
+                      <el-slider v-model="cfg.bgMusicVolume" :min="0" :max="100" :step="1" class="volume-slider" size="small" @change="saveSettings"></el-slider>
+                      <el-icon :size="14"><Bell></Bell></el-icon>
+                      <span class="volume-value" style="font-size:13px">{{cfg.bgMusicVolume}}%</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                    <el-switch v-model="cfg.bgMusicLoop" @change="saveSettings" size="small"></el-switch>
+                    <span style="font-size:13px;color:#606266">循环播放</span>
+                    <span style="font-size:12px;color:#909399;margin-left:auto">{{cfg.bgMusicLoop?'单曲循环':'顺序播放'}}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <el-switch v-model="cfg.bgMusicShuffle" @change="saveSettings" size="small"></el-switch>
+                    <span style="font-size:13px;color:#606266">随机播放</span>
+                    <span style="font-size:12px;color:#909399;margin-left:auto">{{cfg.bgMusicShuffle?'随机':'顺序'}}</span>
+                  </div>
+                </div>
+              </el-popover>
+              <el-button :icon="Delete" type="danger" plain @click="clearAllBgmMusic" :disabled="!bgMusicList.length">清空</el-button>
+            </div>
+          </div>
+
           <el-card>
             <template #header>
               <div class="card-hdr">
                 <el-icon><Headset></Headset></el-icon>
                 <span>音乐列表</span>
                 <el-tag effect="light" size="small" style="margin-left:8px">{{bgMusicList.length}} 首</el-tag>
-                <div style="flex:1"></div>
-                <!-- 设置按钮（弹出 popover） -->
-                <el-popover placement="bottom-end" :width="320" trigger="click">
-                  <template #reference>
-                    <el-button :icon="Setting" size="small" :type="cfg.bgMusicEnabled?'primary':''" circle title="设置"></el-button>
-                  </template>
-                  <div style="padding:4px 0">
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-                      <el-switch v-model="cfg.bgMusicEnabled" @change="saveSettings" size="small"></el-switch>
-                      <span style="font-size:13px;font-weight:500;color:#303133">启用背景音乐</span>
-                      <span style="font-size:12px;color:#909399">({{cfg.bgMusicEnabled?'已启用':'已禁用'}})</span>
-                    </div>
-                    <template v-if="cfg.bgMusicEnabled">
-                      <div style="margin-bottom:14px">
-                        <div style="font-size:12px;color:#909399;margin-bottom:6px">音乐音量</div>
-                        <div class="volume-control">
-                          <el-icon :size="14"><Mute></Mute></el-icon>
-                          <el-slider v-model="cfg.bgMusicVolume" :min="0" :max="100" :step="1" class="volume-slider" size="small" @change="saveSettings"></el-slider>
-                          <el-icon :size="14"><Bell></Bell></el-icon>
-                          <span class="volume-value" style="font-size:13px">{{cfg.bgMusicVolume}}%</span>
-                        </div>
-                      </div>
-                      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-                        <el-switch v-model="cfg.bgMusicLoop" @change="saveSettings" size="small"></el-switch>
-                        <span style="font-size:13px;color:#606266">循环播放</span>
-                        <span style="font-size:12px;color:#909399;margin-left:auto">{{cfg.bgMusicLoop?'单曲循环':'顺序播放'}}</span>
-                      </div>
-                      <div style="display:flex;align-items:center;gap:10px">
-                        <el-switch v-model="cfg.bgMusicShuffle" @change="saveSettings" size="small"></el-switch>
-                        <span style="font-size:13px;color:#606266">随机播放</span>
-                        <span style="font-size:12px;color:#909399;margin-left:auto">{{cfg.bgMusicShuffle?'随机':'顺序'}}</span>
-                      </div>
-                    </template>
-                    <div v-else style="font-size:12px;color:#c0c4cc;text-align:center;padding:4px 0">启用后可配置音量、循环等选项</div>
-                  </div>
-                </el-popover>
-                <!-- 上传按钮 -->
-                <el-button type="primary" :icon="UploadFilled" size="small" @click="triggerBgmUpload" title="上传音乐">上传</el-button>
-                <!-- 添加在线资源 -->
-                <el-button :icon="Link" size="small" @click="openAddOnlineBgm" title="添加在线资源">在线</el-button>
-                <!-- 清空按钮 -->
-                <el-button :icon="Delete" size="small" type="danger" plain @click="clearAllBgmMusic" :disabled="!bgMusicList.length" title="清空全部"></el-button>
               </div>
             </template>
             <el-table :data="bgMusicList" empty-text="暂无背景音乐" style="width:100%">
@@ -594,82 +588,39 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
         <!-- ====== 媒体库视图 ====== -->
         <div v-if="currentView==='media'" v-loading="mediaLoading">
-          <!-- 分组管理卡片 -->
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button type="primary" :icon="UploadFilled" @click="triggerMediaUpload">上传文件</el-button>
+              <el-button :icon="Link" @click="openOnlineResourceDialog">添加在线资源</el-button>
+            </div>
+            <div class="toolbar-right">
+              <el-select v-model="mediaGroupFilter" placeholder="筛选分组" clearable size="default" style="width:160px">
+                <el-option label="全部分组" :value="''"></el-option>
+                <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span :style="{width:'12px',height:'12px',borderRadius:'50%',background:g.color||'#409EFF',display:'inline-block',flexShrink:0}"></span>
+                    <span>{{g.name}}</span>
+                  </div>
+                </el-option>
+              </el-select>
+              <el-button :icon="Grid" @click="openGroupDialog">分组管理</el-button>
+              <el-button :icon="Refresh" @click="doScanAndRefresh">扫描</el-button>
+            </div>
+          </div>
+
+          <!-- 隐藏的文件上传 input -->
+          <input type="file" ref="mediaUploadInput" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx" multiple style="display:none" @change="onMediaUploadChange">
+
+          <!-- 媒体文件表格 -->
           <el-card>
             <template #header>
               <div class="card-hdr">
                 <el-icon><FolderOpened></FolderOpened></el-icon>
-                <span>媒体分组</span>
-                <el-tag effect="light" size="small" class="live-tag">{{groups.length}} 个分组</el-tag>
-                <el-button type="primary" size="small" :icon="Plus" style="margin-left:12px" @click="openNewGroup">新建分组</el-button>
-              </div>
-            </template>
-            <el-table :data="groups" empty-text="暂无分组" style="width:100%" v-if="groups.length>0">
-              <el-table-column label="名称" min-width="150">
-                <template #default="{row}">
-                  <span style="cursor:pointer;color:#409EFF;font-weight:500" @click="openGroupDetail(row)">{{row.name}}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="颜色" width="80" align="center">
-                <template #default="{row}">
-                  <span class="group-color-dot" :style="{backgroundColor:row.color||'#409EFF'}"></span>
-                </template>
-              </el-table-column>
-              <el-table-column label="描述" min-width="200" show-overflow-tooltip>
-                <template #default="{row}">{{row.description||'--'}}</template>
-              </el-table-column>
-              <el-table-column label="文件数" width="80" align="center">
-                <template #default="{row}">{{row.itemCount||0}}</template>
-              </el-table-column>
-              <el-table-column label="操作" width="120" align="center">
-                <template #default="{row}">
-                  <div class="action-buttons">
-                    <el-button :icon="Edit" size="small" text type="primary" @click="openEditGroup(row)" title="编辑"></el-button>
-                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteGroup(row)" title="删除"></el-button>
-                  </div>
-                </template>
-              </el-table-column>
-            </el-table>
-            <div v-else style="color:#909399;text-align:center;padding:20px;font-size:14px">暂无分组，点击"新建分组"创建</div>
-          </el-card>
-
-          <!-- 上传媒体文件卡片 -->
-          <el-card style="margin-top:20px">
-            <template #header><div class="card-hdr"><el-icon><UploadFilled></UploadFilled></el-icon><span>上传媒体文件</span></div></template>
-            <el-upload :action="uploadUrl" :auto-upload="false" :on-change="onFileChange" :on-remove="onFileRemove" :file-list="uploadFiles" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx" drag multiple class="upload-area">
-              <div class="upload-content">
-                <el-icon :size="48" class="upload-icon"><UploadFilled></UploadFilled></el-icon>
-                <div class="upload-text">拖拽文件到此处或点击上传</div>
-                <div class="upload-hint">支持：视频（MP4, MKV, AVI）、图片（JPG, PNG, GIF）、演示文稿（PPT, PPTX）</div>
-              </div>
-            </el-upload>
-            <div class="upload-actions">
-              <el-button type="primary" :icon="UploadFilled" @click="doUpload" :loading="uploading" :disabled="!uploadFiles.length">上传 {{uploadFiles.length}} 个文件</el-button>
-              <el-button :icon="Refresh" @click="doScanAndRefresh">扫描本地存储</el-button>
-            </div>
-          </el-card>
-
-          <!-- 媒体文件卡片 -->
-          <el-card style="margin-top:20px">
-            <template #header>
-              <div class="card-hdr">
-                <el-icon><FolderOpened></FolderOpened></el-icon>
                 <span>媒体文件</span>
-                <el-tag effect="light" size="small" style="margin-left:8px">{{mediaFiles.length}} 个文件</el-tag>
-                <div style="flex:1"></div>
-                <el-select v-model="mediaGroupFilter" placeholder="筛选分组" clearable size="small" style="width:150px;margin-right:8px">
-                  <el-option label="全部分组" :value="''"></el-option>
-                  <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id">
-                    <div style="display:flex;align-items:center;gap:8px">
-                      <span :style="{width:'12px',height:'12px',borderRadius:'50%',background:g.color||'#409EFF',display:'inline-block',flexShrink:0}"></span>
-                      <span>{{g.name}}</span>
-                    </div>
-                  </el-option>
-                </el-select>
-                <el-button :icon="Link" size="small" type="primary" @click="openOnlineResourceDialog">添加在线资源</el-button>
-                <el-button :icon="Refresh" size="small" @click="loadMediaList">刷新</el-button>
+                <el-tag effect="light" size="small" style="margin-left:8px">{{filteredMediaFiles.length}} 个文件</el-tag>
               </div>
             </template>
+            <el-upload :action="uploadUrl" :auto-upload="false" :on-change="onFileChange" :on-remove="onFileRemove" :file-list="uploadFiles" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx" drag multiple class="upload-area" style="display:none"></el-upload>
             <el-table :data="filteredMediaFiles" empty-text="未找到媒体文件" style="width:100%">
               <el-table-column label="文件" min-width="260">
                 <template #default="{row}">
@@ -863,7 +814,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <div class="toolbar">
             <div class="toolbar-left">
               <el-button type="primary" :icon="Plus" @click="openNewSchedule">新建定时任务</el-button>
-              <el-button :icon="Refresh" @click="fetchSchedules">刷新</el-button>
             </div>
           </div>
 
@@ -1353,6 +1303,16 @@ const app = createApp({
 
     const onFileChange = (file, files) => { uploadFiles.value = files; };
     const onFileRemove = (file, files) => { uploadFiles.value = files; };
+
+    const triggerMediaUpload = () => {
+      const input = document.querySelector('input[ref="mediaUploadInput"]') || document.querySelector('input[type="file"][accept*=".mp4"]');
+      if (input) input.click();
+    };
+    const onMediaUploadChange = (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      uploadFiles.value = files.map(f => ({ name: f.name, size: f.size, raw: f }));
+    };
 
     const doUpload = async () => {
       if (!uploadFiles.value.length) return;
@@ -1968,7 +1928,7 @@ const app = createApp({
       openAddItem, openEditItem, resetItemForm, saveItem,
       toggleItem, confirmDeleteItem, bulkToggle, batchDelete,
       mediaLoading, mediaGroupFilter, filteredMediaFiles, uploading, uploadFiles, uploadUrl,
-      onFileChange, onFileRemove, doUpload, loadMediaList, doScanAndRefresh,
+      onFileChange, onFileRemove, triggerMediaUpload, doUpload, loadMediaList, doScanAndRefresh,
       onlineResourceDialog, onlineResourceSaving, onlineResourceForm,
       openOnlineResourceDialog, resetOnlineResourceForm, doAddOnlineResource,
       fmtSize, copyPath, confirmDeleteFile,
@@ -2014,6 +1974,7 @@ const app = createApp({
       List: ElementPlusIconsVue.List,
       FolderOpened: ElementPlusIconsVue.FolderOpened,
       Folder: ElementPlusIconsVue.Folder,
+      Grid: ElementPlusIconsVue.Grid,
       UploadFilled: ElementPlusIconsVue.UploadFilled,
       CopyDocument: ElementPlusIconsVue.CopyDocument,
       Rank: ElementPlusIconsVue.Rank,
