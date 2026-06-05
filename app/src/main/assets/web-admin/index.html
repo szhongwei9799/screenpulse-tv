@@ -234,6 +234,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           <el-icon><Folder></Folder></el-icon>
           <template #title>媒体库</template>
         </el-menu-item>
+        <el-menu-item index="groups" @click="currentView='groups'">
+          <el-icon><Grid></Grid></el-icon>
+          <template #title>分组管理</template>
+        </el-menu-item>
         <el-menu-item index="schedules" @click="currentView='schedules'">
           <el-icon><Timer></Timer></el-icon>
           <template #title>定时任务</template>
@@ -241,6 +245,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
         <el-menu-item index="bgmusic" @click="currentView='bgmusic'">
           <el-icon><Headset></Headset></el-icon>
           <template #title>背景音乐</template>
+        </el-menu-item>
+        <el-menu-item index="settings" @click="currentView='settings'">
+          <el-icon><Setting></Setting></el-icon>
+          <template #title>设置</template>
         </el-menu-item>
       </el-menu>
       <div class="aside-footer">
@@ -317,133 +325,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             </el-table>
           </el-card>
 
-          <!-- 设置区域（合并到播放列表视图下方） -->
-          <div class="settings-section">
-            <el-collapse v-model="settingsExpanded">
-              <el-collapse-item name="settings" title="">
-                <template #title>
-                  <div class="card-hdr" style="margin-right:auto">
-                    <el-icon><Setting></Setting></el-icon>
-                    <span>设置</span>
-                  </div>
-                </template>
-                <div class="settings-grid">
-                  <!-- 播放设置 -->
-                  <el-card>
-                    <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>播放设置</span></div></template>
-                    <el-form label-position="top">
-                      <el-form-item label="播放顺序">
-                        <el-radio-group v-model="cfg.orderMode">
-                          <el-radio-button value="SEQUENTIAL">顺序</el-radio-button>
-                          <el-radio-button value="RANDOM">随机</el-radio-button>
-                        </el-radio-group>
-                        <div class="form-hint">{{cfg.orderMode==='SEQUENTIAL'?'按照播放列表顺序播放':'随机打乱顺序播放'}}</div>
-                      </el-form-item>
-                      <el-form-item label="重复模式">
-                        <el-radio-group v-model="cfg.repeatMode">
-                          <el-radio-button value="ONCE">播放一次</el-radio-button>
-                          <el-radio-button value="LOOP">循环播放</el-radio-button>
-                          <el-radio-button value="N_TIMES">按次数播放</el-radio-button>
-                        </el-radio-group>
-                        <el-input-number v-if="cfg.repeatMode==='N_TIMES'" v-model="cfg.repeatCount" :min="1" :max="999" :step="1" style="margin-top:8px" placeholder="播放次数"></el-input-number>
-                        <div class="form-hint">{{cfg.repeatMode==='ONCE'?'播放一次后停止':cfg.repeatMode==='LOOP'?'循环重复播放列表':'播放指定次数后停止'}}</div>
-                      </el-form-item>
-                      <el-form-item label="音量">
-                        <div class="volume-control">
-                          <el-icon><Mute></Mute></el-icon>
-                          <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" ></el-slider>
-                          <el-icon><Bell></Bell></el-icon>
-                          <span class="volume-value">{{cfg.volume}}%</span>
-                        </div>
-                      </el-form-item>
-                      <el-form-item label="图片显示时长（秒）">
-                        <el-input-number v-model="cfg.imageDuration" :min="1" :max="3600" :step="1" ></el-input-number>
-                        <div class="form-hint">没有自定义时长的图片的默认显示时间。</div>
-                      </el-form-item>
-                    </el-form>
-                  </el-card>
-
-                  <!-- 插播设置 -->
-                  <el-card>
-                    <template #header><div class="card-hdr"><el-icon><Clock></Clock></el-icon><span>插播设置</span></div></template>
-                    <el-form label-position="top">
-                      <el-form-item label="启用插播模式">
-                        <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" ></el-switch><span class="toggle-label">{{cfg.interstitialEnabled?'已启用':'已禁用'}}</span></div>
-                        <div class="form-hint">仅在指定时段显示内容。</div>
-                      </el-form-item>
-                      <el-form-item v-if="cfg.interstitialEnabled" label="开始时间">
-                        <el-time-picker v-model="cfg.interstitialStart" placeholder="开始时间" format="HH:mm" style="width:100%" ></el-time-picker>
-                      </el-form-item>
-                      <el-form-item v-if="cfg.interstitialEnabled" label="结束时间">
-                        <el-time-picker v-model="cfg.interstitialEnd" placeholder="结束时间" format="HH:mm" style="width:100%" ></el-time-picker>
-                      </el-form-item>
-                      <el-form-item v-if="cfg.interstitialEnabled" label="关屏提示">
-                        <el-input v-model="cfg.offScreenMessage" placeholder="非活跃时段显示的消息" clearable ></el-input>
-                      </el-form-item>
-                    </el-form>
-                  </el-card>
-
-                  <!-- 过场动画 -->
-                  <el-card>
-                    <template #header><div class="card-hdr"><el-icon><Setting></Setting></el-icon><span>过场动画</span></div></template>
-                    <el-form label-position="top">
-                      <el-form-item label="启用过场动画">
-                        <div class="toggle-row"><el-switch v-model="cfg.transitionEnabled" ></el-switch><span class="toggle-label">{{cfg.transitionEnabled?'已启用':'已禁用'}}</span></div>
-                        <div class="form-hint">在切换媒体项时播放过渡动画效果。</div>
-                      </el-form-item>
-                      <el-form-item v-if="cfg.transitionEnabled" label="动画类型">
-                        <el-select v-model="cfg.transitionType" placeholder="选择动画类型" style="width:100%">
-                          <el-option label="淡入淡出" value="fade"></el-option>
-                          <el-option label="滑动" value="slide"></el-option>
-                          <el-option label="缩放" value="zoom"></el-option>
-                          <el-option label="旋转" value="rotate"></el-option>
-                          <el-option label="无" value="none"></el-option>
-                        </el-select>
-                      </el-form-item>
-                      <el-form-item v-if="cfg.transitionEnabled" label="动画时长（毫秒）">
-                        <el-input-number v-model="cfg.transitionDuration" :min="100" :max="5000" :step="100"></el-input-number>
-                        <div class="form-hint">过渡动画的持续时间。</div>
-                      </el-form-item>
-                    </el-form>
-                  </el-card>
-
-                  <!-- 设备设置 -->
-                  <el-card>
-                    <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>设备设置</span></div></template>
-                    <el-form label-position="top">
-                      <el-form-item label="设备名称"><el-input v-model="cfg.deviceName" placeholder="请输入设备名称" clearable ></el-input></el-form-item>
-                      <el-form-item label="屏幕方向">
-                        <el-radio-group v-model="cfg.orientation">
-                          <el-radio-button value="landscape">横屏</el-radio-button>
-                          <el-radio-button value="portrait">竖屏</el-radio-button>
-                        </el-radio-group>
-                      </el-form-item>
-                      <el-form-item label="空闲超时（分钟，0 = 从不）">
-                        <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" ></el-input-number>
-                      </el-form-item>
-                    </el-form>
-                  </el-card>
-
-                  <!-- 网络信息 -->
-                  <el-card>
-                    <template #header><div class="card-hdr"><el-icon><Connection></Connection></el-icon><span>网络信息</span></div></template>
-                    <div class="device-info">
-                      <div class="info-row"><span class="info-label">IP 地址</span><span class="info-value mono">{{netInfo.ip||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">网关</span><span class="info-value mono">{{netInfo.gateway||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">DNS</span><span class="info-value mono">{{netInfo.dns||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">网络名称</span><span class="info-value mono">{{netInfo.ssid||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">信号强度</span><span class="info-value">{{netInfo.signal||'--'}}</span></div>
-                      <div class="info-row"><span class="info-label">MAC 地址</span><span class="info-value mono">{{netInfo.mac||'--'}}</span></div>
-                    </div>
-                  </el-card>
-                </div>
-                <div class="save-bar">
-                  <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">保存设置</el-button>
-                </div>
-              </el-collapse-item>
-            </el-collapse>
-          </div>
-
           <!-- 添加/编辑对话框 -->
           <el-dialog v-model="plDialog" :title="plEditing?'编辑播放项':'添加播放项'" width="480px" @close="resetItemForm" destroy-on-close>
             <el-form :model="itemForm" label-position="top">
@@ -484,6 +365,239 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               <el-button type="primary" :loading="pwdSaving" @click="doChangePassword">确认修改</el-button>
             </template>
           </el-dialog>
+        </div>
+
+        <!-- ====== 分组管理视图 ====== -->
+        <div v-if="currentView==='groups'" v-loading="mediaLoading">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button type="primary" :icon="Plus" @click="openNewGroup">新建分组</el-button>
+            </div>
+          </div>
+          <el-card>
+            <el-table :data="groups" empty-text="暂无分组" style="width:100%" v-if="groups.length>0">
+              <el-table-column label="名称" min-width="150">
+                <template #default="{row}">
+                  <span style="cursor:pointer;color:#409EFF;font-weight:500" @click="openGroupDetail(row)">{{row.name}}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="颜色" width="80" align="center">
+                <template #default="{row}">
+                  <span class="group-color-dot" :style="{backgroundColor:row.color||'#409EFF'}"></span>
+                </template>
+              </el-table-column>
+              <el-table-column label="描述" min-width="200" show-overflow-tooltip>
+                <template #default="{row}">{{row.description||'--'}}</template>
+              </el-table-column>
+              <el-table-column label="文件数" width="80" align="center">
+                <template #default="{row}">{{row.itemCount||0}}</template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" align="center">
+                <template #default="{row}">
+                  <div class="action-buttons">
+                    <el-button :icon="Edit" size="small" text type="primary" @click="openEditGroup(row)" title="编辑"></el-button>
+                    <el-button :icon="Delete" size="small" text type="danger" @click="confirmDeleteGroup(row)" title="删除"></el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div v-else style="color:#909399;text-align:center;padding:40px;font-size:14px">暂无分组，点击"新建分组"创建</div>
+          </el-card>
+
+          <!-- 新建/编辑分组对话框 -->
+          <el-dialog v-model="groupDialog" :title="groupEditing?'编辑分组':'新建分组'" width="480px" @close="resetGroupForm" destroy-on-close>
+            <el-form :model="groupForm" label-position="top">
+              <el-form-item label="分组名称" required>
+                <el-input v-model="groupForm.name" placeholder="请输入分组名称" clearable ></el-input>
+              </el-form-item>
+              <el-form-item label="描述">
+                <el-input v-model="groupForm.description" type="textarea" :rows="3" placeholder="分组描述（可选）" clearable ></el-input>
+              </el-form-item>
+              <el-form-item label="颜色">
+                <el-color-picker v-model="groupForm.color" show-alpha></el-color-picker>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="groupDialog=false">取消</el-button>
+              <el-button type="primary" :loading="groupSaving" @click="saveGroup">{{groupEditing?'更新':'创建'}}</el-button>
+            </template>
+          </el-dialog>
+
+          <!-- 分组详情对话框 -->
+          <el-dialog v-model="groupDetailDialog" :title="'分组详情 - ' + (groupDetailData.name||'')" width="640px" destroy-on-close>
+            <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+              <span class="group-color-dot" :style="{backgroundColor:groupDetailData.color||'#409EFF'}" style="width:18px;height:18px"></span>
+              <span style="font-weight:600;color:#303133">{{groupDetailData.name}}</span>
+              <el-tag size="small" effect="light">{{groupDetailItems.length}} 个文件</el-tag>
+              <span v-if="groupDetailData.description" style="font-size:13px;color:#909399;margin-left:8px">{{groupDetailData.description}}</span>
+            </div>
+            <el-table :data="groupDetailItems" empty-text="分组中没有文件" style="width:100%" max-height="400">
+              <el-table-column label="文件名" min-width="250">
+                <template #default="{row}">
+                  <div class="file-cell">
+                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
+                      <el-icon :size="16"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
+                    </div>
+                    <span class="file-name">{{row.name||row.title||'未命名'}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="80" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+              <el-table-column label="操作" width="80" align="center">
+                <template #default="{row}">
+                  <el-button :icon="Delete" size="small" text type="danger" @click="removeFromGroup(row)" title="从分组移除"></el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div style="margin-top:12px">
+              <el-button size="small" :icon="Plus" @click="addToGroupFromDetail">添加文件到分组</el-button>
+            </div>
+          </el-dialog>
+
+          <!-- 添加文件到分组对话框 -->
+          <el-dialog v-model="addMediaToGroupDialog" title="添加文件到分组" width="640px" destroy-on-close>
+            <el-table :data="mediaFilesNotInGroup" empty-text="没有可添加的文件" style="width:100%" max-height="400" @selection-change="onAddMediaToGroupSelection">
+              <el-table-column type="selection" width="50"></el-table-column>
+              <el-table-column label="文件名" min-width="300">
+                <template #default="{row}">
+                  <div class="file-cell">
+                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
+                      <el-icon :size="16"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
+                    </div>
+                    <span class="file-name">{{row.name||row.title||'未命名'}}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="80" align="center">
+                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
+              </el-table-column>
+            </el-table>
+            <template #footer>
+              <el-button @click="addMediaToGroupDialog=false">取消</el-button>
+              <el-button type="primary" @click="confirmAddMediaToGroup">添加选中文件</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- ====== 设置视图 ====== -->
+        <div v-if="currentView==='settings'" v-loading="settingsLoading">
+          <div class="settings-section">
+            <div class="settings-grid">
+              <!-- 播放设置 -->
+              <el-card>
+                <template #header><div class="card-hdr"><el-icon><VideoPlay></VideoPlay></el-icon><span>播放设置</span></div></template>
+                <el-form label-position="top">
+                  <el-form-item label="播放顺序">
+                    <el-radio-group v-model="cfg.orderMode">
+                      <el-radio-button value="SEQUENTIAL">顺序</el-radio-button>
+                      <el-radio-button value="RANDOM">随机</el-radio-button>
+                    </el-radio-group>
+                    <div class="form-hint">{{cfg.orderMode==='SEQUENTIAL'?'按照播放列表顺序播放':'随机打乱顺序播放'}}</div>
+                  </el-form-item>
+                  <el-form-item label="重复模式">
+                    <el-radio-group v-model="cfg.repeatMode">
+                      <el-radio-button value="ONCE">播放一次</el-radio-button>
+                      <el-radio-button value="LOOP">循环播放</el-radio-button>
+                      <el-radio-button value="N_TIMES">按次数播放</el-radio-button>
+                    </el-radio-group>
+                    <el-input-number v-if="cfg.repeatMode==='N_TIMES'" v-model="cfg.repeatCount" :min="1" :max="999" :step="1" style="margin-top:8px" placeholder="播放次数"></el-input-number>
+                    <div class="form-hint">{{cfg.repeatMode==='ONCE'?'播放一次后停止':cfg.repeatMode==='LOOP'?'循环重复播放列表':'播放指定次数后停止'}}</div>
+                  </el-form-item>
+                  <el-form-item label="音量">
+                    <div class="volume-control">
+                      <el-icon><Mute></Mute></el-icon>
+                      <el-slider v-model="cfg.volume" :min="0" :max="100" :step="1" class="volume-slider" ></el-slider>
+                      <el-icon><Bell></Bell></el-icon>
+                      <span class="volume-value">{{cfg.volume}}%</span>
+                    </div>
+                  </el-form-item>
+                  <el-form-item label="图片显示时长（秒）">
+                    <el-input-number v-model="cfg.imageDuration" :min="1" :max="3600" :step="1" ></el-input-number>
+                    <div class="form-hint">没有自定义时长的图片的默认显示时间。</div>
+                  </el-form-item>
+                </el-form>
+              </el-card>
+
+              <!-- 插播设置 -->
+              <el-card>
+                <template #header><div class="card-hdr"><el-icon><Clock></Clock></el-icon><span>插播设置</span></div></template>
+                <el-form label-position="top">
+                  <el-form-item label="启用插播模式">
+                    <div class="toggle-row"><el-switch v-model="cfg.interstitialEnabled" ></el-switch><span class="toggle-label">{{cfg.interstitialEnabled?'已启用':'已禁用'}}</span></div>
+                    <div class="form-hint">仅在指定时段显示内容。</div>
+                  </el-form-item>
+                  <el-form-item v-if="cfg.interstitialEnabled" label="开始时间">
+                    <el-time-picker v-model="cfg.interstitialStart" placeholder="开始时间" format="HH:mm" style="width:100%" ></el-time-picker>
+                  </el-form-item>
+                  <el-form-item v-if="cfg.interstitialEnabled" label="结束时间">
+                    <el-time-picker v-model="cfg.interstitialEnd" placeholder="结束时间" format="HH:mm" style="width:100%" ></el-time-picker>
+                  </el-form-item>
+                  <el-form-item v-if="cfg.interstitialEnabled" label="关屏提示">
+                    <el-input v-model="cfg.offScreenMessage" placeholder="非活跃时段显示的消息" clearable ></el-input>
+                  </el-form-item>
+                </el-form>
+              </el-card>
+
+              <!-- 过场动画 -->
+              <el-card>
+                <template #header><div class="card-hdr"><el-icon><Setting></Setting></el-icon><span>过场动画</span></div></template>
+                <el-form label-position="top">
+                  <el-form-item label="启用过场动画">
+                    <div class="toggle-row"><el-switch v-model="cfg.transitionEnabled" ></el-switch><span class="toggle-label">{{cfg.transitionEnabled?'已启用':'已禁用'}}</span></div>
+                    <div class="form-hint">在切换媒体项时播放过渡动画效果。</div>
+                  </el-form-item>
+                  <el-form-item v-if="cfg.transitionEnabled" label="动画类型">
+                    <el-select v-model="cfg.transitionType" placeholder="选择动画类型" style="width:100%">
+                      <el-option label="淡入淡出" value="fade"></el-option>
+                      <el-option label="滑动" value="slide"></el-option>
+                      <el-option label="缩放" value="zoom"></el-option>
+                      <el-option label="旋转" value="rotate"></el-option>
+                      <el-option label="无" value="none"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item v-if="cfg.transitionEnabled" label="动画时长（毫秒）">
+                    <el-input-number v-model="cfg.transitionDuration" :min="100" :max="5000" :step="100"></el-input-number>
+                    <div class="form-hint">过渡动画的持续时间。</div>
+                  </el-form-item>
+                </el-form>
+              </el-card>
+
+              <!-- 设备设置 -->
+              <el-card>
+                <template #header><div class="card-hdr"><el-icon><Monitor></Monitor></el-icon><span>设备设置</span></div></template>
+                <el-form label-position="top">
+                  <el-form-item label="设备名称"><el-input v-model="cfg.deviceName" placeholder="请输入设备名称" clearable ></el-input></el-form-item>
+                  <el-form-item label="屏幕方向">
+                    <el-radio-group v-model="cfg.orientation">
+                      <el-radio-button value="landscape">横屏</el-radio-button>
+                      <el-radio-button value="portrait">竖屏</el-radio-button>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="空闲超时（分钟，0 = 从不）">
+                    <el-input-number v-model="cfg.idleTimeout" :min="0" :max="480" :step="5" ></el-input-number>
+                  </el-form-item>
+                </el-form>
+              </el-card>
+
+              <!-- 网络信息 -->
+              <el-card>
+                <template #header><div class="card-hdr"><el-icon><Connection></Connection></el-icon><span>网络信息</span></div></template>
+                <div class="device-info">
+                  <div class="info-row"><span class="info-label">IP 地址</span><span class="info-value mono">{{netInfo.ip||'--'}}</span></div>
+                  <div class="info-row"><span class="info-label">网关</span><span class="info-value mono">{{netInfo.gateway||'--'}}</span></div>
+                  <div class="info-row"><span class="info-label">DNS</span><span class="info-value mono">{{netInfo.dns||'--'}}</span></div>
+                  <div class="info-row"><span class="info-label">网络名称</span><span class="info-value mono">{{netInfo.ssid||'--'}}</span></div>
+                  <div class="info-row"><span class="info-label">信号强度</span><span class="info-value">{{netInfo.signal||'--'}}</span></div>
+                  <div class="info-row"><span class="info-label">MAC 地址</span><span class="info-value mono">{{netInfo.mac||'--'}}</span></div>
+                </div>
+              </el-card>
+            </div>
+            <div class="save-bar">
+              <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">保存设置</el-button>
+            </div>
+          </div>
         </div>
 
         <!-- ====== 背景音乐视图 ====== -->
@@ -603,8 +717,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                   </div>
                 </el-option>
               </el-select>
-              <el-button :icon="Grid" @click="openGroupDialog">分组管理</el-button>
-              <el-button :icon="Refresh" @click="doScanAndRefresh">扫描</el-button>
             </div>
           </div>
 
@@ -678,25 +790,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             </template>
           </el-dialog>
 
-          <!-- 新建/编辑分组对话框 -->
-          <el-dialog v-model="groupDialog" :title="groupEditing?'编辑分组':'新建分组'" width="480px" @close="resetGroupForm" destroy-on-close>
-            <el-form :model="groupForm" label-position="top">
-              <el-form-item label="分组名称" required>
-                <el-input v-model="groupForm.name" placeholder="请输入分组名称" clearable ></el-input>
-              </el-form-item>
-              <el-form-item label="描述">
-                <el-input v-model="groupForm.description" type="textarea" :rows="3" placeholder="分组描述（可选）" clearable ></el-input>
-              </el-form-item>
-              <el-form-item label="颜色">
-                <el-color-picker v-model="groupForm.color" show-alpha></el-color-picker>
-              </el-form-item>
-            </el-form>
-            <template #footer>
-              <el-button @click="groupDialog=false">取消</el-button>
-              <el-button type="primary" :loading="groupSaving" @click="saveGroup">{{groupEditing?'更新':'创建'}}</el-button>
-            </template>
-          </el-dialog>
-
           <!-- 媒体分组分配对话框 -->
           <el-dialog v-model="mediaGroupDialog" :title="'设置分组 - ' + mediaGroupName" width="480px" destroy-on-close>
             <div style="margin-bottom:12px;color:#606266;font-size:14px">选择要归属的分组：</div>
@@ -712,63 +805,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             <template #footer>
               <el-button @click="mediaGroupDialog=false">取消</el-button>
               <el-button type="primary" @click="saveMediaGroupAssign">保存</el-button>
-            </template>
-          </el-dialog>
-
-          <!-- 分组详情对话框 -->
-          <el-dialog v-model="groupDetailDialog" :title="'分组详情 - ' + (groupDetailData.name||'')" width="640px" destroy-on-close>
-            <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
-              <span class="group-color-dot" :style="{backgroundColor:groupDetailData.color||'#409EFF'}" style="width:18px;height:18px"></span>
-              <span style="font-weight:600;color:#303133">{{groupDetailData.name}}</span>
-              <el-tag size="small" effect="light">{{groupDetailItems.length}} 个文件</el-tag>
-              <span v-if="groupDetailData.description" style="font-size:13px;color:#909399;margin-left:8px">{{groupDetailData.description}}</span>
-            </div>
-            <el-table :data="groupDetailItems" empty-text="分组中没有文件" style="width:100%" max-height="400">
-              <el-table-column label="文件名" min-width="250">
-                <template #default="{row}">
-                  <div class="file-cell">
-                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
-                      <el-icon :size="16"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
-                    </div>
-                    <span class="file-name">{{row.name||row.title||'未命名'}}</span>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="类型" width="80" align="center">
-                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
-              </el-table-column>
-              <el-table-column label="操作" width="80" align="center">
-                <template #default="{row}">
-                  <el-button :icon="Delete" size="small" text type="danger" @click="removeFromGroup(row)" title="从分组移除"></el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-            <div style="margin-top:12px">
-              <el-button size="small" :icon="Plus" @click="addToGroupFromDetail">添加文件到分组</el-button>
-            </div>
-          </el-dialog>
-
-          <!-- 添加文件到分组对话框 -->
-          <el-dialog v-model="addMediaToGroupDialog" title="添加文件到分组" width="640px" destroy-on-close>
-            <el-table :data="mediaFilesNotInGroup" empty-text="没有可添加的文件" style="width:100%" max-height="400" @selection-change="onAddMediaToGroupSelection">
-              <el-table-column type="selection" width="50"></el-table-column>
-              <el-table-column label="文件名" min-width="300">
-                <template #default="{row}">
-                  <div class="file-cell">
-                    <div :class="'file-icon-wrap '+(row.type==='IMAGE'?'image':row.type==='PPT'?'document':'video')">
-                      <el-icon :size="16"><VideoPlay v-if="row.type==='VIDEO'||row.type==='STREAM'||row.type==='IPTV'"></VideoPlay><Picture v-else-if="row.type==='IMAGE'"></Picture><Document v-else ></Document></el-icon>
-                    </div>
-                    <span class="file-name">{{row.name||row.title||'未命名'}}</span>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="类型" width="80" align="center">
-                <template #default="{row}"><span :class="'mtb mtb-'+(row.type||'video').toLowerCase()">{{row.type||'VIDEO'}}</span></template>
-              </el-table-column>
-            </el-table>
-            <template #footer>
-              <el-button @click="addMediaToGroupDialog=false">取消</el-button>
-              <el-button type="primary" @click="confirmAddMediaToGroup">添加选中文件</el-button>
             </template>
           </el-dialog>
 
@@ -1120,15 +1156,19 @@ const app = createApp({
     const pageTitle = computed(() => ({
       playlist: '播放列表管理',
       media: '媒体库',
+      groups: '分组管理',
       schedules: '定时任务管理',
-      bgmusic: '背景音乐'
+      bgmusic: '背景音乐',
+      settings: '设置'
     }[currentView.value] || '播放列表管理'));
 
     const refreshView = () => {
       if (currentView.value === 'playlist') fetchPlaylistAndSettings();
       else if (currentView.value === 'media') { loadMediaList(); fetchGroups(); }
+      else if (currentView.value === 'groups') { fetchGroups(); loadMediaList(); }
       else if (currentView.value === 'schedules') fetchSchedules();
       else if (currentView.value === 'bgmusic') loadBgmList();
+      else if (currentView.value === 'settings') fetchPlaylistAndSettings();
     };
 
     // ========== 播放列表 ==========
