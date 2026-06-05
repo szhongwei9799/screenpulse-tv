@@ -40,27 +40,30 @@ jobs:
       - name: Build Release APK
         run: ./gradlew :app:assembleRelease --no-daemon
 
-      - name: Get version and upload
-        id: version
+      - name: Read version from build.gradle
+        id: ver
         run: |
-          VERSION=$(./gradlew :app:printVersion --no-daemon -q 2>/dev/null || grep versionName app/build.gradle | head -1 | cut -d'"' -f2)
-          echo "name=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected version: $VERSION"
-          mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/ScreenPulse-v${VERSION}-release.apk
+          VNAME=$(cat app/build.gradle | grep 'versionName' | head -1 | cut -d'"' -f2)
+          echo "ver=$VNAME" >> "$GITHUB_OUTPUT"
+          echo "Extracted version: $VNAME"
 
-      - name: Upload APK to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.name }}
-          name: ScreenPulse v${{ steps.version.outputs.name }}
-          body: |
-            自动构建的 Release APK
-            - 版本: v${{ steps.version.outputs.name }}
-            - 提交: ${{ github.sha }}
-            - 构建时间: ${{ github.event.head_commit.timestamp }}
-          files: app/build/outputs/apk/release/ScreenPulse-v${{ steps.version.outputs.name }}-release.apk
-          draft: false
-          prerelease: false
+      - name: Rename APK
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk \
+             ScreenPulse-v${{ steps.ver.outputs.ver }}-release.apk
+
+      - name: Create Release and Upload APK
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.ver.outputs.ver }}"
+          APK_NAME="ScreenPulse-v${{ steps.ver.outputs.ver }}-release.apk"
+          
+          # Delete old release with same tag if exists
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          
+          # Create new release
+          gh release create "$TAG" "$APK_NAME" \
+            --title "ScreenPulse $TAG" \
+            --notes "自动构建 | 提交: ${{ github.sha }}" \
+            --latest
