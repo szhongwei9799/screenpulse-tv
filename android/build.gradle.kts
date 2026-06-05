@@ -8,14 +8,6 @@ plugins {
     id("androidx.navigation.safeargs.kotlin") version "2.7.7" apply false
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://jitpack.io")
-    }
-}
-
 // 清理任务配置
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
