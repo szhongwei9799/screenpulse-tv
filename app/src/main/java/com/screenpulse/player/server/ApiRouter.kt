@@ -830,6 +830,9 @@ class ApiRouter(
     fun deleteGroup(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
         return runBlocking {
             try {
+                if (id == 1L) {
+                    return@runBlocking jsonResponseError("默认分组不可删除", NanoHTTPD.Response.Status.FORBIDDEN)
+                }
                 mediaGroupDao.clearGroupItems(id)
                 mediaGroupDao.deleteById(id)
                 val result = JsonObject().apply { addProperty("success", true) }
