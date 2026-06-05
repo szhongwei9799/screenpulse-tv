@@ -29,12 +29,9 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/*.gradle.kts') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/*.gradle.kts', 'android/**/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-${{ runner.os }}-
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
 
       - name: Generate debug keystore
         run: |
@@ -42,14 +39,14 @@ jobs:
           keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build Release APK
-        run: ./gradlew :app:assembleRelease --no-daemon
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Extract version from Gradle
         id: version
         run: |
           VERSION=$(grep -oP '(?<=versionName ")[^"]+' android/app/build.gradle.kts | head -1)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $VERSION"
 
       - name: Prepare APK
         run: |
@@ -64,7 +61,6 @@ jobs:
             ## ScreenPulse v${{ steps.version.outputs.version }}
             **构建时间**: ${{ github.event.head_commit.timestamp }}
             **提交**: ${{ github.sha }}
-            **触发**: ${{ github.event_name }}
           files: ScreenPulse-v${{ steps.version.outputs.version }}-release.apk
           draft: false
           prerelease: false

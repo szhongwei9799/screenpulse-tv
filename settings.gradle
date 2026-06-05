@@ -16,5 +16,3 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ScreenPulse-TV-Player"
-include ':app'
-project(':app').projectDir = new File(rootProject.projectDir, 'android/app')
