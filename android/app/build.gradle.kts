@@ -108,7 +108,7 @@ dependencies {
 
     // ============ ZXing 二维码生成 ============
     implementation("com.google.zxing:core:3.5.3")
-    implementation("com.google.zxing:android-core:3.5.3")
+    implementation("com.google.zxing:android-core:3.3.0")
 
     // ============ Gson JSON 解析 ============
     implementation("com.google.code.gson:gson:2.10.1")
