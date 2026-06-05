@@ -248,7 +248,10 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
     <!-- 主内容 -->
     <div class="app-main-container">
       <div class="app-header">
-        <h2 class="page-title">{{pageTitle}}</h2>
+        <div style="display:flex;align-items:center;gap:10px">
+          <h2 class="page-title">{{pageTitle}}</h2>
+          <el-tag size="small" effect="plain" type="info" round>v{{appVersion}}</el-tag>
+        </div>
         <div class="header-right">
           <!-- 播放控制 -->
           <el-button type="success" :icon="VideoPlay" circle size="small" @click="playbackControl('play')" title="播放"></el-button>
@@ -263,7 +266,15 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
             <el-icon style="margin-right:4px"><CircleCheck></CircleCheck></el-icon> 已连接
           </el-tag>
           <el-button :icon="Refresh" circle size="small" @click="refreshView" ></el-button>
-          <el-button :icon="SwitchButton" circle size="small" @click="doLogout" title="退出登录"></el-button>
+          <el-dropdown trigger="click" @command="onUserCommand">
+            <el-button :icon="UserFilled" circle size="small"></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item :icon="EditPen" command="changePwd">修改密码</el-dropdown-item>
+                <el-dropdown-item :icon="SwitchButton" command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
 
@@ -424,7 +435,6 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                 </div>
                 <div class="save-bar">
                   <el-button type="primary" size="large" :icon="Check" :loading="settingsSaving" @click="saveSettings" class="save-button">保存设置</el-button>
-                  <el-button size="large" :icon="Lock" @click="openChangePassword">修改密码</el-button>
                 </div>
               </el-collapse-item>
             </el-collapse>
@@ -1096,8 +1106,15 @@ const app = createApp({
     };
 
     // ========== 布局 ==========
+    const appVersion = ref('1.1.0');
     const isCollapsed = ref(false);
     const currentView = ref('playlist');
+
+    const onUserCommand = (cmd) => {
+      if (cmd === 'logout') doLogout();
+      else if (cmd === 'changePwd') openChangePassword();
+    };
+
     const pageTitle = computed(() => ({
       playlist: '播放列表管理',
       media: '媒体库',
@@ -1859,7 +1876,7 @@ const app = createApp({
     return {
       isLoggedIn, loginPassword, loginLoading, loginError, doLogin, doLogout,
       pwdDialog, pwdSaving, pwdForm, openChangePassword, resetPwdForm, doChangePassword,
-      isCollapsed, currentView, pageTitle, refreshView,
+      appVersion, isCollapsed, currentView, onUserCommand, pageTitle, refreshView,
       plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds, playlist, mediaFiles,
       dragStart, dropItem, fetchPlaylistAndSettings, onSelectionChange, moveItem,
       openAddItem, openEditItem, onDurationToggle, resetItemForm, saveItem,
@@ -1895,6 +1912,8 @@ const app = createApp({
       // Icons
       Lock: ElementPlusIconsVue.Lock,
       SwitchButton: ElementPlusIconsVue.SwitchButton,
+      UserFilled: ElementPlusIconsVue.UserFilled,
+      EditPen: ElementPlusIconsVue.EditPen,
       Refresh: ElementPlusIconsVue.Refresh,
       Plus: ElementPlusIconsVue.Plus,
       Delete: ElementPlusIconsVue.Delete,
