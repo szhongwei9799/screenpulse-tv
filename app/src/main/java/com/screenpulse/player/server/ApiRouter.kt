@@ -878,6 +878,9 @@ class ApiRouter(
     }
 
     fun deleteGroup(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        if (id == 1L) {
+            return jsonResponseError("默认分组不可删除", NanoHTTPD.Response.Status.BAD_REQUEST)
+        }
         return runBlocking {
             try {
                 mediaGroupDao.removeAllItemsFromGroup(id)
