@@ -28,8 +28,8 @@ jobs:
         with:
           accept-android-sdk-licenses: true
 
-      - name: Ensure Android SDK platform
-        run: sdkmanager "platforms" "android-33" "platforms;android-34" || true
+      - name: Install Android SDK 34
+        run: sdkmanager "platforms" "android-34" || true
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
