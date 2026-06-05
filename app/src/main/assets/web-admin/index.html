@@ -481,61 +481,56 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 
         <!-- ====== 背景音乐视图 ====== -->
         <div v-if="currentView==='bgmusic'" v-loading="bgmLoading">
-          <!-- Enable/Disable card -->
-          <el-card style="margin-bottom:20px">
-            <template #header><div class="card-hdr"><el-icon><Headset></Headset></el-icon><span>背景音乐设置</span></div></template>
-            <el-form label-position="top">
-              <el-form-item label="启用背景音乐">
-                <div class="toggle-row">
-                  <el-switch v-model="cfg.bgMusicEnabled" @change="saveSettings"></el-switch>
-                  <span class="toggle-label">{{cfg.bgMusicEnabled?'已启用':'已禁用'}}</span>
-                </div>
-                <div class="form-hint">启用后将静音视频原声，播放背景音乐</div>
-              </el-form-item>
-              <template v-if="cfg.bgMusicEnabled">
-                <el-form-item label="音乐音量">
-                  <div class="volume-control">
-                    <el-icon><Mute></Mute></el-icon>
-                    <el-slider v-model="cfg.bgMusicVolume" :min="0" :max="100" :step="1" class="volume-slider" @change="saveSettings"></el-slider>
-                    <el-icon><Bell></Bell></el-icon>
-                    <span class="volume-value">{{cfg.bgMusicVolume}}%</span>
-                  </div>
-                </el-form-item>
-                <el-form-item label="循环播放">
-                  <div class="toggle-row">
-                    <el-switch v-model="cfg.bgMusicLoop" @change="saveSettings"></el-switch>
-                    <span class="toggle-label">{{cfg.bgMusicLoop?'单曲循环':'播放一次后播放下一首'}}</span>
-                  </div>
-                </el-form-item>
-                <el-form-item label="随机播放">
-                  <div class="toggle-row">
-                    <el-switch v-model="cfg.bgMusicShuffle" @change="saveSettings"></el-switch>
-                    <span class="toggle-label">{{cfg.bgMusicShuffle?'随机顺序':'按列表顺序'}}</span>
-                  </div>
-                </el-form-item>
-              </template>
-            </el-form>
-          </el-card>
-
-          <!-- Upload card -->
-          <el-card style="margin-bottom:20px">
-            <template #header><div class="card-hdr"><el-icon><UploadFilled></UploadFilled></el-icon><span>上传音乐</span></div></template>
-            <el-upload :action="bgmUploadUrl" :auto-upload="false" :on-change="onBgmFileChange" :on-remove="onBgmFileRemove" :file-list="bgmUploadFiles" accept=".mp3,.wav,.ogg,.flac,.aac,.m4a" drag multiple class="upload-area">
-              <div class="upload-content">
-                <el-icon :size="48" class="upload-icon"><UploadFilled></UploadFilled></el-icon>
-                <div class="upload-text">拖拽音乐文件到此处或点击上传</div>
-                <div class="upload-hint">支持：MP3, WAV, OGG, FLAC, AAC, M4A</div>
-              </div>
-            </el-upload>
-            <div class="upload-actions">
-              <el-button type="primary" :icon="UploadFilled" @click="doBgmUpload" :loading="bgmUploading" :disabled="!bgmUploadFiles.length">上传 {{bgmUploadFiles.length}} 个文件</el-button>
-              <el-button :icon="Delete" type="danger" plain @click="clearAllBgmMusic" :disabled="!bgMusicList.length">清空全部</el-button>
-            </div>
-          </el-card>
-
-          <!-- Music list -->
           <el-card>
-            <template #header><div class="card-hdr"><el-icon><Headset></Headset></el-icon><span>音乐列表</span><el-tag effect="light" size="small" class="live-tag">{{bgMusicList.length}} 首</el-tag></div></template>
+            <template #header>
+              <div class="card-hdr">
+                <el-icon><Headset></Headset></el-icon>
+                <span>音乐列表</span>
+                <el-tag effect="light" size="small" style="margin-left:8px">{{bgMusicList.length}} 首</el-tag>
+                <div style="flex:1"></div>
+                <!-- 设置按钮（弹出 popover） -->
+                <el-popover placement="bottom-end" :width="320" trigger="click">
+                  <template #reference>
+                    <el-button :icon="Setting" size="small" :type="cfg.bgMusicEnabled?'primary':''" circle title="设置"></el-button>
+                  </template>
+                  <div style="padding:4px 0">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                      <el-switch v-model="cfg.bgMusicEnabled" @change="saveSettings" size="small"></el-switch>
+                      <span style="font-size:13px;font-weight:500;color:#303133">启用背景音乐</span>
+                      <span style="font-size:12px;color:#909399">({{cfg.bgMusicEnabled?'已启用':'已禁用'}})</span>
+                    </div>
+                    <template v-if="cfg.bgMusicEnabled">
+                      <div style="margin-bottom:14px">
+                        <div style="font-size:12px;color:#909399;margin-bottom:6px">音乐音量</div>
+                        <div class="volume-control">
+                          <el-icon :size="14"><Mute></Mute></el-icon>
+                          <el-slider v-model="cfg.bgMusicVolume" :min="0" :max="100" :step="1" class="volume-slider" size="small" @change="saveSettings"></el-slider>
+                          <el-icon :size="14"><Bell></Bell></el-icon>
+                          <span class="volume-value" style="font-size:13px">{{cfg.bgMusicVolume}}%</span>
+                        </div>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                        <el-switch v-model="cfg.bgMusicLoop" @change="saveSettings" size="small"></el-switch>
+                        <span style="font-size:13px;color:#606266">循环播放</span>
+                        <span style="font-size:12px;color:#909399;margin-left:auto">{{cfg.bgMusicLoop?'单曲循环':'顺序播放'}}</span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:10px">
+                        <el-switch v-model="cfg.bgMusicShuffle" @change="saveSettings" size="small"></el-switch>
+                        <span style="font-size:13px;color:#606266">随机播放</span>
+                        <span style="font-size:12px;color:#909399;margin-left:auto">{{cfg.bgMusicShuffle?'随机':'顺序'}}</span>
+                      </div>
+                    </template>
+                    <div v-else style="font-size:12px;color:#c0c4cc;text-align:center;padding:4px 0">启用后可配置音量、循环等选项</div>
+                  </div>
+                </el-popover>
+                <!-- 上传按钮 -->
+                <el-button type="primary" :icon="UploadFilled" size="small" @click="triggerBgmUpload" title="上传音乐">上传</el-button>
+                <!-- 添加在线资源 -->
+                <el-button :icon="Link" size="small" @click="openAddOnlineBgm" title="添加在线资源">在线</el-button>
+                <!-- 清空按钮 -->
+                <el-button :icon="Delete" size="small" type="danger" plain @click="clearAllBgmMusic" :disabled="!bgMusicList.length" title="清空全部"></el-button>
+              </div>
+            </template>
             <el-table :data="bgMusicList" empty-text="暂无背景音乐" style="width:100%">
               <el-table-column label="#" width="60">
                 <template #default="{$index}">
@@ -553,7 +548,7 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
                 </template>
               </el-table-column>
               <el-table-column label="大小" width="120" align="right">
-                <template #default="{row}"><span class="file-size">{{fmtSize(row.fileSize)}}</span></template>
+                <template #default="{row}"><span class="file-size">{{row.fileSize?fmtSize(row.fileSize):'--'}}</span></template>
               </el-table-column>
               <el-table-column label="操作" width="100" align="center">
                 <template #default="{row}">
@@ -564,6 +559,29 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
               </el-table-column>
             </el-table>
           </el-card>
+
+          <!-- 隐藏的文件上传 input -->
+          <input type="file" ref="bgmFileInput" accept=".mp3,.wav,.ogg,.flac,.aac,.m4a" multiple style="display:none" @change="onBgmFileSelected">
+
+          <!-- 添加在线资源对话框 -->
+          <el-dialog v-model="onlineBgmDialog" title="添加在线资源" width="520px" @close="resetOnlineBgmForm" destroy-on-close>
+            <el-form :model="onlineBgmForm" label-position="top">
+              <el-form-item label="资源地址" required>
+                <el-input v-model="onlineBgmForm.url" placeholder="请输入音频文件直链地址" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="标题（可选）">
+                <el-input v-model="onlineBgmForm.title" placeholder="留空则自动从 URL 提取" clearable></el-input>
+              </el-form-item>
+              <div style="font-size:12px;color:#909399;background:#f0f2f5;border-radius:8px;padding:10px 14px;line-height:1.6">
+                <el-icon :size="14" style="vertical-align:middle;margin-right:4px"><InfoFilled></InfoFilled></el-icon>
+                支持格式：MP3, WAV, OGG, FLAC, AAC, M4A<br>支持 HTTP/HTTPS 直链地址，需可直接访问音频文件
+              </div>
+            </el-form>
+            <template #footer>
+              <el-button @click="onlineBgmDialog=false">取消</el-button>
+              <el-button type="primary" :loading="onlineBgmSaving" @click="saveOnlineBgm">添加</el-button>
+            </template>
+          </el-dialog>
         </div>
 
         <!-- ====== 媒体库视图 ====== -->
@@ -1697,33 +1715,73 @@ const app = createApp({
     // ========== 背景音乐 ==========
     const bgmLoading = ref(false);
     const bgmUploading = ref(false);
-    const bgmUploadFiles = ref([]);
-    const bgmUploadUrl = API + '/api/bgmusic/upload';
     const bgMusicList = ref([]);
     const bgmDragIdx = ref(null);
+    const bgmFileInput = ref(null);
 
-    const onBgmFileChange = (file, files) => { bgmUploadFiles.value = files; };
-    const onBgmFileRemove = (file, files) => { bgmUploadFiles.value = files; };
+    // 隐藏 input 触发文件选择
+    const triggerBgmUpload = () => {
+      if (bgmFileInput.value) bgmFileInput.value.click();
+    };
 
-    const doBgmUpload = async () => {
-      if (!bgmUploadFiles.value.length) return;
+    const onBgmFileSelected = async (e) => {
+      const files = e.target.files;
+      if (!files || !files.length) return;
       bgmUploading.value = true;
       let ok = 0, fail = 0;
-      for (const f of bgmUploadFiles.value) {
+      for (const file of files) {
         try {
           const fd = new FormData();
-          fd.append('file', f.raw);
+          fd.append('file', file);
           const token = getAuthToken();
           const headers = {};
           if (token) headers['Authorization'] = 'Bearer ' + token;
           const r = await fetch(API + '/api/bgmusic/upload', { method: 'POST', body: fd, headers });
           if (r.ok) ok++; else fail++;
-        } catch (e) { fail++; }
+        } catch (err) { fail++; }
       }
       bgmUploading.value = false;
-      if (fail === 0) { ElementPlus.ElMessage.success(ok + ' 个音乐上传成功'); bgmUploadFiles.value = []; }
+      if (fail === 0) ElementPlus.ElMessage.success(ok + ' 个音乐上传成功');
       else ElementPlus.ElMessage.warning(ok + ' 个上传成功，' + fail + ' 个上传失败');
+      // 重置 input 以便可以再次选择相同文件
+      e.target.value = '';
       loadBgmList();
+    };
+
+    // 在线资源
+    const onlineBgmDialog = ref(false);
+    const onlineBgmSaving = ref(false);
+    const onlineBgmForm = reactive({ url: '', title: '' });
+
+    const openAddOnlineBgm = () => {
+      onlineBgmForm.url = '';
+      onlineBgmForm.title = '';
+      onlineBgmDialog.value = true;
+    };
+
+    const resetOnlineBgmForm = () => {
+      onlineBgmForm.url = '';
+      onlineBgmForm.title = '';
+    };
+
+    const saveOnlineBgm = async () => {
+      if (!onlineBgmForm.url) { ElementPlus.ElMessage.warning('请输入资源地址'); return; }
+      onlineBgmSaving.value = true;
+      try {
+        const title = onlineBgmForm.title || onlineBgmForm.url.split('/').pop().split('?')[0] || '在线音乐';
+        await apiPost('/api/playlist', {
+          title: title,
+          url: onlineBgmForm.url,
+          type: 'VIDEO',
+          duration: 'auto',
+          enabled: true
+        });
+        ElementPlus.ElMessage.success('在线资源已添加到播放列表');
+        onlineBgmDialog.value = false;
+      } catch (e) {
+        ElementPlus.ElMessage.error('添加失败: ' + (e.message || ''));
+      }
+      onlineBgmSaving.value = false;
     };
 
     const loadBgmList = async () => {
@@ -1828,9 +1886,12 @@ const app = createApp({
       // Playback controls
       playbackState, playbackControl, setVolume,
       // Background music
-      bgmLoading, bgmUploading, bgmUploadFiles, bgmUploadUrl, bgMusicList,
-      onBgmFileChange, onBgmFileRemove, doBgmUpload, loadBgmList,
+      bgmLoading, bgmUploading, bgMusicList, bgmFileInput,
+      triggerBgmUpload, onBgmFileSelected, loadBgmList,
       confirmDeleteBgm, clearAllBgmMusic, bgmDragStart, bgmDrop,
+      // Online bgm
+      onlineBgmDialog, onlineBgmSaving, onlineBgmForm,
+      openAddOnlineBgm, resetOnlineBgmForm, saveOnlineBgm,
       // Icons
       Lock: ElementPlusIconsVue.Lock,
       SwitchButton: ElementPlusIconsVue.SwitchButton,
@@ -1863,7 +1924,9 @@ const app = createApp({
       Timer: ElementPlusIconsVue.Timer,
       Collection: ElementPlusIconsVue.Collection,
       Calendar: ElementPlusIconsVue.Calendar,
-      Headset: ElementPlusIconsVue.Headset
+      Headset: ElementPlusIconsVue.Headset,
+      Link: ElementPlusIconsVue.Link,
+      InfoFilled: ElementPlusIconsVue.InfoFilled
     };
   }
 });
