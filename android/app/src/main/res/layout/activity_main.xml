@@ -1,7 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ScreenPulse TV Player - 主 Activity 布局 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/fragment_container"
+    android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black" />
+    android:background="@android:color/black">
+
+    <!-- ExoPlayer video surface -->
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/playerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false"
+        android:visibility="gone" />
+
+    <!-- Image display (for photo slides) -->
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/app_name"
+        android:visibility="gone" />
+
+    <!-- WebView for PPT/PDF rendering -->
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Loading progress indicator -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+    <!-- QR Code splash screen (shown when no playlist is configured) -->
+    <LinearLayout
+        android:id="@+id/qrSplash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="48dp"
+        android:visibility="gone">
+
+        <!-- App title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/app_name"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="32sp" />
+
+        <!-- QR Code image -->
+        <ImageView
+            android:id="@+id/qrImageView"
+            android:layout_width="280dp"
+            android:layout_height="280dp"
+            android:layout_marginBottom="24dp"
+            android:background="@android:color/white"
+            android:contentDescription="@string/scan_qr"
+            android:padding="8dp"
+            android:scaleType="fitCenter" />
+
+        <!-- Management URL text -->
+        <TextView
+            android:id="@+id/qrUrlText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="monospace"
+            android:textColor="@color/colorAccent"
+            android:textSize="18sp" />
+
+        <!-- Instructions text -->
+        <TextView
+            android:id="@+id/qrInstructionsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:text="@string/qr_instructions"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="16sp" />
+
+        <!-- Device info / waiting indicator -->
+        <ProgressBar
+            android:id="@+id/qrProgressBar"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/colorAccent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/no_playlist"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

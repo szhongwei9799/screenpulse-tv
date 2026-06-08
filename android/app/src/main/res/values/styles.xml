@@ -1,77 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ScreenPulse TV Player - 样式资源 -->
 <resources>
-
-    <!-- 标题文字样式 -->
-    <style name="ScreenPulseTitle">
-        <item name="android:textSize">36sp</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textStyle">bold</item>
+    <style name="AppTheme" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
     </style>
 
-    <!-- 副标题文字样式 -->
-    <style name="ScreenPulseSubtitle">
-        <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/text_secondary</item>
-        <item name="android:fontFamily">sans-serif</item>
-    </style>
-
-    <!-- 正文文字样式 -->
-    <style name="ScreenPulseBody">
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:fontFamily">sans-serif</item>
-    </style>
-
-    <!-- 提示文字样式 -->
-    <style name="ScreenPulseHint">
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@color/text_hint</item>
-        <item name="android:fontFamily">sans-serif</item>
-    </style>
-
-    <!-- 卡片样式 -->
-    <style name="ScreenPulseCard">
-        <item name="android:background">@color/background_card</item>
-        <item name="android:padding">24dp</item>
-    </style>
-
-    <!-- 按钮样式 -->
-    <style name="ScreenPulseButton">
-        <item name="android:backgroundTint">@color/primary</item>
-        <item name="android:textColor">@android:color/black</item>
-        <item name="android:textSize">16sp</item>
-        <item name="android:textAllCaps">false</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:paddingStart">32dp</item>
-        <item name="android:paddingEnd">32dp</item>
-        <item name="android:paddingTop">12dp</item>
-        <item name="android:paddingBottom">12dp</item>
-        <item name="android:minHeight">48dp</item>
-        <item name="android:focusable">true</item>
-        <item name="android:focusableInTouchMode">true</item>
-    </style>
-
-    <!-- 次要按钮样式 -->
-    <style name="ScreenPulseButtonSecondary" parent="ScreenPulseButton">
-        <item name="android:backgroundTint">@android:color/transparent</item>
-        <item name="android:textColor">@color/text_secondary</item>
-    </style>
-
-    <!-- Leanback 行标题样式 -->
-    <style name="LeanbackRowTitle">
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">@color/text_secondary</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:maxLines">2</item>
-        <item name="android:ellipsize">end</item>
-    </style>
-
-    <!-- Leanback 卡片内容样式 -->
-    <style name="LeanbackCardContent">
-        <item name="android:textSize">12sp</item>
-        <item name="android:textColor">@color/text_hint</item>
-        <item name="android:fontFamily">sans-serif</item>
+    <style name="AppTheme.Fullscreen" parent="AppTheme">
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
     </style>
 </resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Internal storage files directory (uploads) -->
+    <files-path name="uploads" path="screenpulse_uploads/" />
+
+    <!-- External storage (media files on SD card / shared storage) -->
+    <external-path name="external_media" path="." />
+
+    <!-- External files directory -->
+    <external-files-path name="external_files" path="." />
+
+    <!-- Cache directory -->
+    <cache-path name="cache" path="." />
+</paths>
