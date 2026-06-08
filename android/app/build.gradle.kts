@@ -98,7 +98,8 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     // ============ Android TV Leanback ============
-    implementation("androidx.leanback:leanback:1.0.0")
+    implementation("androidx.leanback:leanback:1.2.0-alpha02")
+    implementation("androidx.leanback:leanback-preference:1.2.0-alpha02")
     implementation("androidx.tvprovider:tvprovider:1.1.0")
 
     // ============ ExoPlayer (Media3) ============
