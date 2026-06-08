@@ -17,6 +17,11 @@
         <!-- 背景色 -->
         <item name="android:windowBackground">@color/background_dark</item>
 
+        <!-- Leanback 主题覆盖 -->
+        <item name="browseTitleTextColor">@color/leanback_browse_title</item>
+        <item name="browseRowsBackgroundColor">@color/leanback_background</item>
+        <item name="searchAffordanceColor">@color/primary</item>
+
         <!-- 状态栏颜色（用于 WorkManager 通知等场景） -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>

@@ -11,12 +11,12 @@ plugins {
 
 android {
     namespace = "com.screenpulse.tv"
-    compileSdk = 34
+    compileSdk = 33
 
     defaultConfig {
         applicationId = "com.screenpulse.tv"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 33
         versionCode = 9
         versionName = "1.2.0"
 
@@ -90,7 +90,7 @@ android {
 
 dependencies {
     // ============ Android 核心库 ============
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
@@ -98,8 +98,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     // ============ Android TV Leanback ============
-    implementation("androidx.leanback:leanback:1.2.0-alpha02")
-    implementation("androidx.leanback:leanback-preference:1.2.0-alpha02")
+    implementation("androidx.leanback:leanback:1.0.0")
     implementation("androidx.tvprovider:tvprovider:1.1.0")
 
     // ============ ExoPlayer (Media3) ============
@@ -110,9 +109,9 @@ dependencies {
     implementation("androidx.media3:media3-common:1.2.1")
 
     // ============ Room 数据库 ============
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.5.2")
+    implementation("androidx.room:room-ktx:2.5.2")
+    ksp("androidx.room:room-compiler:2.5.2")
 
     // ============ NanoHTTPD 嵌入式 Web 服务器 ============
     implementation("org.nanohttpd:nanohttpd:2.3.1")
