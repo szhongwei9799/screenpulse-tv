@@ -56,18 +56,18 @@ class ScheduleManager(private val context: Context) {
      * @return 任务 ID
      */
     fun addSchedule(entity: ScheduleEntity): Long {
-         val id = scheduleScope.launch {
-             database.scheduleDao().insert(entity)
-         }.join()
+        val id = kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+            database.scheduleDao().insert(entity)
+        }
 
-         if (id > 0) {
-             // 注册定时器
-             registerAlarm(id, entity)
-             Log.d(TAG, "定时任务已添加: id=$id, name=${entity.name}")
-         }
+        if (id > 0) {
+            // 注册定时器
+            registerAlarm(id, entity)
+            Log.d(TAG, "定时任务已添加: id=$id, name=${entity.name}")
+        }
 
-         return id
-     }
+        return id
+    }
 
     /**
      * 删除定时任务

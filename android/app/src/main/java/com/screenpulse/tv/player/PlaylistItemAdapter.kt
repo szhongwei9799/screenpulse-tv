@@ -33,8 +33,8 @@ class PlaylistItemAdapter : Presenter() {
         val titleText: TextView = view.findViewById(android.R.id.text1)
         val subtitleText: TextView = view.findViewById(android.R.id.text2)
         val thumbnail: ImageView = view.findViewById(android.R.id.icon)
-        val typeBadge: TextView = view.findViewById(R.id.item_type_badge)
-        val durationText: TextView = view.findViewById(R.id.item_duration)
+        var typeBadge: TextView? = null
+        var durationText: TextView? = null
     }
 
     /** 创建播放列表项视图 */
@@ -93,7 +93,7 @@ class PlaylistItemAdapter : Presenter() {
 
         // 类型标签
         val typeBadge = TextView(context).apply {
-            id = R.id.item_type_badge
+            id = View.generateViewId()
             textSize = 12f
             setTextColor(Color.WHITE)
             setPadding(dpToPx(context, 8), dpToPx(context, 4), dpToPx(context, 8), dpToPx(context, 4))
@@ -102,7 +102,7 @@ class PlaylistItemAdapter : Presenter() {
 
         // 时长
         val durationText = TextView(context).apply {
-            id = R.id.item_duration
+            id = View.generateViewId()
             textSize = 14f
             setTextColor(Color.LTGRAY)
         }
@@ -122,7 +122,10 @@ class PlaylistItemAdapter : Presenter() {
         cardView.addView(thumbnail)
         cardView.addView(infoContainer)
 
-        return ViewHolder(cardView)
+        return ViewHolder(cardView).apply {
+            this.typeBadge = typeBadge
+            this.durationText = durationText
+        }
     }
 
     /** 绑定数据到视图 */
@@ -147,11 +150,11 @@ class PlaylistItemAdapter : Presenter() {
             MediaType.WEBPAGE -> "网页" to R.color.badge_webpage
             else -> "未知" to R.color.badge_video
         }
-        vh.typeBadge.text = typeLabel
-        vh.typeBadge.setBackgroundColor(ContextCompat.getColor(context, badgeColorRes))
+        vh.typeBadge?.text = typeLabel
+        vh.typeBadge?.setBackgroundColor(ContextCompat.getColor(context, badgeColorRes))
 
         // 设置时长
-        vh.durationText.text = formatDuration(playlistItem.duration)
+        vh.durationText?.text = formatDuration(playlistItem.duration)
 
         // 设置缩略图
         loadThumbnail(vh.thumbnail, playlistItem)

@@ -168,7 +168,7 @@ class TtsEngine(private val context: Context) {
 
                 override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                     // Binary messages contain audio data with a 2-byte length prefix header
-                    if (bytes.size() > 2) {
+                    if (bytes.size > 2) {
                         val audioBytes = bytes.substring(2).toByteArray()
                         audioChunks.add(audioBytes)
                         Log.d(TAG, "Received audio chunk: ${audioBytes.size} bytes")

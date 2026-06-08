@@ -19,26 +19,24 @@ import java.io.File
  */
 object FileScanner {
 
-    companion object {
-        private const val TAG = "FileScanner"
+    private const val TAG = "FileScanner"
 
-        /** 支持的视频文件扩展名 */
-        private val VIDEO_EXTENSIONS = setOf(
-            "mp4", "mkv", "avi", "mov", "wmv", "flv", "3gp",
-            "ts", "m3u8", "webm", "mpg", "mpeg", "m4v", "vob"
-        )
+    /** 支持的视频文件扩展名 */
+    private val VIDEO_EXTENSIONS = setOf(
+        "mp4", "mkv", "avi", "mov", "wmv", "flv", "3gp",
+        "ts", "m3u8", "webm", "mpg", "mpeg", "m4v", "vob"
+    )
 
-        /** 支持的图片文件扩展名 */
-        private val IMAGE_EXTENSIONS = setOf(
-            "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"
-        )
+    /** 支持的图片文件扩展名 */
+    private val IMAGE_EXTENSIONS = setOf(
+        "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"
+    )
 
-        /** 扫描的根目录 */
-        private val SCAN_DIRECTORIES = arrayOf(
-            "Movies", "DCIM", "Pictures", "Download",
-            "Video", "Videos", "screenpulse_media"
-        )
-    }
+    /** 扫描的根目录 */
+    private val SCAN_DIRECTORIES = arrayOf(
+        "Movies", "DCIM", "Pictures", "Download",
+        "Video", "Videos", "screenpulse_media"
+    )
 
     /**
      * 扫描设备存储中的所有媒体文件

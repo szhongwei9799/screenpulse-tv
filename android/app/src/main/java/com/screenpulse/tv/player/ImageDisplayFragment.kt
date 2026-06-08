@@ -103,7 +103,7 @@ class ImageDisplayFragment : Fragment() {
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .placeholder(R.drawable.bg_gradient)
             .error(R.drawable.bg_gradient)
-            .transition(com.bumptech.glide.request.transition.DrawableTransitionOptions.withCrossFade())
+            .transition(DrawableTransitionOptions.withCrossFade())
             .into(imgView)
 
         // 根据转场类型应用不同的进入动画

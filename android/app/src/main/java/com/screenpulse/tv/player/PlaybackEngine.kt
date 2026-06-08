@@ -98,6 +98,9 @@ class PlaybackEngine(private val context: Context) {
     var currentIndex: Int = 0
         private set
 
+    /** 获取当前播放项（供 ViewModel 访问） */
+    fun getCurrentItem(): PlaylistEntity? = currentMediaItem
+
     /** 是否被定时任务中断 */
     @Volatile
     private var isInterruptedBySchedule: Boolean = false
