@@ -19,6 +19,11 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
+import android.view.animation.TranslateAnimation
+import android.view.animation.ScaleAnimation
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.viewModels
@@ -34,7 +39,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.screenpulse.player.data.entity.MediaType
 import com.screenpulse.player.data.entity.PlaylistConfig
+import com.screenpulse.player.player.BackgroundMusicPlayer
 import com.screenpulse.player.player.PlaylistManager
+import com.screenpulse.player.player.PresentationRenderer
 import com.screenpulse.player.qrcode.QRCodeGenerator
 import com.screenpulse.player.server.WebServer
 import com.screenpulse.player.util.NetworkUtil
@@ -82,6 +89,14 @@ class MainActivity : AppCompatActivity() {
 
     // ── Image display timer ──────────────────────────────────────────────
     private var imageDisplayJob: Job? = null
+    private var presentationSlides: List<PresentationRenderer.SlideResult> = emptyList()
+    private var currentSlideIndex: Int = 0
+
+    // ── Background music ──────────────────────────────────────────────
+    private var bgMusicPlayer: BackgroundMusicPlayer? = null
+    private var bgMusicEnabled = false
+    private var transitionEnabled = true
+    private val transitionTypes = listOf("fade", "slide_left", "slide_right", "slide_up", "zoom_in", "zoom_out")
 
     // ── Network receiver ─────────────────────────────────────────────────
     private var networkReceiver: android.content.BroadcastReceiver? = null
@@ -212,8 +227,6 @@ class MainActivity : AppCompatActivity() {
                 start()
                 Log.d(TAG, "Web server started on port $WEB_SERVER_PORT")
             }
-            // Generate and display QR code
-            displayQrSplash()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start web server", e)
         }
@@ -257,18 +270,21 @@ class MainActivity : AppCompatActivity() {
     private fun observePlaylist() {
         val dao = (application as ScreenPulseApp).database.mediaItemDao()
         val configDao = (application as ScreenPulseApp).database.playlistConfigDao()
+        val groupDao = (application as ScreenPulseApp).database.mediaGroupDao()
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    dao.getEnabledItems().collect { items ->
-                        if (items.isEmpty()) {
+                    dao.getPlaylistGroupItems().collect { playlistEntries ->
+                        if (playlistEntries.isEmpty()) {
                             showQrSplash()
                             playlistManager?.stop()
                             playlistManager = null
                         } else {
                             hideQrSplash()
-                            updatePlaylistManager(items)
+                            // Expand group entries to their member media items
+                            val expandedItems = expandPlaylistGroups(playlistEntries, groupDao, dao)
+                            updatePlaylistManager(expandedItems)
                         }
                     }
                 }
@@ -282,9 +298,43 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Expands playlist group entries into their constituent media items.
+     * Each group entry is expanded to the media items belonging to that group,
+     * preserving the group's sortOrder as the playlist position.
+     */
+    private suspend fun expandPlaylistGroups(
+        playlistEntries: List<com.screenpulse.player.data.entity.MediaItem>,
+        groupDao: com.screenpulse.player.data.dao.MediaGroupDao,
+        mediaItemDao: com.screenpulse.player.data.dao.MediaItemDao
+    ): List<com.screenpulse.player.data.entity.MediaItem> {
+        val expanded = mutableListOf<com.screenpulse.player.data.entity.MediaItem>()
+        for (entry in playlistEntries) {
+            if (entry.groupId > 0) {
+                try {
+                    val mediaIds = groupDao.getMediaIdsInGroup(entry.groupId)
+                    if (mediaIds.isNotEmpty()) {
+                        val groupItems = mediaItemDao.getItemsByIds(mediaIds)
+                        expanded.addAll(groupItems)
+                    } else {
+                        Log.w(TAG, "Group ${entry.groupId} has no media items, skipping")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to expand group ${entry.groupId}", e)
+                }
+            } else {
+                // Fallback: treat as direct media item (shouldn't happen normally)
+                expanded.add(entry)
+            }
+        }
+        Log.d(TAG, "Expanded playlist: ${playlistEntries.size} groups -> ${expanded.size} media items")
+        return expanded
+    }
+
     private fun updatePlaylistManager(items: List<com.screenpulse.player.data.entity.MediaItem>) {
         if (playlistManager == null) {
             playlistManager = PlaylistManager(items.toMutableList())
+            WebServer.setPlaylistManager(playlistManager!!)
             playCurrentItem()
         } else {
             val changed = playlistManager!!.updateItems(items)
@@ -304,6 +354,43 @@ class MainActivity : AppCompatActivity() {
             startHour = config.interstitialStartHour,
             endHour = config.interstitialEndHour
         )
+        // Background music settings
+        bgMusicEnabled = config.bgMusicEnabled
+        transitionEnabled = config.transitionEnabled
+        updateBackgroundMusic(config)
+    }
+
+    private fun updateBackgroundMusic(config: PlaylistConfig) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val bgMusicDao = (application as ScreenPulseApp).database.backgroundMusicDao()
+                val ttsDao = (application as ScreenPulseApp).database.ttsAudioDao()
+                val bgFiles = bgMusicDao.getAll().map { it.filePath }.toMutableList()
+                val ttsFiles = ttsDao.getEnabled().map { it.filePath }
+                bgFiles.addAll(ttsFiles)
+
+                withContext(Dispatchers.Main) {
+                    if (bgMusicEnabled && bgFiles.isNotEmpty()) {
+                        if (bgMusicPlayer == null) {
+                            bgMusicPlayer = BackgroundMusicPlayer(this@MainActivity)
+                        }
+                        bgMusicPlayer?.setVolume(config.bgMusicVolume)
+                        bgMusicPlayer?.setPlaylist(bgFiles, config.bgMusicShuffle, config.bgMusicLoop)
+                        // Mute video audio when bg music is playing
+                        exoPlayer?.volume = 0f
+                        bgMusicPlayer?.play()
+                        Log.d(TAG, "Background music started with ${bgFiles.size} tracks")
+                    } else {
+                        bgMusicPlayer?.stop()
+                        // Restore video volume
+                        exoPlayer?.volume = currentVolume / 100f
+                        Log.d(TAG, "Background music stopped")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update background music", e)
+            }
+        }
     }
 
     // =====================================================================
@@ -316,6 +403,16 @@ class MainActivity : AppCompatActivity() {
         stopAllPlayback()
 
         Log.d(TAG, "Playing item: ${item.title} (${item.type}) URL: ${item.url}")
+
+        // Apply random transition animation
+        val contentView = when (item.type) {
+            MediaType.VIDEO, MediaType.IPTV, MediaType.STREAM -> playerView
+            MediaType.IMAGE -> imageView
+            MediaType.PPT -> imageView // Use ImageView for rendered PPT slides
+        }
+        if (transitionEnabled) {
+            applyRandomTransition(contentView)
+        }
 
         when (item.type) {
             MediaType.VIDEO, MediaType.IPTV, MediaType.STREAM -> {
@@ -348,18 +445,16 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val bitmap = withContext(Dispatchers.IO) {
-                    val url = if (item.url.startsWith("http", ignoreCase = true) || item.url.startsWith("content://")) {
-                        item.url
-                    } else if (item.url.startsWith("/")) {
-                        "file://$item.url"
-                    } else {
-                        "file://${android.os.Environment.getExternalStorageDirectory()}/${item.url}"
-                    }
-                    BitmapFactory.decodeStream(
-                        android.net.Uri.parse(url).let { uri ->
-                            contentResolver.openInputStream(uri)
+                    val path = item.url
+                    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("content://")) {
+                        // Remote or content URI: use ContentResolver
+                        contentResolver.openInputStream(Uri.parse(path))?.use { input ->
+                            BitmapFactory.decodeStream(input)
                         }
-                    )
+                    } else {
+                        // Local file path: use decodeFile directly (more reliable)
+                        BitmapFactory.decodeFile(path)
+                    }
                 }
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap)
@@ -390,30 +485,60 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun displayPresentation(item: com.screenpulse.player.data.entity.MediaItem) {
-        showWebView()
+        showImageView()
 
-        val url = if (item.url.startsWith("http", ignoreCase = true)) {
-            item.url
-        } else {
-            "file://${android.os.Environment.getExternalStorageDirectory()}/${item.url}"
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+
+        lifecycleScope.launch {
+            val slides = withContext(Dispatchers.IO) {
+                val renderer = PresentationRenderer()
+                renderer.render(item.url, screenWidth, screenHeight)
+            }
+
+            if (slides.isEmpty()) {
+                Log.e(TAG, "No slides rendered for: ${item.url}")
+                onCurrentItemFinished()
+                return@launch
+            }
+
+            Log.d(TAG, "Rendered ${slides.size} slides from: ${item.url}")
+            presentationSlides = slides
+            currentSlideIndex = 0
+            showSlide(item.durationSeconds)
+        }
+    }
+
+    /**
+     * Display the current PPT slide and schedule the next one.
+     */
+    private fun showSlide(durationSeconds: Int) {
+        if (currentSlideIndex >= presentationSlides.size) {
+            // All slides shown, move to next playlist item
+            onCurrentItemFinished()
+            return
         }
 
-        webView.loadUrl(url)
+        val slide = presentationSlides[currentSlideIndex]
+        imageView.setImageBitmap(slide.bitmap)
 
-        // If PPT has a custom duration, auto-advance after that time
-        if (item.durationSeconds > 0) {
-            imageDisplayJob?.cancel()
-            imageDisplayJob = lifecycleScope.launch {
-                delay(item.durationSeconds * 1000L)
-                onCurrentItemFinished()
-            }
+        if (transitionEnabled) {
+            applyRandomTransition(imageView)
+        }
+
+        imageDisplayJob?.cancel()
+        val slideDurationMs = if (durationSeconds > 0 && presentationSlides.size == 1) {
+            durationSeconds * 1000L
         } else {
-            // Default PPT duration: 60 seconds
-            imageDisplayJob?.cancel()
-            imageDisplayJob = lifecycleScope.launch {
-                delay(60_000L)
-                onCurrentItemFinished()
-            }
+            slide.durationMs
+        }
+
+        imageDisplayJob = lifecycleScope.launch {
+            delay(slideDurationMs)
+            currentSlideIndex++
+            showSlide(durationSeconds)
         }
     }
 
@@ -441,6 +566,23 @@ class MainActivity : AppCompatActivity() {
     // =====================================================================
     //  View switching
     // =====================================================================
+
+    private fun applyRandomTransition(view: View) {
+        val type = transitionTypes.random()
+        val duration = 500L
+        val anim: Animation = when (type) {
+            "fade" -> AlphaAnimation(0f, 1f).apply { this.duration = duration }
+            "slide_left" -> TranslateAnimation(-view.width.toFloat(), 0f, 0f, 0f).apply { this.duration = duration }
+            "slide_right" -> TranslateAnimation(view.width.toFloat(), 0f, 0f, 0f).apply { this.duration = duration }
+            "slide_up" -> TranslateAnimation(0f, 0f, -view.height.toFloat(), 0f).apply { this.duration = duration }
+            "zoom_in" -> ScaleAnimation(0.5f, 1f, 0.5f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f).apply { this.duration = duration }
+            "zoom_out" -> ScaleAnimation(1.5f, 1f, 1.5f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f).apply { this.duration = duration }
+            else -> AlphaAnimation(0f, 1f).apply { this.duration = duration }
+        }
+        anim.fillAfter = true
+        view.startAnimation(anim)
+        Log.d(TAG, "Applied transition: $type")
+    }
 
     private fun showPlayerView() {
         playerView.visibility = View.VISIBLE
@@ -502,10 +644,13 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         imageDisplayJob?.cancel()
+        bgMusicPlayer?.release()
+        bgMusicPlayer = null
         exoPlayer?.release()
         exoPlayer = null
         webServer?.stop()
         webServer = null
+        WebServer.setPlaylistManager(null)
         playlistManager = null
         try {
             networkReceiver?.let { unregisterReceiver(it) }

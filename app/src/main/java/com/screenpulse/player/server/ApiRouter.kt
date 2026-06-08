@@ -7,15 +7,24 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.screenpulse.player.data.AppDatabase
+import com.screenpulse.player.data.entity.BackgroundMusic
+import com.screenpulse.player.data.entity.MediaGroup
+import com.screenpulse.player.data.entity.MediaGroupItem
 import com.screenpulse.player.data.entity.MediaItem
 import com.screenpulse.player.data.entity.MediaType
+import com.screenpulse.player.BuildConfig
 import com.screenpulse.player.data.entity.PlaylistConfig
 import com.screenpulse.player.data.entity.PlaybackMode
+
 import com.screenpulse.player.util.NetworkUtil
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
 /**
  * Handles REST API routing logic for the embedded web server.
@@ -30,6 +39,7 @@ class ApiRouter(
 
     companion object {
         private const val TAG = "ApiRouter"
+        private val activeTokens = mutableSetOf<String>()
     }
 
     private val gson: Gson = GsonBuilder()
@@ -38,6 +48,104 @@ class ApiRouter(
 
     private val mediaItemDao = database.mediaItemDao()
     private val configDao = database.playlistConfigDao()
+    private val bgMusicDao = database.backgroundMusicDao()
+    private val mediaGroupDao = database.mediaGroupDao()
+
+    // Password stored in a hidden file in the app's internal storage
+    private val passwordFile = File(context.filesDir, ".admin_password")
+
+    private fun getStoredPassword(): String {
+        return if (passwordFile.exists()) {
+            try { passwordFile.readText().trim() } catch (_: Exception) { "admin" }
+        } else {
+            "admin"
+        }
+    }
+
+    private fun setStoredPassword(pwd: String) {
+        try {
+            passwordFile.writeText(pwd)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to write password file", e)
+        }
+    }
+
+    /**
+     * Check if the request has a valid auth token.
+     * Tokens are checked from Authorization header or cookie.
+     * If no tokens exist at all (fresh start), allows through.
+     */
+    fun isAuthenticated(session: NanoHTTPD.IHTTPSession): Boolean {
+        // If no tokens have ever been issued, allow all requests
+        // (this handles the first-time setup where no password has been set)
+        synchronized(activeTokens) {
+            if (activeTokens.isEmpty()) return true
+        }
+        val authHeader = session.headers["authorization"]
+        val token = authHeader?.removePrefix("Bearer ")?.trim() ?: ""
+        return synchronized(activeTokens) { activeTokens.contains(token) }
+    }
+
+    // =====================================================================
+    //  POST /api/auth/login
+    // =====================================================================
+
+    fun login(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val password = body.get("password")?.asString ?: ""
+
+                val storedPassword = getStoredPassword()
+
+                if (password == storedPassword) {
+                    val token = UUID.randomUUID().toString()
+                    synchronized(activeTokens) { activeTokens.add(token) }
+                    Log.d(TAG, "Login successful, token issued")
+                    val result = JsonObject().apply {
+                        addProperty("success", true)
+                        addProperty("token", token)
+                    }
+                    jsonResponse(result)
+                } else {
+                    jsonResponseError("密码错误", NanoHTTPD.Response.Status.UNAUTHORIZED)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Login failed", e)
+                jsonResponseError("登录失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  POST /api/auth/password
+    // =====================================================================
+
+    fun changePassword(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val oldPassword = body.get("oldPassword")?.asString ?: ""
+                val newPassword = body.get("newPassword")?.asString ?: ""
+
+                val storedPassword = getStoredPassword()
+
+                if (oldPassword != storedPassword) {
+                    return@runBlocking jsonResponseError("原密码错误", NanoHTTPD.Response.Status.BAD_REQUEST)
+                }
+                if (newPassword.length < 4) {
+                    return@runBlocking jsonResponseError("新密码至少4位", NanoHTTPD.Response.Status.BAD_REQUEST)
+                }
+
+                setStoredPassword(newPassword)
+                Log.d(TAG, "Password changed successfully")
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                Log.e(TAG, "Change password failed", e)
+                jsonResponseError("修改密码失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
 
     // =====================================================================
     //  GET /api/status
@@ -46,21 +154,49 @@ class ApiRouter(
     fun getStatus(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         return runBlocking {
             val itemCount = mediaItemDao.getEnabledCount()
+            val totalCount = mediaItemDao.getTotalCount()
             val config = configDao.getConfigOnce() ?: PlaylistConfig()
             val ipAddress = NetworkUtil.getDeviceIpAddress(context) ?: "unknown"
-            val port = session.remoteIpAddress?.let { 8080 } ?: 8080
+
+            // Calculate uptime
+            val uptimeMs = System.currentTimeMillis() - android.os.Build.TIME
+            val uptimeSecs = uptimeMs / 1000
+            val hours = uptimeSecs / 3600
+            val minutes = (uptimeSecs % 3600) / 60
+            val uptimeStr = "${hours}h ${minutes}m"
+
+            // Calculate storage used
+            val uploadDirSize = uploadDir.listFiles()?.sumOf { it.length() } ?: 0
+            val storageUsedStr = if (uploadDirSize > 1073741824) {
+                String.format("%.1f GB", uploadDirSize / 1073741824.0)
+            } else if (uploadDirSize > 1048576) {
+                String.format("%.1f MB", uploadDirSize / 1048576.0)
+            } else {
+                uploadDirSize.toString() + " B"
+            }
+
+            // Get MAC address
+            val macAddress = try { NetworkUtil.getMacAddress(context) } catch (_: Exception) { null }
 
             val status = JsonObject().apply {
+                addProperty("online", true)
                 addProperty("deviceName", android.os.Build.MODEL)
+                addProperty("model", android.os.Build.MODEL)
+                addProperty("ip", ipAddress)
                 addProperty("ipAddress", ipAddress)
                 addProperty("port", 8080)
                 addProperty("managementUrl", "http://$ipAddress:8080")
+                addProperty("uptime", uptimeStr)
+                addProperty("mediaCount", totalCount)
                 addProperty("activeItems", itemCount)
+                addProperty("storageUsed", storageUsedStr)
                 addProperty("playbackMode", config.playbackMode.name)
                 addProperty("interstitialEnabled", config.interstitialEnabled)
                 addProperty("volumeLevel", config.volumeLevel)
+                addProperty("volume", config.volumeLevel)
                 addProperty("androidVersion", android.os.Build.VERSION.RELEASE)
-                addProperty("appVersion", "1.0.0")
+                addProperty("appVersion", BuildConfig.VERSION_NAME)
+                if (macAddress != null) addProperty("mac", macAddress)
             }
 
             jsonResponse(status)
@@ -71,9 +207,10 @@ class ApiRouter(
     //  GET /api/playlist
     // =====================================================================
 
+    // GET /api/playlist — Returns only group-type playlist entries
     fun getPlaylist(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         return runBlocking {
-            val items = mediaItemDao.getAllItemsOnce()
+            val items = mediaItemDao.getPlaylistGroupItemsOnce()
             val json = gson.toJson(items)
             NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json", json)
         }
@@ -93,6 +230,8 @@ class ApiRouter(
                 val durationSeconds = body.get("durationSeconds")?.asInt ?: 0
                 val enabled = body.get("enabled")?.asBoolean ?: true
                 val sortOrder = body.get("sortOrder")?.asInt ?: mediaItemDao.getTotalCount()
+                val sourceType = body.get("sourceType")?.asString ?: "group"
+                val groupId = body.get("groupId")?.asLong ?: 0
 
                 if (url.isBlank()) {
                     return@runBlocking jsonResponseError("URL is required", NanoHTTPD.Response.Status.BAD_REQUEST)
@@ -105,6 +244,8 @@ class ApiRouter(
                     durationSeconds = durationSeconds,
                     enabled = enabled,
                     sortOrder = sortOrder,
+                    sourceType = sourceType,
+                    groupId = groupId,
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis()
                 )
@@ -112,7 +253,7 @@ class ApiRouter(
                 val id = mediaItemDao.insert(mediaItem)
                 mediaItem.id = id
 
-                Log.d(TAG, "Added media item: $title (id=$id)")
+                Log.d(TAG, "Added playlist item: $title (id=$id, sourceType=$sourceType, groupId=$groupId)")
                 jsonResponse(gson.toJsonTree(mediaItem))
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to add playlist item", e)
@@ -143,6 +284,8 @@ class ApiRouter(
                     durationSeconds = body.get("durationSeconds")?.asInt ?: existing.durationSeconds,
                     enabled = body.get("enabled")?.asBoolean ?: existing.enabled,
                     sortOrder = body.get("sortOrder")?.asInt ?: existing.sortOrder,
+                    sourceType = body.get("sourceType")?.asString ?: existing.sourceType,
+                    groupId = body.get("groupId")?.asLong ?: existing.groupId,
                     updatedAt = System.currentTimeMillis()
                 )
 
@@ -169,13 +312,10 @@ class ApiRouter(
                 }
 
                 mediaItemDao.deleteById(id)
+                // NOTE: Do NOT delete physical files when removing from playlist.
+                // Media files are managed separately in the media library.
 
-                // Also delete the uploaded file if it's a local file
-                if (existing.url.startsWith(uploadDir.absolutePath)) {
-                    File(existing.url).delete()
-                }
-
-                Log.d(TAG, "Deleted media item: $id")
+                Log.d(TAG, "Deleted playlist item: $id")
                 val result = JsonObject().apply {
                     addProperty("success", true)
                     addProperty("deletedId", id)
@@ -204,9 +344,9 @@ class ApiRouter(
                 val updates = mutableMapOf<Long, Int>()
                 for (element in items) {
                     val item = element.asJsonObject
-                    val id = item.get("id")?.asLong ?: continue
+                    val itemId = item.get("id")?.asLong ?: continue
                     val sortOrder = item.get("sortOrder")?.asInt ?: continue
-                    updates[id] = sortOrder
+                    updates[itemId] = sortOrder
                 }
 
                 if (updates.isNotEmpty()) {
@@ -222,6 +362,32 @@ class ApiRouter(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to reorder playlist", e)
                 jsonResponseError("Failed to reorder: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  GET /api/config
+    // =====================================================================
+
+    fun getConfig(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val config = configDao.getConfigOnce() ?: PlaylistConfig()
+                val ipAddress = NetworkUtil.getDeviceIpAddress(context) ?: "unknown"
+                val netInfo = JsonObject().apply {
+                    addProperty("ip", ipAddress)
+                    addProperty("mac", NetworkUtil.getMacAddress(context) ?: "--")
+                }
+
+                val json = gson.toJson(config)
+                val result = JsonParser.parseString(json).asJsonObject
+                result.add("network", netInfo)
+
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get config", e)
+                jsonResponseError("Failed to get config: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }
@@ -244,7 +410,20 @@ class ApiRouter(
                     interstitialStartHour = body.get("interstitialStartHour")?.asInt ?: existingConfig.interstitialStartHour,
                     interstitialEndHour = body.get("interstitialEndHour")?.asInt ?: existingConfig.interstitialEndHour,
                     interstitialPlaylistName = body.get("interstitialPlaylistName")?.asString ?: existingConfig.interstitialPlaylistName,
-                    volumeLevel = body.get("volumeLevel")?.asInt ?: existingConfig.volumeLevel,
+                    volumeLevel = body.get("volumeLevel")?.asInt ?: body.get("volume")?.asInt ?: existingConfig.volumeLevel,
+                    repeatMode = body.get("repeatMode")?.asString ?: existingConfig.repeatMode,
+                    repeatCount = body.get("repeatCount")?.asInt ?: existingConfig.repeatCount,
+                    imageDuration = body.get("imageDuration")?.asInt ?: existingConfig.imageDuration,
+                    deviceName = body.get("deviceName")?.asString ?: existingConfig.deviceName,
+                    orientation = body.get("orientation")?.asString ?: existingConfig.orientation,
+                    idleTimeout = body.get("idleTimeout")?.asInt ?: existingConfig.idleTimeout,
+                    bgMusicEnabled = body.get("bgMusicEnabled")?.asBoolean ?: existingConfig.bgMusicEnabled,
+                    bgMusicVolume = body.get("bgMusicVolume")?.asInt ?: existingConfig.bgMusicVolume,
+                    bgMusicLoop = body.get("bgMusicLoop")?.asBoolean ?: existingConfig.bgMusicLoop,
+                    bgMusicShuffle = body.get("bgMusicShuffle")?.asBoolean ?: existingConfig.bgMusicShuffle,
+                    transitionEnabled = body.get("transitionEnabled")?.asBoolean ?: existingConfig.transitionEnabled,
+                    transitionType = body.get("transitionType")?.asString ?: existingConfig.transitionType,
+                    transitionDuration = body.get("transitionDuration")?.asInt ?: existingConfig.transitionDuration,
                     lastUpdated = System.currentTimeMillis()
                 )
 
@@ -265,60 +444,98 @@ class ApiRouter(
     fun uploadFile(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         val files = mutableMapOf<String, String>()
         try {
+            // Set temp dir for NanoHTTPD to use app's cache directory
+            // Android TV's default java.io.tmpdir may not be writable
+            System.setProperty("java.io.tmpdir", File(context.cacheDir, "nanohttpd_tmp").also { it.mkdirs() }.absolutePath)
             session.parseBody(files)
         } catch (e: Exception) {
-            return jsonResponseError("Failed to parse upload: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
+            Log.e(TAG, "parseBody failed: ${e.message}", e)
+            return jsonResponseError("文件上传解析失败: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
         }
-        val tempFilePath = files["file"] ?: return jsonResponseError("No 'file' field in upload", NanoHTTPD.Response.Status.BAD_REQUEST)
+        val tempFilePath = files["file"] ?: return jsonResponseError("未找到上传文件", NanoHTTPD.Response.Status.BAD_REQUEST)
         val tempFile = File(tempFilePath)
+        if (!tempFile.exists()) {
+            return jsonResponseError("临时文件不存在: ${tempFile.absolutePath}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+        }
+
+        // Extract original filename from multipart Content-Disposition header
+        // NanoHTTPD stores the filename in session.parameters[fieldName]
+        val originalName = session.parameters["file"]?.firstOrNull()?.let {
+            // Strip any directory path (browser may include full path)
+            it.substringAfterLast('/')
+        }
+        val fallbackName = tempFile.name
+        val nameToUse = if (!originalName.isNullOrBlank() && originalName.contains('.')) {
+            originalName
+        } else {
+            fallbackName
+        }
+        Log.d(TAG, "Upload original filename: $originalName, using: $nameToUse")
 
         return runBlocking {
             try {
-                val originalName = session.parameters["filename"]?.firstOrNull() ?: "upload_${System.currentTimeMillis()}"
-
-                // Sanitize filename
-                val safeName = originalName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                // Keep original filename, only strip path separators and null bytes
+                val safeName = nameToUse
+                    .replace("\\0", "")
+                    .replace("..", "_")
                 val destFile = File(uploadDir, safeName)
+
+                // If filename conflicts, append a number
+                var finalFile = destFile
+                var counter = 1
+                while (finalFile.exists() && finalFile != tempFile) {
+                    val base = nameToUse.substringBeforeLast('.')
+                    val ext = nameToUse.substringAfterLast('.')
+                    finalFile = File(uploadDir, "${base}_${counter}.${ext}")
+                    counter++
+                }
 
                 // Copy uploaded file to persistent storage
                 java.io.FileInputStream(tempFile).use { input ->
-                    FileOutputStream(destFile).use { output ->
+                    FileOutputStream(finalFile).use { output ->
                         input.copyTo(output)
                     }
                 }
 
-                // Optionally auto-add to playlist
-                val autoAdd = session.parameters["autoAdd"]?.firstOrNull()?.toBoolean() ?: false
-                var mediaItem: MediaItem? = null
+                // Add to media library (NOT playlist — files belong to groups)
+                val type = detectMediaType(finalFile.name)
+                val displayTitle = (originalName ?: nameToUse).substringBeforeLast(".").take(200)
+                val mediaItem = MediaItem(
+                    title = displayTitle,
+                    url = finalFile.absolutePath,
+                    type = type,
+                    durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
+                    sortOrder = mediaItemDao.getTotalCount(),
+                    sourceType = "media"
+                )
+                val id = mediaItemDao.insert(mediaItem)
+                mediaItem.id = id
 
-                if (autoAdd) {
-                    val type = detectMediaType(safeName)
-                    mediaItem = MediaItem(
-                        title = safeName.substringBeforeLast("."),
-                        url = destFile.absolutePath,
-                        type = type,
-                        durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
-                        sortOrder = mediaItemDao.getTotalCount()
-                    )
-                    val id = mediaItemDao.insert(mediaItem)
-                    mediaItem.id = id
+                // Auto-assign to default "未分类" group
+                try {
+                    val defaultGroup = mediaGroupDao.getAllGroupsOnce().find { it.name == "未分类" }
+                    if (defaultGroup != null) {
+                        mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = defaultGroup.id, mediaId = id, sortOrder = 0))
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to auto-assign to 未分类 group", e)
                 }
+
+                // Clean up temp file
+                try { tempFile.delete() } catch (_: Exception) {}
 
                 val result = JsonObject().apply {
                     addProperty("success", true)
-                    addProperty("filename", safeName)
-                    addProperty("url", destFile.absolutePath)
-                    addProperty("size", destFile.length())
-                    addProperty("autoAdded", autoAdd)
-                    if (mediaItem != null) {
-                        add("mediaItem", gson.toJsonTree(mediaItem))
-                    }
+                    addProperty("filename", finalFile.name)
+                    addProperty("url", finalFile.absolutePath)
+                    addProperty("size", finalFile.length())
+                    add("mediaItem", gson.toJsonTree(mediaItem))
                 }
 
                 jsonResponse(result)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to upload file", e)
-                jsonResponseError("Upload failed: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+                jsonResponseError("上传失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }
@@ -354,9 +571,15 @@ class ApiRouter(
                                         url = file.absolutePath,
                                         type = type,
                                         durationSeconds = if (type == MediaType.IMAGE) 10 else 0,
-                                        sortOrder = mediaItemDao.getTotalCount()
+                                        sortOrder = mediaItemDao.getTotalCount(),
+                                        sourceType = "media"
                                     )
-                                    mediaItemDao.insert(item)
+                                    val newId = mediaItemDao.insert(item)
+                                    // Auto-assign to 未分类 group
+                                    try {
+                                        val dg = mediaGroupDao.getAllGroupsOnce().find { it.name == "未分类" }
+                                        if (dg != null) mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = dg.id, mediaId = newId, sortOrder = 0))
+                                    } catch (_: Exception) {}
                                     foundCount++
                                 }
                             }
@@ -364,15 +587,194 @@ class ApiRouter(
                     }
                 }
 
+                // Fetch all media library items and enrich with file system metadata
+                val allItems = mediaItemDao.getMediaLibraryItemsOnce()
+                val filesArray = com.google.gson.JsonArray()
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                for (item in allItems) {
+                    val file = File(item.url)
+                    val obj = com.google.gson.JsonObject()
+                    obj.addProperty("id", item.id)
+                    obj.addProperty("name", file.name)
+                    obj.addProperty("title", item.title)
+                    obj.addProperty("path", item.url)
+                    obj.addProperty("type", item.type.name)
+                    obj.addProperty("size", if (file.exists()) file.length() else 0)
+                    obj.addProperty("date", if (file.exists()) dateFormat.format(Date(file.lastModified())) else "")
+                    // Add group IDs
+                    val groupIds = com.google.gson.JsonArray()
+                    try {
+                        val itemGroups = mediaGroupDao.getGroupsContainingMedia(item.id)
+                        for (g in itemGroups) groupIds.add(g.id)
+                    } catch (_: Exception) {}
+                    obj.add("groupIds", groupIds)
+                    filesArray.add(obj)
+                }
+
                 val result = JsonObject().apply {
                     addProperty("success", true)
-                    addProperty("scannedDirectories", scanDirs.map { it.absolutePath }.toString())
                     addProperty("filesFound", foundCount)
+                    add("files", filesArray)
                 }
                 jsonResponse(result)
             } catch (e: Exception) {
                 Log.e(TAG, "Media scan failed", e)
                 jsonResponseError("Scan failed: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  GET /api/media - list all media items (lightweight, no scan)
+    // =====================================================================
+
+    fun getMediaList(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val allItems = mediaItemDao.getMediaLibraryItemsOnce()
+                val filesArray = com.google.gson.JsonArray()
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                for (item in allItems) {
+                    val file = File(item.url)
+                    val obj = com.google.gson.JsonObject()
+                    obj.addProperty("id", item.id)
+                    obj.addProperty("name", file.name)
+                    obj.addProperty("title", item.title)
+                    obj.addProperty("path", item.url)
+                    obj.addProperty("type", item.type.name)
+                    obj.addProperty("size", if (file.exists()) file.length() else 0)
+                    obj.addProperty("date", if (file.exists()) dateFormat.format(Date(file.lastModified())) else "")
+                    // Add group IDs
+                    val groupIds = com.google.gson.JsonArray()
+                    try {
+                        val itemGroups = mediaGroupDao.getGroupsContainingMedia(item.id)
+                        for (g in itemGroups) groupIds.add(g.id)
+                    } catch (_: Exception) {}
+                    obj.add("groupIds", groupIds)
+                    filesArray.add(obj)
+                }
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("files", filesArray)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get media list", e)
+                jsonResponseError("获取媒体列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  GET /api/playback-stats
+    // =====================================================================
+
+    fun getPlaybackStats(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return try {
+            val manager = WebServer.activePlaylistManager
+            if (manager == null) {
+                val empty = JsonObject().apply {
+                    addProperty("currentPlayingTitle", "")
+                    addProperty("currentPlayingType", "")
+                    addProperty("currentIndex", 0)
+                    addProperty("totalPlayCount", 0)
+                    addProperty("loopCount", 0)
+                    add("itemStats", com.google.gson.JsonArray())
+                    addProperty("playbackMode", "LOOP")
+                    addProperty("totalItems", 0)
+                }
+                jsonResponse(empty)
+            } else {
+                val stats = manager.getPlaybackStats()
+                val json = gson.toJsonTree(stats).asJsonObject
+                jsonResponse(json)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get playback stats", e)
+            jsonResponseError("获取播放统计失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+        }
+    }
+
+    // =====================================================================
+    //  DELETE /api/media/:id
+    // =====================================================================
+
+    fun deleteMediaItem(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val existing = mediaItemDao.getItemById(id)
+                if (existing == null) {
+                    return@runBlocking jsonResponseError("文件未找到", NanoHTTPD.Response.Status.NOT_FOUND)
+                }
+
+                // Delete file from disk
+                val file = File(existing.url)
+                if (file.exists()) file.delete()
+
+                // Delete from database
+                mediaItemDao.deleteById(id)
+
+                Log.d(TAG, "Deleted media file: ${file.name} (id=$id)")
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    addProperty("deletedId", id)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete media file: $id", e)
+                jsonResponseError("删除失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  PUT /api/media/:id  (rename)
+    // =====================================================================
+
+    fun renameMediaItem(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val existing = mediaItemDao.getItemById(id)
+                if (existing == null) {
+                    return@runBlocking jsonResponseError("文件未找到", NanoHTTPD.Response.Status.NOT_FOUND)
+                }
+
+                val body = parseBody(session)
+                val newTitle = body.get("title")?.asString
+                if (newTitle.isNullOrBlank()) {
+                    return@runBlocking jsonResponseError("文件名不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                }
+
+                val oldFile = File(existing.url)
+                val ext = oldFile.extension
+                val newFileName = if (ext.isNotEmpty()) "$newTitle.$ext" else newTitle
+                val newFile = File(oldFile.parentFile, newFileName)
+
+                // Rename file on disk
+                if (oldFile.exists() && !newFile.exists()) {
+                    oldFile.renameTo(newFile)
+                }
+
+                // Update database
+                val updated = existing.copy(
+                    title = newTitle,
+                    url = newFile.absolutePath,
+                    updatedAt = System.currentTimeMillis()
+                )
+                mediaItemDao.update(updated)
+
+                Log.d(TAG, "Renamed media: ${existing.title} -> $newTitle (id=$id)")
+                val result = com.google.gson.JsonObject()
+                result.addProperty("id", updated.id)
+                result.addProperty("name", newFile.name)
+                result.addProperty("title", newTitle)
+                result.addProperty("path", newFile.absolutePath)
+                result.addProperty("type", updated.type.name)
+                result.addProperty("success", true)
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to rename media file: $id", e)
+                jsonResponseError("重命名失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
             }
         }
     }
@@ -423,5 +825,358 @@ class ApiRouter(
             addProperty("error", message)
         }
         return NanoHTTPD.newFixedLengthResponse(status, "application/json", gson.toJson(error))
+    }
+
+    // =====================================================================
+    //  Media Group APIs
+    // =====================================================================
+
+    fun getGroups(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val groups = mediaGroupDao.getAllGroupsOnce()
+                val arr = com.google.gson.JsonArray()
+                for (g in groups) {
+                    val obj = gson.toJsonTree(g).asJsonObject
+                    val count = mediaGroupDao.getItemCountInGroup(g.id)
+                    obj.addProperty("itemCount", count)
+                    arr.add(obj)
+                }
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("groups", arr)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get groups", e)
+                jsonResponseError("获取分组列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun createGroup(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val name = body.get("name")?.asString ?: return@runBlocking jsonResponseError("分组名称不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                val color = body.get("color")?.asString ?: "#409EFF"
+                val count = mediaGroupDao.getGroupCount()
+                val group = MediaGroup(name = name, color = color, sortOrder = count)
+                val id = mediaGroupDao.insert(group)
+                group.id = id
+                Log.d(TAG, "Created group: $name (id=$id)")
+                jsonResponse(gson.toJsonTree(group))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create group", e)
+                jsonResponseError("创建分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun updateGroup(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val group = mediaGroupDao.getGroupById(id) ?: return@runBlocking jsonResponseError("分组不存在", NanoHTTPD.Response.Status.NOT_FOUND)
+                val body = parseBody(session)
+                val updated = group.copy(
+                    name = body.get("name")?.asString ?: group.name,
+                    color = body.get("color")?.asString ?: group.color
+                )
+                mediaGroupDao.update(updated)
+                jsonResponse(gson.toJsonTree(updated))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update group", e)
+                jsonResponseError("更新分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun deleteGroup(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        if (id == 1L) {
+            return jsonResponseError("默认分组不可删除", NanoHTTPD.Response.Status.BAD_REQUEST)
+        }
+        return runBlocking {
+            try {
+                mediaGroupDao.removeAllItemsFromGroup(id)
+                mediaGroupDao.deleteGroupById(id)
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete group", e)
+                jsonResponseError("删除分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun setMediaGroups(session: NanoHTTPD.IHTTPSession, mediaId: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val groupIds = body.getAsJsonArray("groupIds")?.map { it.asLong } ?: emptyList()
+                // Remove existing assignments
+                mediaGroupDao.removeMediaFromAllGroups(mediaId)
+                // Add new assignments
+                for ((idx, gid) in groupIds.withIndex()) {
+                    mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = gid, mediaId = mediaId, sortOrder = idx))
+                }
+                val groups = mediaGroupDao.getGroupsContainingMedia(mediaId)
+                val arr = com.google.gson.JsonArray()
+                for (g in groups) arr.add(gson.toJsonTree(g))
+                jsonResponse(JsonObject().apply { addProperty("success", true); add("groups", arr) })
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to set media groups", e)
+                jsonResponseError("设置分组失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun addOnlineMedia(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val url = body.get("url")?.asString ?: return@runBlocking jsonResponseError("URL不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                val title = body.get("title")?.asString ?: url.substringAfterLast("/").substringBefore("?").take(100)
+                val typeName = body.get("type")?.asString ?: "STREAM"
+                val groupIds = body.getAsJsonArray("groupIds")?.map { it.asLong } ?: emptyList()
+
+                val mediaItem = MediaItem(
+                    title = title,
+                    url = url,
+                    type = try { MediaType.valueOf(typeName) } catch (_: Exception) { MediaType.STREAM },
+                    durationSeconds = 0,
+                    sortOrder = mediaItemDao.getTotalCount(),
+                    sourceType = "media"
+                )
+                val id = mediaItemDao.insert(mediaItem)
+                mediaItem.id = id
+
+                // Add to specified groups; if none specified, auto-assign to "未分类"
+                val effectiveGroupIds = if (groupIds.isEmpty()) {
+                    try {
+                        val dg = mediaGroupDao.getAllGroupsOnce().find { it.name == "未分类" }
+                        if (dg != null) listOf(dg.id) else emptyList()
+                    } catch (_: Exception) { emptyList() }
+                } else {
+                    groupIds
+                }
+                for ((idx, gid) in effectiveGroupIds.withIndex()) {
+                    mediaGroupDao.addMediaToGroup(MediaGroupItem(groupId = gid, mediaId = id, sortOrder = idx))
+                }
+
+                Log.d(TAG, "Added online media: $title (id=$id)")
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("mediaItem", gson.toJsonTree(mediaItem))
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to add online media", e)
+                jsonResponseError("添加在线资源失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  Background Music APIs
+    // =====================================================================
+
+    fun getBgMusicList(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val items = bgMusicDao.getAll()
+                val arr = com.google.gson.JsonArray()
+                for (item in items) {
+                    val obj = gson.toJsonTree(item).asJsonObject
+                    arr.add(obj)
+                }
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("items", arr)
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get bg music list", e)
+                jsonResponseError("获取背景音乐列表失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun uploadBgMusic(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        val files = mutableMapOf<String, String>()
+        try {
+            System.setProperty("java.io.tmpdir", File(context.cacheDir, "nanohttpd_tmp").also { it.mkdirs() }.absolutePath)
+            session.parseBody(files)
+        } catch (e: Exception) {
+            return jsonResponseError("上传解析失败: ${e.message}", NanoHTTPD.Response.Status.BAD_REQUEST)
+        }
+        val tempFilePath = files["file"] ?: return jsonResponseError("未找到上传文件", NanoHTTPD.Response.Status.BAD_REQUEST)
+        val tempFile = File(tempFilePath)
+        if (!tempFile.exists()) return jsonResponseError("临时文件不存在", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+
+        val originalName = session.parameters["file"]?.firstOrNull()?.substringAfterLast('/') ?: tempFile.name
+
+        return runBlocking {
+            try {
+                val safeName = originalName.replace("\\0", "").replace("..", "_")
+                val destFile = File(uploadDir, safeName)
+                var finalFile = destFile
+                var counter = 1
+                while (finalFile.exists() && finalFile != tempFile) {
+                    val base = safeName.substringBeforeLast('.')
+                    val ext = safeName.substringAfterLast('.')
+                    finalFile = File(uploadDir, "${base}_${counter}.${ext}")
+                    counter++
+                }
+                java.io.FileInputStream(tempFile).use { input ->
+                    FileOutputStream(finalFile).use { output -> input.copyTo(output) }
+                }
+                try { tempFile.delete() } catch (_: Exception) {}
+
+                val count = bgMusicDao.getCount()
+                val music = BackgroundMusic(
+                    title = originalName.substringBeforeLast(".").take(200),
+                    filePath = finalFile.absolutePath,
+                    fileSize = finalFile.length(),
+                    sortOrder = count
+                )
+                val id = bgMusicDao.insert(music)
+                music.id = id
+
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    addProperty("id", id)
+                    add("item", gson.toJsonTree(music))
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to upload bg music", e)
+                jsonResponseError("上传背景音乐失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun deleteBgMusic(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val item = bgMusicDao.getById(id)
+                if (item != null) {
+                    File(item.filePath).delete()
+                    bgMusicDao.deleteById(id)
+                }
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                jsonResponseError("删除背景音乐失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun addOnlineBgMusic(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val url = body.get("url")?.asString ?: return@runBlocking jsonResponseError("URL不能为空", NanoHTTPD.Response.Status.BAD_REQUEST)
+                val title = body.get("title")?.asString ?: url.substringAfterLast("/").substringBefore("?").take(100)
+                val music = BackgroundMusic(
+                    title = title,
+                    filePath = url,
+                    fileSize = 0
+                )
+                val id = bgMusicDao.insert(music)
+                music.id = id
+                Log.d(TAG, "Added online BGM: $title (id=$id)")
+                val result = JsonObject().apply {
+                    addProperty("success", true)
+                    add("item", gson.toJsonTree(music))
+                }
+                jsonResponse(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to add online BGM", e)
+                jsonResponseError("添加在线音乐失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    // =====================================================================
+    //  Schedule APIs
+    // =====================================================================
+
+    fun getSchedules(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                jsonResponse(JsonObject().apply { addProperty("success", true); add("items", arr) })
+            } catch (e: Exception) {
+                jsonResponseError("获取定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun createSchedule(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val name = body.get("name")?.asString ?: "Unnamed Schedule"
+                val cron = body.get("cron")?.asString ?: ""
+                val enabled = body.get("enabled")?.asBoolean ?: true
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                val newId = System.currentTimeMillis()
+                val obj = JsonObject().apply {
+                    addProperty("id", newId)
+                    addProperty("name", name)
+                    addProperty("cron", cron)
+                    addProperty("enabled", enabled)
+                    addProperty("content", body.get("content")?.asString ?: "__all__")
+                }
+                arr.add(obj)
+                prefs.edit().putString("schedules_list", gson.toJson(arr)).apply()
+                jsonResponse(obj)
+            } catch (e: Exception) {
+                jsonResponseError("创建定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun updateSchedule(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val body = parseBody(session)
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                for (element in arr) {
+                    val obj = element.asJsonObject
+                    if (obj.get("id")?.asLong == id) {
+                        if (body.has("enabled")) obj.addProperty("enabled", body.get("enabled").asBoolean)
+                        if (body.has("name")) obj.addProperty("name", body.get("name").asString)
+                        if (body.has("cron")) obj.addProperty("cron", body.get("cron").asString)
+                    }
+                }
+                prefs.edit().putString("schedules_list", gson.toJson(arr)).apply()
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                jsonResponseError("更新定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
+    }
+
+    fun deleteSchedule(session: NanoHTTPD.IHTTPSession, id: Long): NanoHTTPD.Response {
+        return runBlocking {
+            try {
+                val prefs = context.getSharedPreferences("schedules", android.content.Context.MODE_PRIVATE)
+                val schedulesJson = prefs.getString("schedules_list", "[]") ?: "[]"
+                val arr = JsonParser.parseString(schedulesJson).asJsonArray
+                val newArr = com.google.gson.JsonArray()
+                for (element in arr) {
+                    if (element.asJsonObject.get("id")?.asLong != id) newArr.add(element)
+                }
+                prefs.edit().putString("schedules_list", gson.toJson(newArr)).apply()
+                jsonResponse(JsonObject().apply { addProperty("success", true) })
+            } catch (e: Exception) {
+                jsonResponseError("删除定时任务失败: ${e.message}", NanoHTTPD.Response.Status.INTERNAL_ERROR)
+            }
+        }
     }
 }

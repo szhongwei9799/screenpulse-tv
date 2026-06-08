@@ -11,14 +11,14 @@ plugins {
 
 android {
     namespace = "com.screenpulse.tv"
-    compileSdk = 34
+    compileSdk = 33
 
     defaultConfig {
         applicationId = "com.screenpulse.tv"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 33
+        versionCode = 9
+        versionName = "1.2.0"
 
         // 测试配置
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -37,11 +37,21 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
@@ -108,7 +118,7 @@ dependencies {
 
     // ============ ZXing 二维码生成 ============
     implementation("com.google.zxing:core:3.5.3")
-    implementation("com.google.zxing:android-core:3.5.3")
+    implementation("com.google.zxing:android-core:3.3.0")
 
     // ============ Gson JSON 解析 ============
     implementation("com.google.code.gson:gson:2.10.1")

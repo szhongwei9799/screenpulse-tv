@@ -36,6 +36,19 @@ class PlaylistManager(initialItems: List<MediaItem>) {
     // ── Shuffle state ────────────────────────────────────────────────────
     private var shuffledIndices: MutableList<Int> = mutableListOf()
 
+    // ── Playback stats ──────────────────────────────────────────────────
+    // Tracks how many times each media item has been played today
+    private val playCounts: MutableMap<Long, Int> = mutableMapOf()
+    // Total number of full playlist loop cycles completed today
+    private var loopCount: Int = 0
+    // Total play count across all items today
+    private var totalPlayCount: Int = 0
+    // The date (day of year) when stats were last reset
+    private var statsDay: Int = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)
+    // Current playing item info
+    private var currentPlayingTitle: String = ""
+    private var currentPlayingType: String = ""
+
     /**
      * Returns the current media item, or null if the playlist is empty.
      */
@@ -68,9 +81,25 @@ class PlaylistManager(initialItems: List<MediaItem>) {
     fun advanceToNext(): Boolean {
         if (items.isEmpty()) return false
 
+        // Check if day changed, reset stats if needed
+        checkDayReset()
+
+        // Record play count for the current item BEFORE advancing
+        if (currentIndex in items.indices) {
+            val itemId = items[currentIndex].id
+            playCounts[itemId] = (playCounts[itemId] ?: 0) + 1
+            totalPlayCount++
+        }
+
         when (playbackMode) {
             PlaybackMode.LOOP -> {
+                val prevIndex = currentIndex
                 currentIndex = (currentIndex + 1) % items.size
+                // If we wrapped around to the beginning, increment loop count
+                if (currentIndex == 0 && prevIndex == items.size - 1) {
+                    loopCount++
+                    Log.d(TAG, "LOOP: completed cycle #$loopCount")
+                }
                 Log.d(TAG, "LOOP: advancing to index $currentIndex")
                 return true
             }
@@ -78,6 +107,7 @@ class PlaylistManager(initialItems: List<MediaItem>) {
                 currentIndex++
                 if (currentIndex >= items.size) {
                     Log.d(TAG, "SEQUENTIAL: playlist exhausted at end")
+                    loopCount++
                     currentIndex = 0  // Reset for next play
                     return false
                 }
@@ -222,6 +252,59 @@ class PlaylistManager(initialItems: List<MediaItem>) {
     fun stop() {
         currentIndex = 0
         isPlayingInterstitial = false
+        currentPlayingTitle = ""
+        currentPlayingType = ""
+    }
+
+    // =====================================================================
+    //  Playback stats accessors
+    // =====================================================================
+
+    /**
+     * Returns a snapshot of playback statistics.
+     */
+    fun getPlaybackStats(): PlaybackStats {
+        checkDayReset()
+        val current = currentItem()
+        if (current != null) {
+            currentPlayingTitle = current.title
+            currentPlayingType = current.type.name
+        }
+
+        // Build per-item play count list
+        val itemStats = items.map { item ->
+            mapOf(
+                "id" to item.id,
+                "title" to item.title,
+                "type" to item.type.name,
+                "playCount" to (playCounts[item.id] ?: 0)
+            )
+        }
+
+        return PlaybackStats(
+            currentPlayingTitle = currentPlayingTitle,
+            currentPlayingType = currentPlayingType,
+            currentIndex = currentIndex,
+            totalPlayCount = totalPlayCount,
+            loopCount = loopCount,
+            itemStats = itemStats,
+            playbackMode = playbackMode.name,
+            totalItems = items.size
+        )
+    }
+
+    /**
+     * Checks if the day has changed and resets stats if needed.
+     */
+    private fun checkDayReset() {
+        val today = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)
+        if (today != statsDay) {
+            Log.d(TAG, "Day changed ($statsDay -> $today), resetting playback stats")
+            playCounts.clear()
+            loopCount = 0
+            totalPlayCount = 0
+            statsDay = today
+        }
     }
 
     // =====================================================================
@@ -233,3 +316,17 @@ class PlaylistManager(initialItems: List<MediaItem>) {
         Log.d(TAG, "Shuffle indices rebuilt: $shuffledIndices")
     }
 }
+
+/**
+ * Data class holding current playback statistics.
+ */
+data class PlaybackStats(
+    val currentPlayingTitle: String = "",
+    val currentPlayingType: String = "",
+    val currentIndex: Int = 0,
+    val totalPlayCount: Int = 0,
+    val loopCount: Int = 0,
+    val itemStats: List<Map<String, Any>> = emptyList(),
+    val playbackMode: String = "LOOP",
+    val totalItems: Int = 0
+)

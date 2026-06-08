@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.ImageView
@@ -119,6 +120,39 @@ class PlaybackEngine(private val context: Context) {
     /** 容器视图引用 */
     private var containerView: ViewGroup? = null
 
+    // ======================== Transition Settings ========================
+
+    /** Current transition effect */
+    var transitionEffect: TransitionEffect = TransitionEffect.RANDOM
+        private set
+
+    /** Transition duration in milliseconds */
+    var transitionDuration: Long = 600L
+
+    /** Set transition effect */
+    fun setTransitionEffect(effect: TransitionEffect) {
+        transitionEffect = effect
+    }
+
+    // ======================== Background Music / TTS ========================
+
+    /** Background music MediaPlayer */
+    private var bgMusicPlayer: android.media.MediaPlayer? = null
+
+    /** Current background music path */
+    private var currentBgMusicPath: String? = null
+
+    /** Background music volume (0-1) */
+    var bgMusicVolume: Float = 0.8f
+
+    /** Whether video audio is muted (replaced by background music) */
+    var isVideoMuted: Boolean = false
+        private set
+
+    /** Current TTS audio queue */
+    private var ttsAudioQueue: List<String> = emptyList()
+    private var ttsAudioIndex: Int = 0
+
     /** 状态变化监听器 */
     var onStateChanged: ((PlaybackState, PlaylistEntity?) -> Unit)? = null
 
@@ -135,6 +169,19 @@ class PlaybackEngine(private val context: Context) {
         PAUSED,     // 暂停
         TRANSITION, // 切换转场中
         ERROR       // 错误
+    }
+
+    /**
+     * 转场动画效果枚举
+     */
+    enum class TransitionEffect {
+        NONE,       // No animation
+        FADE,       // Fade in/out
+        ZOOM,       // Zoom in/out
+        SLIDE_LEFT, // Slide from right
+        SLIDE_RIGHT,// Slide from left
+        DISSOLVE,   // Dissolve effect
+        RANDOM      // Random selection
     }
 
     // ExoPlayer 播放状态监听
@@ -266,9 +313,9 @@ class PlaybackEngine(private val context: Context) {
 
         Log.d(TAG, "开始播放 [${item.type}]: ${item.title}")
 
-        // 设置音量
+        // 设置音量（考虑静音状态）
         val volume = (item.volume.toFloat() / MAX_VOLUME).coerceIn(0f, 1f)
-        exoPlayer.volume = volume
+        exoPlayer.volume = if (isVideoMuted) 0f else volume
 
         // 隐藏所有视图
         hideAllViews()
@@ -377,7 +424,7 @@ class PlaybackEngine(private val context: Context) {
             }
 
             if (currentIndex < playlist.size) {
-                playItem(playlist[currentIndex])
+                playItemWithTransition(playlist[currentIndex])
             }
         }
     }
@@ -448,6 +495,7 @@ class PlaybackEngine(private val context: Context) {
      */
     fun release() {
         stop()
+        stopBackgroundMusic()
         exoPlayer.release()
         engineScope.cancel()
         playerView = null
@@ -598,6 +646,202 @@ class PlaybackEngine(private val context: Context) {
         durationRunnable?.let {
             mainHandler.removeCallbacks(it)
             durationRunnable = null
+        }
+    }
+
+    /**
+     * Play next item with transition animation
+     */
+    private fun playItemWithTransition(item: PlaylistEntity) {
+        val effect = if (transitionEffect == TransitionEffect.RANDOM) {
+            TransitionEffect.values().filter { it != TransitionEffect.RANDOM && it != TransitionEffect.NONE }.random()
+        } else {
+            transitionEffect
+        }
+
+        if (effect == TransitionEffect.NONE) {
+            playItem(item)
+            return
+        }
+
+        updateState(PlaybackState.TRANSITION)
+
+        when (effect) {
+            TransitionEffect.FADE -> applyFadeTransition(item)
+            TransitionEffect.ZOOM -> applyZoomTransition(item)
+            TransitionEffect.SLIDE_LEFT -> applySlideTransition(item, fromLeft = true)
+            TransitionEffect.SLIDE_RIGHT -> applySlideTransition(item, fromLeft = false)
+            TransitionEffect.DISSOLVE -> applyDissolveTransition(item)
+            else -> playItem(item)
+        }
+    }
+
+    private fun applyFadeTransition(item: PlaylistEntity) {
+        val currentView = getCurrentVisibleView() ?: run { playItem(item); return }
+        currentView.animate()
+            .alpha(0f)
+            .setDuration(transitionDuration / 2)
+            .withEndAction {
+                hideAllViews()
+                playItem(item)
+                val newView = getCurrentVisibleView()
+                newView?.alpha = 0f
+                newView?.animate()?.alpha(1f)?.setDuration(transitionDuration / 2)?.start()
+            }
+            .start()
+    }
+
+    private fun applyZoomTransition(item: PlaylistEntity) {
+        val currentView = getCurrentVisibleView() ?: run { playItem(item); return }
+        currentView.animate()
+            .alpha(0f)
+            .scaleX(1.2f)
+            .scaleY(1.2f)
+            .setDuration(transitionDuration / 2)
+            .withEndAction {
+                hideAllViews()
+                playItem(item)
+                val newView = getCurrentVisibleView()
+                newView?.alpha = 0f
+                newView?.scaleX = 0.8f
+                newView?.scaleY = 0.8f
+                newView?.animate()?.alpha(1f)?.scaleX(1f)?.scaleY(1f)?.setDuration(transitionDuration / 2)?.start()
+            }
+            .start()
+    }
+
+    private fun applySlideTransition(item: PlaylistEntity, fromLeft: Boolean) {
+        val currentView = getCurrentVisibleView() ?: run { playItem(item); return }
+        val slideX = if (fromLeft) currentView.width.toFloat() else -currentView.width.toFloat()
+        currentView.animate()
+            .translationX(slideX)
+            .alpha(0f)
+            .setDuration(transitionDuration / 2)
+            .withEndAction {
+                hideAllViews()
+                playItem(item)
+                val newView = getCurrentVisibleView()
+                val entryX = if (fromLeft) -slideX else slideX
+                newView?.translationX = entryX
+                newView?.alpha = 0f
+                newView?.animate()?.translationX(0f)?.alpha(1f)?.setDuration(transitionDuration / 2)?.start()
+            }
+            .start()
+    }
+
+    private fun applyDissolveTransition(item: PlaylistEntity) {
+        // Dissolve: cross-fade with slight scale change
+        val currentView = getCurrentVisibleView() ?: run { playItem(item); return }
+        currentView.animate()
+            .alpha(0.3f)
+            .scaleX(1.05f)
+            .scaleY(1.05f)
+            .setDuration(transitionDuration / 2)
+            .withEndAction {
+                hideAllViews()
+                playItem(item)
+                val newView = getCurrentVisibleView()
+                newView?.alpha = 0.3f
+                newView?.scaleX = 1.05f
+                newView?.scaleY = 1.05f
+                newView?.animate()?.alpha(1f)?.scaleX(1f)?.scaleY(1f)?.setDuration(transitionDuration / 2)?.start()
+            }
+            .start()
+    }
+
+    /**
+     * Get the currently visible view (playerView, imageView, or webView)
+     */
+    private fun getCurrentVisibleView(): View? {
+        return when {
+            playerView?.visibility == View.VISIBLE -> playerView
+            imageView?.visibility == View.VISIBLE -> imageView
+            webView?.visibility == View.VISIBLE -> webView
+            else -> null
+        }
+    }
+
+    // ======================== Background Music / TTS Methods ========================
+
+    /**
+     * Start playing background music
+     */
+    fun playBackgroundMusic(filePath: String) {
+        stopBackgroundMusic()
+        try {
+            bgMusicPlayer = android.media.MediaPlayer().apply {
+                setDataSource(filePath)
+                setOnPreparedListener { mp ->
+                    mp.setVolume(bgMusicVolume, bgMusicVolume)
+                    mp.start()
+                }
+                setOnCompletionListener {
+                    // Play next in queue if available
+                    playNextBgMusic()
+                }
+                setOnErrorListener { _, _, _ ->
+                    playNextBgMusic()
+                    true
+                }
+                prepareAsync()
+            }
+            currentBgMusicPath = filePath
+            Log.d(TAG, "Background music started: $filePath")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to play background music", e)
+        }
+    }
+
+    /**
+     * Play TTS audio list as background music
+     */
+    fun playTtsAudioList(audioPaths: List<String>, startIndex: Int = 0) {
+        ttsAudioQueue = audioPaths
+        ttsAudioIndex = startIndex
+        if (audioPaths.isNotEmpty() && startIndex < audioPaths.size) {
+            playBackgroundMusic(audioPaths[startIndex])
+        }
+    }
+
+    private fun playNextBgMusic() {
+        if (ttsAudioQueue.isNotEmpty()) {
+            ttsAudioIndex = (ttsAudioIndex + 1) % ttsAudioQueue.size
+            playBackgroundMusic(ttsAudioQueue[ttsAudioIndex])
+        } else {
+            stopBackgroundMusic()
+        }
+    }
+
+    /**
+     * Stop background music and release resources
+     */
+    fun stopBackgroundMusic() {
+        try {
+            bgMusicPlayer?.release()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error releasing bg music player", e)
+        }
+        bgMusicPlayer = null
+        currentBgMusicPath = null
+    }
+
+    /**
+     * Set background music volume (0-1)
+     */
+    fun setBgMusicVolume(volume: Float) {
+        bgMusicVolume = volume.coerceIn(0f, 1f)
+        bgMusicPlayer?.setVolume(bgMusicVolume, bgMusicVolume)
+    }
+
+    /**
+     * Toggle video mute (when background music is playing)
+     */
+    fun setVideoMuted(muted: Boolean) {
+        isVideoMuted = muted
+        if (muted) {
+            exoPlayer.volume = 0f
+        } else {
+            exoPlayer.volume = (currentMediaItem?.volume?.toFloat()?.div(100f)) ?: 1f
         }
     }
 
