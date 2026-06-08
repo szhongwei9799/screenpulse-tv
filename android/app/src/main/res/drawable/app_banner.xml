@@ -13,11 +13,4 @@
     <path
         android:fillColor="#1A237E"
         android:pathData="M125,65h70v50h-70z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:fontFamily="sans-serif-medium"
-        android:fontSize="24"
-        android:gravity="center"
-        android:text="S"
-        android:pathData="M145,110" />
 </vector>
