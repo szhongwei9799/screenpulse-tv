@@ -11,4 +11,7 @@
     <color name="colorError">#F44336</color>
     <color name="colorOverlay">#88000000</color>
     <color name="colorQRBackground">#1A237E</color>
+    <color name="background_dark">#121212</color>
+    <color name="leanback_browse_title">#FFFFFF</color>
+    <color name="leanback_background">#121212</color>
 </resources>
