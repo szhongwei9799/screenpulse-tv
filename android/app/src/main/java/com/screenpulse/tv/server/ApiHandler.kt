@@ -316,27 +316,27 @@ class ApiHandler(private val context: Context) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
 
-        /* Header */
+        <!-- Header -->
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         .header h1 { font-size: 20px; font-weight: 600; }
         .header .device-info { font-size: 13px; opacity: 0.9; }
 
-        /* Tab Navigation */
+        <!-- Tab Navigation -->
         .tabs { display: flex; background: #fff; border-bottom: 2px solid #e8e8e8; padding: 0 24px; }
         .tab { padding: 12px 24px; cursor: pointer; font-size: 14px; font-weight: 500; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; }
         .tab:hover { color: #667eea; }
         .tab.active { color: #667eea; border-bottom-color: #667eea; }
 
-        /* Content */
+        <!-- Content -->
         .content { max-width: 1200px; margin: 0 auto; padding: 24px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Cards */
+        <!-- Cards -->
         .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .card h2 { font-size: 16px; margin-bottom: 16px; color: #333; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
 
-        /* Playback Controls Bar */
+        <!-- Playback Controls Bar -->
         .controls-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
         .btn:hover { opacity: 0.85; }
@@ -347,14 +347,14 @@ class ApiHandler(private val context: Context) {
         .btn-default { background: #fff; color: #333; border: 1px solid #d9d9d9; }
         .btn-sm { padding: 4px 10px; font-size: 12px; }
 
-        /* Table */
+        <!-- Table -->
         .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .data-table th, .data-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
         .data-table th { background: #fafafa; color: #666; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
         .data-table tr:hover { background: #f5f7ff; }
         .data-table .actions { display: flex; gap: 6px; }
 
-        /* Badge */
+        <!-- Badge -->
         .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
         .badge-video { background: #fff1f0; color: #cf1322; }
         .badge-image { background: #e6f7ff; color: #1890ff; }
@@ -364,13 +364,13 @@ class ApiHandler(private val context: Context) {
         .badge-tts { background: #e6fffb; color: #13c2c2; }
         .badge-audio { background: #fff0f6; color: #eb2f96; }
 
-        /* Upload Area */
+        <!-- Upload Area -->
         .upload-area { border: 2px dashed #d9d9d9; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s; }
         .upload-area:hover { border-color: #667eea; background: #f5f7ff; }
         .upload-area p { margin-bottom: 8px; color: #666; }
         .upload-area .hint { font-size: 12px; color: #999; }
 
-        /* Form */
+        <!-- Form -->
         .form-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
         .form-group { flex: 1; }
         .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: #666; font-weight: 500; }
@@ -383,22 +383,22 @@ class ApiHandler(private val context: Context) {
         }
         .form-group textarea { resize: vertical; min-height: 80px; }
 
-        /* Toast */
+        <!-- Toast -->
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
 
-        /* Empty State */
+        <!-- Empty State -->
         .empty-state { text-align: center; padding: 40px; color: #999; }
         .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
         .empty-state h3 { font-size: 16px; color: #666; margin-bottom: 6px; }
 
-        /* Settings Grid */
+        <!-- Settings Grid -->
         .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
         .setting-item { padding: 16px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; }
         .setting-item label { display: block; font-size: 13px; color: #666; margin-bottom: 8px; }
         .setting-item select, .setting-item input { width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; }
 
-        /* TTS Section */
+        <!-- TTS Section -->
         .tts-section { margin-bottom: 20px; }
         .tts-status { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 8px; margin-bottom: 16px; }
         .tts-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #52c41a; }
