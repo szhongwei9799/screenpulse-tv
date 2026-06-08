@@ -21,6 +21,7 @@ import com.bumptech.glide.request.target.BitmapImageViewTarget
 import com.screenpulse.tv.ScreenPulseApp
 import com.screenpulse.tv.R
 import com.screenpulse.tv.db.entities.PlaylistEntity
+import com.screenpulse.tv.player.PlaylistManager.PlayMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -64,7 +65,7 @@ class PlaybackEngine(private val context: Context) {
             // 视频播放完毕时自动停止（由引擎控制下一步）
             repeatMode = Player.REPEAT_MODE_OFF
             // 硬件加速
-            setVideoScalingMode(PlayerView.DEFAULT_VIDEO_SCALING_MODE)
+            setVideoScalingMode(C.SCALING_MODE_AUTOMATIC)
         }
     }
 

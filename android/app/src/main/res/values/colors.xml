@@ -22,4 +22,9 @@
     <color name="background_elevated">#272736</color>
     <color name="warning_yellow">#FF9800</color>
     <color name="success_green">#4CAF50</color>
+    <color name="badge_video">#448AFF</color>
+    <color name="badge_image">#4CAF50</color>
+    <color name="badge_iptv">#AB47BC</color>
+    <color name="badge_stream">#EF5350</color>
+    <color name="badge_webpage">#26C6DA</color>
 </resources>

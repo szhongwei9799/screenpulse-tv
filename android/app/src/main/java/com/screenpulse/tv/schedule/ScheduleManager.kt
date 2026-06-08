@@ -52,23 +52,23 @@ class ScheduleManager(private val context: Context) {
     var onScheduleContentComplete: (() -> Unit)? = null
 
     /**
-     * 添加定时任务
-     * @param entity 定时任务实体
-     * @return 任务 ID
-     */
-    fun addSchedule(entity: ScheduleEntity): Long {
-        val id = runCatching {
-            database.scheduleDao().insert(entity)
-        }.getOrDefault(-1)
+     /** 添加定时任务
+      * @param entity 定时任务实体
+      * @return 任务 ID
+      */
+     fun addSchedule(entity: ScheduleEntity): Long {
+         val id = scheduleScope.launch {
+             database.scheduleDao().insert(entity)
+         }.join()
 
-        if (id > 0) {
-            // 注册定时器
-            registerAlarm(id, entity)
-            Log.d(TAG, "定时任务已添加: id=$id, name=${entity.name}")
-        }
+         if (id > 0) {
+             // 注册定时器
+             registerAlarm(id, entity)
+             Log.d(TAG, "定时任务已添加: id=$id, name=${entity.name}")
+         }
 
-        return id
-    }
+         return id
+     }
 
     /**
      * 删除定时任务
@@ -291,7 +291,7 @@ class ScheduleManager(private val context: Context) {
                     }
 
                     // 计算到下周目标日期的天数差
-                    val currentDay = get(Calendar.DAY_OF_WEEK)
+                    val currentDay = calendar.get(Calendar.DAY_OF_WEEK)
                     var daysUntil = dayOfWeek - currentDay
                     if (daysUntil <= 0) daysUntil += 7
 

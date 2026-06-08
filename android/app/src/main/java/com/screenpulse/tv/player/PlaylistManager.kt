@@ -196,9 +196,9 @@ class PlaylistManager(private val context: Context) {
     }
 
     /**
-     * 获取播放列表的 Flow（实时更新）
+     * 获取播放列表的 LiveData（实时更新）
      */
-    fun observePlaylist(): Flow<List<PlaylistEntity>> {
+    fun observePlaylist(): androidx.lifecycle.LiveData<List<PlaylistEntity>> {
         return database.playlistDao().getActivePlaylistFlow()
     }
 }

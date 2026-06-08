@@ -11,7 +11,7 @@ import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
+import com.bumptech.glide.request.transition.DrawableTransitionOptions
 import com.screenpulse.tv.R
 
 /**
@@ -98,17 +98,12 @@ class ImageDisplayFragment : Fragment() {
         // 先隐藏视图
         imgView.alpha = 0f
 
-        // 创建 Glide 的 cross fade 工厂
-        val factory = DrawableCrossFadeFactory.Builder()
-            .setCrossFadeEnabled(true)
-            .build()
-
         Glide.with(this)
             .load(url)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .placeholder(R.drawable.bg_gradient)
             .error(R.drawable.bg_gradient)
-            .crossFade(factory)
+            .transition(com.bumptech.glide.request.transition.DrawableTransitionOptions.withCrossFade())
             .into(imgView)
 
         // 根据转场类型应用不同的进入动画
@@ -192,7 +187,10 @@ class ImageDisplayFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        val imgView = imageView
         imageView = null
-        Glide.with(this).clear(imageView)
+        if (imgView != null) {
+            Glide.with(this).clear(imgView)
+        }
     }
 }

@@ -47,16 +47,18 @@ class MainActivity : FragmentActivity() {
         // 处理返回键 - 在 TV 上使用遥控器返回
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                when (getCurrentScreen()) {
-                    Screen.SETTINGS -> {
-                        navigateTo(if (hasActivePlaylist()) Screen.PLAYBACK else Screen.LANDING)
-                    }
-                    Screen.PLAYBACK -> {
-                        navigateTo(Screen.LANDING)
-                    }
-                    Screen.LANDING -> {
-                        // 在首屏按返回退出应用
-                        finish()
+                lifecycleScope.launch {
+                    when (getCurrentScreen()) {
+                        Screen.SETTINGS -> {
+                            navigateTo(if (hasActivePlaylist()) Screen.PLAYBACK else Screen.LANDING)
+                        }
+                        Screen.PLAYBACK -> {
+                            navigateTo(Screen.LANDING)
+                        }
+                        Screen.LANDING -> {
+                            // 在首屏按返回退出应用
+                            finish()
+                        }
                     }
                 }
             }
@@ -182,7 +184,7 @@ class MainActivity : FragmentActivity() {
      * 获取当前显示的页面类型
      */
     private fun getCurrentScreen(): Screen {
-        val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.rootContainer)
         return when (currentFragment) {
             is LandingFragment -> Screen.LANDING
             is PlaybackFragment -> Screen.PLAYBACK
@@ -210,7 +212,7 @@ class MainActivity : FragmentActivity() {
                 android.R.animator.fade_in,
                 android.R.animator.fade_out
             )
-            .replace(R.id.fragment_container, fragment)
+            .replace(R.id.rootContainer, fragment)
             .addToBackStack(null)
             .commitAllowingStateLoss()
     }

@@ -315,47 +315,47 @@ class ApiHandler(private val context: Context) {
 
     /**
      * GET /api/status - 获取设备状态
-     */
-    private fun getStatus(): NanoHTTPD.Response {
-        val ip = NetworkUtils.getDeviceIpAddress()
-        val port = (context as? com.screenpulse.tv.ScreenPulseApp)?.webServerManager?.port ?: 8080
+     /** GET /api/status - 获取设备状态 */
+     private fun getStatus(): NanoHTTPD.Response {
+         val ip = NetworkUtils.getDeviceIpAddress()
+         val port = (context as? com.screenpulse.tv.ScreenPulseApp)?.webServerManager?.port ?: 8080
 
-        val playlistCount = try {
-            database.playlistDao().getActivePlaylistCount()
-        } catch (e: Exception) {
-            0
-        }
+         val playlistCount = runCatching {
+             kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                 database.playlistDao().getActivePlaylistCount()
+             }
+         }.getOrDefault(0)
 
-        val status = mapOf(
-            "deviceName" to android.os.Build.MODEL,
-            "deviceIp" to ip,
-            "ip" to ip,
-            "port" to port,
-            "status" to "online",
-            "playlistCount" to playlistCount,
-            "playbackState" to "idle",
-            "version" to "1.0.0",
-            "timestamp" to SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-        )
+         val status = mapOf(
+             "deviceName" to android.os.Build.MODEL,
+             "deviceIp" to ip,
+             "ip" to ip,
+             "port" to port,
+             "status" to "online",
+             "playlistCount" to playlistCount,
+             "playbackState" to "idle",
+             "version" to "1.0.0",
+             "timestamp" to SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+         )
 
-        return okResponse(gson.toJson(status))
-    }
+         return okResponse(gson.toJson(status))
+     }
 
     // ==================== 播放列表 API ====================
 
     /**
      * GET /api/playlist - 获取播放列表
-     */
-    private fun getPlaylist(): NanoHTTPD.Response {
-        val items = try {
-            database.playlistDao().getActivePlaylistItems()
-        } catch (e: Exception) {
-            emptyList()
-        }
+     /** GET /api/playlist - 获取播放列表 */
+     private fun getPlaylist(): NanoHTTPD.Response {
+         val items = runCatching {
+             kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                 database.playlistDao().getActivePlaylistItems()
+             }
+         }.getOrDefault(emptyList())
 
-        val response = items.map { it.toMap() }
-        return okResponse(gson.toJson(response))
-    }
+         val response = items.map { it.toMap() }
+         return okResponse(gson.toJson(response))
+     }
 
     /**
      * POST /api/playlist - 更新整个播放列表
@@ -428,15 +428,13 @@ class ApiHandler(private val context: Context) {
 
     // ==================== 媒体库 API ====================
 
-    /**
-     * GET /api/media - 获取媒体库列表
-     */
+    /** GET /api/media - 获取媒体库列表 */
     private fun getMediaLibrary(): NanoHTTPD.Response {
-        val items = try {
-            database.mediaDao().getAll()
-        } catch (e: Exception) {
-            emptyList()
-        }
+        val items = runCatching {
+            kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                database.mediaDao().getAll()
+            }
+        }.getOrDefault(emptyList())
 
         val response = items.map { media ->
             mapOf(
@@ -837,15 +835,13 @@ class ApiHandler(private val context: Context) {
         }
     }
 
-    /**
-     * GET /api/tts - 获取所有TTS音频文件列表
-     */
+    /** GET /api/tts - 获取所有TTS音频文件列表 */
     private fun getTtsLibrary(): NanoHTTPD.Response {
-        val items = try {
-            database.ttsAudioDao().getAll()
-        } catch (e: Exception) {
-            emptyList()
-        }
+        val items = runCatching {
+            kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                database.ttsAudioDao().getAll()
+            }
+        }.getOrDefault(emptyList())
 
         val response = items.map { tts ->
             mapOf(
@@ -859,6 +855,11 @@ class ApiHandler(private val context: Context) {
                 "volume" to tts.volume,
                 "enabled" to tts.enabled,
                 "createdAt" to tts.createdAt
+            )
+        }
+
+        return okResponse(gson.toJson(response))
+    }
             )
         }
 
@@ -1164,6 +1165,6 @@ private fun PlaylistEntity.toMap(): Map<String, Any> = mapOf(
     "duration" to (duration ?: 0),
     "enabled" to enabled,
     "volume" to volume,
-    "order" to playOrder,
+    "order" to order,
     "createdAt" to createdAt
 )
