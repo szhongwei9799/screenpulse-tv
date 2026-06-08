@@ -337,14 +337,12 @@ class ApiHandler(private val context: Context) {
          )
 
          return okResponse(gson.toJson(status))
-     }
+         }
 
-    // ==================== 播放列表 API ====================
+         // ==================== 播放列表 API ====================
 
-    /**
-     * GET /api/playlist - 获取播放列表
-     /** GET /api/playlist - 获取播放列表 */
-     private fun getPlaylist(): NanoHTTPD.Response {
+         /** GET /api/playlist - 获取播放列表 */
+         private fun getPlaylist(): NanoHTTPD.Response {
          val items = runCatching {
              kotlinx.coroutines.runBlocking(Dispatchers.IO) {
                  database.playlistDao().getActivePlaylistItems()
@@ -353,9 +351,9 @@ class ApiHandler(private val context: Context) {
 
          val response = items.map { it.toMap() }
          return okResponse(gson.toJson(response))
-     }
+         }
 
-    /**
+         /**
      * POST /api/playlist - 更新整个播放列表
      * 请求体: JSON 数组
      */
