@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ScreenPulse TV Player - 网络安全配置 -->
-<!-- 允许所有 HTTP 连接（用于局域网 Web 管理面板） -->
 <network-security-config>
-    <!-- 允许明文（HTTP）流量 -->
-    <base-config cleartextTrafficPermitted="true">
-        <trust-anchors>
-            <!-- 信任系统预装证书 -->
-            <certificates src="system" />
-            <!-- 信任用户安装的证书（调试时有用） -->
-            <certificates src="user" />
-        </trust-anchors>
-    </base-config>
-
-    <!-- 局域网域名特殊配置（允许 HTTP） -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">10.0.0.0/8</domain>
-        <domain includeSubdomains="true">172.16.0.0/12</domain>
-        <domain includeSubdomains="true">192.168.0.0/16</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
     </domain-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
 </network-security-config>
