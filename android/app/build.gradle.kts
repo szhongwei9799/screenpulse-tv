@@ -11,12 +11,12 @@ plugins {
 
 android {
     namespace = "com.screenpulse.tv"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.screenpulse.tv"
         minSdk = 24
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 9
         versionName = "1.2.0"
 
