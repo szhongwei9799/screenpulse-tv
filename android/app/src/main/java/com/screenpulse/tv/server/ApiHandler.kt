@@ -856,11 +856,6 @@ class ApiHandler(private val context: Context) {
 
         return okResponse(gson.toJson(response))
     }
-            )
-        }
-
-        return okResponse(gson.toJson(response))
-    }
 
     /**
      * DELETE /api/tts/{id} - 删除TTS音频
