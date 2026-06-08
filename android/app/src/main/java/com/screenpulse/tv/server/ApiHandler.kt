@@ -1722,10 +1722,6 @@ class ApiHandler(private val context: Context) {
         }
     }
 }
-
-/**
- * PlaylistEntity 转换为 Map（用于 JSON 序列化）
- */
 private fun PlaylistEntity.toMap(): Map<String, Any> = mapOf(
     "id" to id,
     "title" to title,
