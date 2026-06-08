@@ -37,27 +37,30 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/*.gradle.kts', 'android/**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
       - name: Generate debug keystore
         run: |
-          cd android/app
+          cd app
           keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
       - name: Build Release APK
-        run: cd android && ../gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Extract version from Gradle
         id: version
         run: |
-          VERSION=$(grep -oP '(?<=versionName ")[^"]+' android/app/build.gradle.kts | head -1)
+          VERSION=$(grep -oP '(?<=versionName \")[^\"]+' app/build.gradle | head -1)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Prepare APK
         run: |
-          cp android/app/build/outputs/apk/release/*.apk ScreenPulse-v${{ steps.version.outputs.version }}-release.apk
+          cp app/build/outputs/apk/release/*.apk ScreenPulse-v${{ steps.version.outputs.version }}-release.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
