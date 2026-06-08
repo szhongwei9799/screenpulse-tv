@@ -309,14 +309,12 @@ class ApiHandler(private val context: Context) {
             Log.e(TAG, "读取 assets/$fileName 失败", e)
             "<html><body><h1>管理面板加载失败</h1><p>${e.message}</p></body></html>"
         }
-    }
+    } // readAssetFile 结束
 
     // ==================== 设备状态 API ====================
 
-    /**
-     * GET /api/status - 获取设备状态
-     /** GET /api/status - 获取设备状态 */
-     private fun getStatus(): NanoHTTPD.Response {
+    /** GET /api/status - 获取设备状态 */
+    private fun getStatus(): NanoHTTPD.Response {
          val ip = NetworkUtils.getDeviceIpAddress()
          val port = (context as? com.screenpulse.tv.ScreenPulseApp)?.webServerManager?.port ?: 8080
 

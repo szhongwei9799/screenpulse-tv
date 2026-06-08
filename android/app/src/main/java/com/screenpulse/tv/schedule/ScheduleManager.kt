@@ -51,12 +51,11 @@ class ScheduleManager(private val context: Context) {
     /** 定时内容播放完成回调 */
     var onScheduleContentComplete: (() -> Unit)? = null
 
-    /**
-     /** 添加定时任务
-      * @param entity 定时任务实体
-      * @return 任务 ID
-      */
-     fun addSchedule(entity: ScheduleEntity): Long {
+    /** 添加定时任务
+     * @param entity 定时任务实体
+     * @return 任务 ID
+     */
+    fun addSchedule(entity: ScheduleEntity): Long {
          val id = scheduleScope.launch {
              database.scheduleDao().insert(entity)
          }.join()
