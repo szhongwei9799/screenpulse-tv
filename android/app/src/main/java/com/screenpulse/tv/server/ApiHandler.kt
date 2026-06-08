@@ -61,18 +61,18 @@ import java.util.Locale
  * POST /api/control/previous      - 跳到上一项
  * GET  /api/settings              - 获取设置
  * POST /api/settings              - 更新设置
- * GET  /api/tts/voices            - 获取可用的TTS语音列表
- * POST /api/tts/generate          - 生成TTS语音
- * GET  /api/tts                   - 获取所有TTS音频文件
- * DELETE /api/tts/{id}            - 删除TTS音频
- * POST /api/tts/{id}/volume       - 设置TTS音量
- * POST /api/tts/{id}/toggle       - 启用/禁用TTS音频
- * POST /api/tts/{id}/play         - 播放指定TTS音频作为背景音乐
+ * GET  /api/tts/voices            - 获取可用的 TTS 语音列表
+ * POST /api/tts/generate          - 生成 TTS 语音
+ * GET  /api/tts                   - 获取所有 TTS 音频文件
+ * DELETE /api/tts/{id}            - 删除 TTS 音频
+ * POST /api/tts/{id}/volume       - 设置 TTS 音量
+ * POST /api/tts/{id}/toggle       - 启用/禁用 TTS 音频
+ * POST /api/tts/{id}/play         - 播放指定 TTS 音频作为背景音乐
  * POST /api/tts/stop              - 停止背景音乐播放
- * GET  /api/tts/playing           - 获取当前TTS播放状态
- * POST /api/tts/queue             - 设置TTS播放队列
- * /tts/*                          - TTS静态文件服务
- * /media/*                        - 媒体静态文件服务
+ * GET  /api/tts/playing           - 获取当前 TTS 播放状态
+ * POST /api/tts/queue             - 设置 TTS 播放队列
+ * /tts/…                          - TTS 静态文件服务
+ * /media/…                        - 媒体静态文件服务
  */
 class ApiHandler(private val context: Context) {
 
