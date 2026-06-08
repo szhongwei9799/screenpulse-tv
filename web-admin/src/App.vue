@@ -57,13 +57,6 @@
         <div class="header-left">
           <h2 class="page-title">{{ pageTitle }}</h2>
         </div>
-        <div class="header-right">
-          <el-tag type="success" effect="dark" size="small" class="status-tag">
-            <el-icon class="tag-icon"><CircleCheck /></el-icon>
-            Connected
-          </el-tag>
-          <el-button :icon="Refresh" circle size="small" @click="refreshPage" />
-        </div>
       </el-header>
 
       <el-main class="app-main">
@@ -80,7 +73,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Monitor, List, FolderOpened, Setting, Fold, Expand, Refresh, CircleCheck } from '@element-plus/icons-vue'
+import { Monitor, List, FolderOpened, Setting, Fold, Expand } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -202,20 +195,6 @@ const refreshPage = () => {
   font-weight: 600;
   color: #E0E0E0;
   margin: 0;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.status-tag {
-  border: none;
-}
-
-.tag-icon {
-  margin-right: 4px;
 }
 
 .app-main {
