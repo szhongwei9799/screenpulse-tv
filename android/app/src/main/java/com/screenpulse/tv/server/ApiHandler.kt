@@ -1750,3 +1750,4 @@ private fun PlaylistEntity.toMap(): Map<String, Any> = mapOf(
     "order" to playOrder,
     "createdAt" to createdAt
 )
+}
