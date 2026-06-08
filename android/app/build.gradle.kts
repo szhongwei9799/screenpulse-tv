@@ -4,7 +4,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
     id("androidx.navigation.safeargs.kotlin")
     kotlin("kapt")
 }
@@ -22,11 +21,6 @@ android {
 
         // 测试配置
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // 支持 Room schema 导出
-        ksp {
-            arg("room.schemaLocation", "$projectDir/schemas")
-        }
     }
 
     buildTypes {
@@ -112,7 +106,7 @@ dependencies {
     // ============ Room 数据库 ============
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
     // ============ NanoHTTPD 嵌入式 Web 服务器 ============
     implementation("org.nanohttpd:nanohttpd:2.3.1")

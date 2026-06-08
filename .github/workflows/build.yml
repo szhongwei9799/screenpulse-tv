@@ -49,6 +49,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Clean project Gradle caches
+        run: rm -rf android/.gradle android/app/.gradle
+
       - name: Clean Gradle
         run: cd android && ../gradlew clean --no-daemon
 
