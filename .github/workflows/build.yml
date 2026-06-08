@@ -43,34 +43,28 @@ jobs:
 
       - name: Generate debug keystore
         run: |
-          cd app
+          cd android/app
           keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon
-
-      - name: Extract version from Gradle
-        id: version
-        run: |
-          VERSION=$(grep -oP '(?<=versionName \")[^\"]+' app/build.gradle | head -1)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Build Release APK (from android/ subproject)
+        run: cd android && ../gradlew assembleRelease --no-daemon
 
       - name: Prepare APK
         run: |
-          cp app/build/outputs/apk/release/*.apk ScreenPulse-v${{ steps.version.outputs.version }}-release.apk
+          cp android/app/build/outputs/apk/release/*.apk ScreenPulse-v1.2.0-release.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}-${{ github.run_number }}
-          name: ScreenPulse v${{ steps.version.outputs.version }} (#${{ github.run_number }})
+          tag_name: v1.2.0-${{ github.run_number }}
+          name: ScreenPulse v1.2.0 (#${{ github.run_number }})
           body: |
-            ## ScreenPulse v${{ steps.version.outputs.version }}
+            ## ScreenPulse v1.2.0
             **构建时间**: ${{ github.event.head_commit.timestamp }}
             **提交**: ${{ github.sha }}
-          files: ScreenPulse-v${{ steps.version.outputs.version }}-release.apk
+          files: ScreenPulse-v1.2.0-release.apk
           draft: false
           prerelease: false
