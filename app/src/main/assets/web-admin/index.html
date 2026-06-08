@@ -58,6 +58,8 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 .app-aside.collapsed{width:64px}
 .logo-area{height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #21262d;gap:10px;flex-shrink:0}
 .logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#1a237e,#448aff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
+.logo-text-wrapper{display:flex;flex-direction:column;line-height:1.2}
+.logo-version{font-size:11px;font-weight:600;color:#448aff;letter-spacing:0.5px;text-transform:uppercase}
 .logo-text{font-size:16px;font-weight:700;white-space:nowrap;background:linear-gradient(135deg,#448aff,#82b1ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;overflow:hidden}
 .app-menu{flex:1;padding-top:8px;border-right:none!important}
 .app-menu .el-menu-item{margin:2px 8px;border-radius:8px;height:44px;line-height:44px}
@@ -172,6 +174,18 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fade-enter-active{animation:fadeIn .25s ease}
 
+/* ===== COMING SOON VIEW ===== */
+.coming-soon-view{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#78909c;gap:16px;padding:40px}
+.coming-icon{color:#448aff}
+.coming-soon-view h2{margin:0;font-size:24px;color:#e0e0e0}
+.coming-soon-view p{margin:0;font-size:14px}
+
+/* ===== HEADER USER MENU ===== */
+.header-right{display:flex;align-items:center}
+.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,#1a237e,#448aff);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.user-avatar:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(68,138,255,.4)}
+.user-avatar .el-icon{font-size:18px}
+
 /* ===== RESPONSIVE ===== */
 @media(max-width:768px){
 .status-grid{grid-template-columns:repeat(2,1fr)}
@@ -195,24 +209,35 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
     <div class="app-aside" :class="{collapsed: isCollapsed}">
       <div class="logo-area">
         <div class="logo-icon">S</div>
-        <span v-show="!isCollapsed" class="logo-text">ScreenPulse</span>
+        <div v-show="!isCollapsed" class="logo-text-wrapper">
+          <span class="logo-version">v{{appVersion}}</span>
+          <span class="logo-text">ScreenPulse</span>
+        </div>
       </div>
       <el-menu :default-active="currentView" :collapse="isCollapsed" :collapse-transition="true" class="app-menu" background-color="transparent" text-color="#B0BEC5" active-text-color="#448AFF">
-        <el-menu-item index="dashboard" @click="currentView='dashboard'">
-          <el-icon><Monitor /></el-icon>
-          <template #title>Dashboard</template>
-        </el-menu-item>
         <el-menu-item index="playlist" @click="currentView='playlist'">
           <el-icon><List /></el-icon>
-          <template #title>Playlist</template>
+          <template #title>播放列表</template>
         </el-menu-item>
         <el-menu-item index="media" @click="currentView='media'">
           <el-icon><FolderOpened /></el-icon>
-          <template #title>Media Library</template>
+          <template #title>媒体库</template>
+        </el-menu-item>
+        <el-menu-item index="music" @click="currentView='music'">
+          <el-icon><Headset /></el-icon>
+          <template #title>背景音乐</template>
+        </el-menu-item>
+        <el-menu-item index="group" @click="currentView='group'">
+          <el-icon><Folder /></el-icon>
+          <template #title>分组管理</template>
+        </el-menu-item>
+        <el-menu-item index="schedule" @click="currentView='schedule'">
+          <el-icon><Timer /></el-icon>
+          <template #title>定时任务</template>
         </el-menu-item>
         <el-menu-item index="settings" @click="currentView='settings'">
           <el-icon><Setting /></el-icon>
-          <template #title>Settings</template>
+          <template #title>设置</template>
         </el-menu-item>
       </el-menu>
       <div class="aside-footer">
@@ -224,6 +249,25 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
     <div class="app-main-container">
       <div class="app-header">
         <h2 class="page-title">{{pageTitle}}</h2>
+        <div class="header-right">
+          <el-dropdown trigger="click">
+            <span class="user-avatar">
+              <el-icon><User /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="changePassword">
+                  <el-icon><Lock /></el-icon>
+                  <span>修改密码</span>
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="logout">
+                  <el-icon><ArrowRight /></el-icon>
+                  <span>登出</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </div>
 
       <div class="app-main">
@@ -524,6 +568,27 @@ html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Sego
           </div>
         </div>
 
+        <!-- ====== SCHEDULE VIEW ====== -->
+        <div v-if="currentView==='schedule'" class="coming-soon-view">
+          <el-icon :size="80" class="coming-icon"><Timer /></el-icon>
+          <h2>定时任务</h2>
+          <p>功能开发中，敬请期待</p>
+        </div>
+
+        <!-- ====== MUSIC VIEW ====== -->
+        <div v-if="currentView==='music'" class="coming-soon-view">
+          <el-icon :size="80" class="coming-icon"><Headset /></el-icon>
+          <h2>背景音乐</h2>
+          <p>功能开发中，敬请期待</p>
+        </div>
+
+        <!-- ====== GROUP VIEW ====== -->
+        <div v-if="currentView==='group'" class="coming-soon-view">
+          <el-icon :size="80" class="coming-icon"><Folder /></el-icon>
+          <h2>分组管理</h2>
+          <p>功能开发中，敬请期待</p>
+        </div>
+
       </div><!-- /app-main -->
     </div><!-- /app-main-container -->
   </div><!-- /app-container -->
@@ -584,10 +649,11 @@ const app = createApp({
   setup() {
     // Layout
     const isCollapsed = ref(false);
-    const currentView = ref('dashboard');
+    const currentView = ref('playlist');
+    const appVersion = '1.2.0';
     const pageTitle = computed(() => ({
-      dashboard: 'Dashboard', playlist: 'Playlist', media: 'Media Library', settings: 'Device Settings'
-    }[currentView.value] || 'Dashboard'));
+      playlist: '播放列表', media: '媒体库', schedule: '定时任务', music: '背景音乐', group: '分组管理', settings: '设置'
+    }[currentView.value] || '播放列表'));
 
     // ========== DASHBOARD ==========
     const dashLoading = ref(false);
@@ -857,11 +923,20 @@ const app = createApp({
       settingsSaving.value = false;
     };
 
+    // ========== USER MENU ==========
+    const changePassword = () => {
+      ElementPlus.ElMessage.info('修改密码功能开发中');
+    };
+
+    const logout = () => {
+      ElementPlus.ElMessage.info('登出功能开发中');
+    };
+
     // ========== INIT ==========
     onMounted(() => { loadDashboard(); });
 
     return {
-      isCollapsed, currentView, pageTitle,
+      isCollapsed, currentView, pageTitle, appVersion,
       dashLoading, status, playlist, mediaFiles, nowPlaying, playlistSummary, trunc,
       plLoading, plSaving, plDialog, plEditing, itemForm, selectedIds,
       dragStart, dropItem, fetchPlaylist, onSelectionChange, moveItem,
@@ -870,7 +945,8 @@ const app = createApp({
       mediaLoading, uploading, uploadFiles, uploadUrl,
       onFileChange, onFileRemove, doUpload, scanMedia,
       isVideo, isImage, getMediaType, fmtSize, copyPath, confirmDeleteFile,
-      settingsLoading, settingsSaving, netInfo, cfg, saveSettings
+      settingsLoading, settingsSaving, netInfo, cfg, saveSettings,
+      changePassword, logout
     };
   }
 });

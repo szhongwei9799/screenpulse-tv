@@ -3,7 +3,7 @@
 <resources>
 
     <!-- 标题文字样式 -->
-    <style name="ScreenPulseTitle" parent="android:Widget.TextView">
+    <style name="ScreenPulseTitle">
         <item name="android:textSize">36sp</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:fontFamily">sans-serif-medium</item>
@@ -11,34 +11,34 @@
     </style>
 
     <!-- 副标题文字样式 -->
-    <style name="ScreenPulseSubtitle" parent="android:Widget.TextView">
+    <style name="ScreenPulseSubtitle">
         <item name="android:textSize">18sp</item>
         <item name="android:textColor">@color/text_secondary</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>
 
     <!-- 正文文字样式 -->
-    <style name="ScreenPulseBody" parent="android:Widget.TextView">
+    <style name="ScreenPulseBody">
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>
 
     <!-- 提示文字样式 -->
-    <style name="ScreenPulseHint" parent="android:Widget.TextView">
+    <style name="ScreenPulseHint">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/text_hint</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>
 
     <!-- 卡片样式 -->
-    <style name="ScreenPulseCard" parent="android:Widget.FrameLayout">
+    <style name="ScreenPulseCard">
         <item name="android:background">@color/background_card</item>
         <item name="android:padding">24dp</item>
     </style>
 
     <!-- 按钮样式 -->
-    <style name="ScreenPulseButton" parent="android:Widget.Button">
+    <style name="ScreenPulseButton">
         <item name="android:backgroundTint">@color/primary</item>
         <item name="android:textColor">@android:color/black</item>
         <item name="android:textSize">16sp</item>

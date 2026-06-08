@@ -5,7 +5,10 @@
       <div class="logo-area">
         <div class="logo-icon">S</div>
         <transition name="fade">
-          <span v-if="!isCollapsed" class="logo-text">ScreenPulse</span>
+          <div v-if="!isCollapsed" class="logo-text-wrapper">
+            <span class="logo-version">v{{ appVersion }}</span>
+            <span class="logo-text">ScreenPulse</span>
+          </div>
         </transition>
       </div>
 
@@ -19,24 +22,34 @@
         text-color="#B0BEC5"
         active-text-color="#448AFF"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><Monitor /></el-icon>
-          <template #title>Dashboard</template>
-        </el-menu-item>
-
         <el-menu-item index="/playlist">
           <el-icon><List /></el-icon>
-          <template #title>Playlist</template>
+          <template #title>播放列表</template>
         </el-menu-item>
 
         <el-menu-item index="/media">
           <el-icon><FolderOpened /></el-icon>
-          <template #title>Media Library</template>
+          <template #title>媒体库</template>
+        </el-menu-item>
+
+        <el-menu-item index="/music">
+          <el-icon><Headset /></el-icon>
+          <template #title>背景音乐</template>
+        </el-menu-item>
+
+        <el-menu-item index="/group">
+          <el-icon><Folder /></el-icon>
+          <template #title>分组管理</template>
+        </el-menu-item>
+
+        <el-menu-item index="/schedule">
+          <el-icon><Timer /></el-icon>
+          <template #title>定时任务</template>
         </el-menu-item>
 
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
-          <template #title>Settings</template>
+          <template #title>设置</template>
         </el-menu-item>
       </el-menu>
 
@@ -57,6 +70,25 @@
         <div class="header-left">
           <h2 class="page-title">{{ pageTitle }}</h2>
         </div>
+        <div class="header-right">
+          <el-dropdown trigger="click">
+            <span class="user-avatar">
+              <el-icon><User /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="changePassword">
+                  <el-icon><Lock /></el-icon>
+                  <span>修改密码</span>
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="logout">
+                  <el-icon><ArrowRight /></el-icon>
+                  <span>登出</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </el-header>
 
       <el-main class="app-main">
@@ -73,25 +105,35 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Monitor, List, FolderOpened, Setting, Fold, Expand } from '@element-plus/icons-vue'
+import { List, FolderOpened, Setting, Fold, Expand, Timer, Headset, Folder, User, Lock, ArrowRight } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
 const isCollapsed = ref(false)
 
+// App version - in production this would be injected at build time
+const appVersion = '1.2.0'
+
 const currentRoute = computed(() => route.path)
 
 const pageTitles = {
-  '/dashboard': 'Dashboard',
-  '/playlist': 'Playlist Management',
-  '/media': 'Media Library',
-  '/settings': 'Device Settings'
+  '/playlist': '播放列表',
+  '/media': '媒体库',
+  '/music': '背景音乐',
+  '/group': '分组管理',
+  '/schedule': '定时任务',
+  '/settings': '设置'
 }
 
-const pageTitle = computed(() => pageTitles[route.path] || 'Dashboard')
+const pageTitle = computed(() => pageTitles[route.path] || '播放列表')
 
-const refreshPage = () => {
-  router.go(0)
+const changePassword = () => {
+  ElMessage.info('修改密码功能开发中')
+}
+
+const logout = () => {
+  ElMessage.info('登出功能开发中')
 }
 </script>
 
@@ -134,6 +176,20 @@ const refreshPage = () => {
   font-size: 16px;
   color: #fff;
   flex-shrink: 0;
+}
+
+.logo-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.logo-version {
+  font-size: 11px;
+  font-weight: 600;
+  color: #448AFF;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .logo-text {
@@ -195,6 +251,33 @@ const refreshPage = () => {
   font-weight: 600;
   color: #E0E0E0;
   margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #1A237E, #448AFF);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(68, 138, 255, 0.4);
+}
+
+.user-avatar .el-icon {
+  font-size: 18px;
 }
 
 .app-main {
