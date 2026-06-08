@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ScreenPulse Player - 字符串资源（中文） -->
+<!-- ScreenPulse TV Player - 字符串资源（中文） -->
 <resources>
     <string name="app_name">ScreenPulse</string>
     <string name="scan_qr">扫描二维码进行管理</string>
@@ -12,4 +12,27 @@
     <string name="playback_notification_text">播放列表正在播放</string>
     <string name="device_info">设备 IP：%1$s</string>
     <string name="qr_instructions">在浏览器中打开以下网址以管理此显示屏</string>
+
+    <!-- Search -->
+    <string name="search_hint">搜索媒体、播放列表…</string>
+    <string name="search_settings_description">搜索音视频内容和播放列表</string>
+
+    <!-- Shortcuts -->
+    <string name="shortcut_playlist">播放列表</string>
+    <string name="shortcut_playlist_long">打开播放列表管理</string>
+
+    <!-- Landing -->
+    <string name="landing_title">ScreenPulse</string>
+    <string name="landing_subtitle">Android TV 数字标牌播放器</string>
+    <string name="landing_qr_hint">扫码打开管理后台</string>
+    <string name="landing_scanning">等待配置播放列表…</string>
+
+    <!-- Settings -->
+    <string name="settings_title">设置</string>
+    <string name="settings_server">Web 管理服务</string>
+    <string name="settings_play_mode">播放模式</string>
+    <string name="settings_mode_loop">循环播放</string>
+    <string name="settings_mode_sequential">顺序播放</string>
+    <string name="settings_mode_random">随机播放</string>
+    <string name="error_empty_playlist">播放列表为空</string>
 </resources>

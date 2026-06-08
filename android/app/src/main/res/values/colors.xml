@@ -14,4 +14,12 @@
     <color name="background_dark">#121212</color>
     <color name="leanback_browse_title">#FFFFFF</color>
     <color name="leanback_background">#121212</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0BEC5</color>
+    <color name="text_hint">#78909C</color>
+    <color name="primary">#448AFF</color>
+    <color name="background_card">#1E1E2E</color>
+    <color name="background_elevated">#272736</color>
+    <color name="warning_yellow">#FF9800</color>
+    <color name="success_green">#4CAF50</color>
 </resources>
