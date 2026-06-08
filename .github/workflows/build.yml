@@ -53,7 +53,7 @@ jobs:
         run: cd android && ../gradlew clean --no-daemon
 
       - name: Build Release APK (from android/ subproject)
-        run: cd android && ../gradlew assembleRelease --no-daemon --no-build-cache
+        run: cd android && ../gradlew assembleRelease --no-daemon --no-build-cache --no-configuration-cache
 
       - name: Prepare APK
         run: |
