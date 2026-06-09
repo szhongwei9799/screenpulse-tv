@@ -65,7 +65,7 @@ class PlaybackEngine(private val context: Context) {
             // 视频播放完毕时自动停止（由引擎控制下一步）
             repeatMode = Player.REPEAT_MODE_OFF
             // 硬件加速
-            setVideoScalingMode(C.SCALING_MODE_FIT)
+            setVideoScalingMode(C.SCALING_MODE_AUTOMATIC)
         }
     }
 
