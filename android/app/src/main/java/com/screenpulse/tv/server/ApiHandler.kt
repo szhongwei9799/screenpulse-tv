@@ -605,10 +605,8 @@ class ApiHandler(private val context: Context) {
 
     // ==================== 定时任务 API ====================
 
-    /**
-     * GET /api/schedule - 获取定时任务列表
-     /** GET /api/schedule - 获取定时任务列表 */
-     private fun getSchedules(): NanoHTTPD.Response {
+    /** GET /api/schedule - 获取定时任务列表 */
+    private fun getSchedules(): NanoHTTPD.Response {
          val schedules = runCatching {
              kotlinx.coroutines.runBlocking(Dispatchers.IO) {
                  database.scheduleDao().getAll()

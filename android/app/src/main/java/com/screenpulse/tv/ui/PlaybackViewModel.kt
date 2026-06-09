@@ -113,9 +113,9 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     /** 播放
-      */
-     fun play() {
+     * 播放
+     */
+    fun play() {
          playbackEngine?.let {
              if (it.getCurrentItem() == null) {
                  it.start()
