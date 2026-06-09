@@ -148,6 +148,7 @@ class PlaybackEngine(private val context: Context) {
 
     /** Background music volume (0-1) */
     var bgMusicVolume: Float = 0.8f
+        private set
 
     /** Whether video audio is muted (replaced by background music) */
     var isVideoMuted: Boolean = false
