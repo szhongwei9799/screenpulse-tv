@@ -522,11 +522,6 @@ class PlaybackEngine(private val context: Context) {
     }
 
     /**
-     * 获取当前播放项
-     */
-    fun getCurrentItem(): PlaylistEntity? = currentMediaItem
-
-    /**
      * 获取播放进度信息
      */
     fun getProgress(): PlaybackProgress {

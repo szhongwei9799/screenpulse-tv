@@ -113,17 +113,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * 播放
-     */
-    fun play() {
-        playbackEngine?.let {
-            if (it.currentMediaItem == null) {
-                it.start()
-            } else {
-                it.resume()
-            }
-        }
-    }
+     /** 播放
+      */
+     fun play() {
+         playbackEngine?.let {
+             if (it.getCurrentItem() == null) {
+                 it.start()
+             } else {
+                 it.resume()
+             }
+         }
+     }
 
     /**
      * 暂停
@@ -165,15 +165,15 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * 恢复播放
-     */
-    fun resumePlayback() {
-        playbackEngine?.let {
-            if (it.currentMediaItem != null && !it.isPlaying) {
-                it.resume()
-            }
-        }
-    }
+     /** 恢复播放
+      */
+     fun resumePlayback() {
+         playbackEngine?.let {
+             if (it.getCurrentItem() != null && !it.isPlaying) {
+                 it.resume()
+             }
+         }
+     }
 
     /**
      * 刷新播放列表

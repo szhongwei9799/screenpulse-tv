@@ -279,6 +279,7 @@ class ApiHandler(private val context: Context) {
             Log.e(TAG, "处理请求异常", e)
             serverError(e.message ?: "服务器内部错误")
         }
+        return serverError("未知错误") // Should never reach here
     }
 
     // ==================== Web 管理面板 ====================
@@ -606,16 +607,16 @@ class ApiHandler(private val context: Context) {
 
     /**
      * GET /api/schedule - 获取定时任务列表
-     */
-    private fun getSchedules(): NanoHTTPD.Response {
-        val schedules = try {
-            database.scheduleDao().getAll()
-        } catch (e: Exception) {
-            emptyList()
-        }
+     /** GET /api/schedule - 获取定时任务列表 */
+     private fun getSchedules(): NanoHTTPD.Response {
+         val schedules = runCatching {
+             kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                 database.scheduleDao().getAll()
+             }
+         }.getOrDefault(emptyList())
 
-        return okResponse(gson.toJson(schedules))
-    }
+         return okResponse(gson.toJson(schedules))
+     }
 
     /**
      * POST /api/schedule - 创建定时任务
