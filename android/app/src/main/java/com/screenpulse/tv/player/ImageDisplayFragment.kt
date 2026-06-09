@@ -11,7 +11,7 @@ import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.transition.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestOptions
 import com.screenpulse.tv.R
 
 /**
@@ -103,7 +103,7 @@ class ImageDisplayFragment : Fragment() {
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .placeholder(R.drawable.bg_gradient)
             .error(R.drawable.bg_gradient)
-            .transition(DrawableTransitionOptions.withCrossFade())
+            .crossFade()
             .into(imgView)
 
         // 根据转场类型应用不同的进入动画
